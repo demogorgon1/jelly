@@ -18,8 +18,10 @@ A typical client-server online game works something like this:
 
 One obvious implication of this is that saves (writes) are much more frequent than loads (reads). There will
 only ever be a single read per session, while there will most likely be a large number of writes (depending on the duration of the session).
+
 Secondly it's important to consider what happens if clients need to be able to switch between multiple game server: what if two game server end up fighting over the same player progress? In other words, what happens when there are multiple sessions for the same player across multiple game servers. This can happen in various edge cases and failure modes. A common example could
 be that a client crashes or disconnects during a session and then reconnects to another server. The original server session might not have saved progress yet at that point and the new session will get old data. Loss of progress makes players very unhappy and should be avoided.
+
 To solve this problem the game server should acquire an exclusive lock on player progress data before it's loaded. This lock should last as long as the session and not be released before the latest player progress has been saved.
 _Jelly_ implements such a locking mechanism in addition to writing and reading player progress.
 

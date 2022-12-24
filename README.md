@@ -25,4 +25,11 @@ be that a client crashes or disconnects during a session and then reconnects to 
 To solve this problem the game server should acquire an exclusive lock on player progress data before it's loaded. This lock should last as long as the session and not be released before the latest player progress has been saved.
 _Jelly_ implements such a locking mechanism in addition to writing and reading player progress.
 
+## Usage overview
+
 ## Background
+I've been working on an online RPG solo-project for a while now and _jelly_ came into existence because I wanted a cheap and efficient way to store player progress data. Obviously one can argue it's silly to implement your own database system, when your actual goal is to make a game... and sure it is. I just can't help myself. Originally I just wanted something extremely simple with a lot of assumptions, but ended up with something quite general purpose. 
+
+I'm under no illusion that _jelly_ is comparable to any of the well-known, mature, and robust database systems people usually use. What it does is that it offers a simple solution to the narrowly scoped problem of storing player progress data for an online game. Nothing more, nothing less. This allows _jelly_ to be small and quite efficient. This was important to me as it's for a solo-project with a very limited budget for hosting servers.
+
+Notice that _jelly_ doesn't offer any networking. If you want to use it as mainly intended, in a larger distributed system, you'll need to provide all the glue sticking everything together yourself.

@@ -7,6 +7,8 @@ in a game server, similarily to sqlite, or as the inner-most moving parts of a l
 * Robust handling of common failure modes to prevent loss of player progress.
 * Optimized for online games where high throughput and write performance are favored over low latency and read performance.
 
+Check out the wiki for more in-depth discussion of how _jelly_ works.
+
 ## Blobs!
 
 Binary blobs are usually the most flexible and robust way of storing player progress data for online games. Here are some reasons why:

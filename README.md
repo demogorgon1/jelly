@@ -16,10 +16,11 @@ Binary blobs are usually the most flexible and robust way of storing player prog
 * You can take snapshots of blobs and store them if previous player state needs to be restored.
 * No need to juggle around complex (and dangerous) SQL database upgrade scripts whenever you add anything to your game.
 
-Exactly how you serialize stuff into binary blobs is up to you and is outside of the scope of _jelly_. You could use something like Google Protocol Buffers. Two things to keep in mind:
+Exactly how you serialize stuff into binary blobs is up to you and is outside of the scope of _jelly_. You could use something like Google Protocol Buffers. A few things to keep in mind:
 
 1. Make sure your blobs are compact. The tinier they are, the cheaper it will be to host your game. _Jelly_ supports compression using ZSTD, so you shouldn't compress your blobs as well. Just don't put things like big GUIDs or strings into your blobs. It all adds up.
 2. You need to have some kind of internal versioning system as you'll probably want to add new stuff to you game continuesly.
+3. It's tempting to use JSON, but don't. Way too verbose.
 
 ## In a nutshell
 
@@ -33,18 +34,11 @@ A typical client-server online game works something like this:
 One obvious implication of this is that saves (writes) are much more frequent than loads (reads). There will
 only ever be a single read per session, while there will most likely be a large number of writes (depending on the duration of the session). Because of this, writes need to be very efficient, while reads aren't as important.
 
-Secondly it's important to consider what happens if clients need to be able to switch between multiple game server: what if two game servers end up fighting over the same blob? In other words, what happens when there are multiple sessions for the same player across multiple game servers? This can happen in various edge cases and failure modes. A common example could
+Secondly it's important to consider what happens if clients need to be able to switch between multiple game servers: what if two game servers end up fighting over the same blob? In other words, what happens when there are multiple sessions for the same player across multiple game servers? This can happen in various edge cases and failure modes. A common example could
 be that a client crashes or disconnects during a session and then reconnects to another server. The original server session might not have saved progress yet at that point and the new session will get an old blob. Loss of progress ensues and makes players very unhappy.
 
 To solve this problem the game server should acquire an exclusive lock on a blob before it's loaded. This lock should last as long as the session and not be released before the blob has been saved.
 _Jelly_ implements such a locking mechanism in addition to writing and reading blobs.
-
-The relational database equivalent would be having table with these columns:
-
-* _Key_ identifying a blob (for example a user account identifier).
-* _Binary blob_ of serialized player progress.
-* _Lock_ identifying the game server currently holding the exclusive lock.
-* (and various metadata).
 
 ## Background
 I've been working on an online RPG solo-project for a while now and _jelly_ came into existence because I wanted a cheap and efficient way to store player progress data. Obviously one can argue it's silly to implement your own database system when your actual goal is to make a game... and sure it is. I just can't help myself. Originally I just wanted something extremely simple with a lot of assumptions, but ended up with something quite general purpose. 

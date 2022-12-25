@@ -7,7 +7,7 @@ in a game server, similarily to sqlite, or as the inner-most moving parts of a l
 * Robust handling of common failure modes to prevent loss of player progress.
 * Optimized for online games where high throughput and write performance are favored over low latency and read performance.
 
-[Check out the wiki](https://github.com/demogorgon1/jelly/wiki/Nodes) for more in-depth discussion of how _jelly_ works.
+[Check out the wiki](https://github.com/demogorgon1/jelly/wiki) for more in-depth discussion of how _jelly_ works.
 
 ## Blobs!
 

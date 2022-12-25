@@ -40,6 +40,14 @@ be that a client crashes or disconnects during a session and then reconnects to 
 To solve this problem the game server should acquire an exclusive lock on a blob before it's loaded. This lock should last as long as the session and not be released before the blob has been saved.
 _Jelly_ implements such a locking mechanism in addition to writing and reading blobs.
 
+## Limitations and things you should know
+
+* Your blobs should be small (preferably less than 10 KB).
+* All metadata (not the blobs themselves) is expected to fit in memory. You need to have a _lot_ of
+users before this becomes a problem, though.
+* _Jelly_ runs a pass on all data on disk (both stores and write-ahead logs) on startup. This means it can take some time if restart is required, but it's really not that bad when with a lot of users. Your blobs are small, right? Game servers will generate a lot of data,
+but the vast majority of it will be overwrites. 
+
 ## Background
 I've been working on an online RPG solo-project for a while now and _jelly_ came into existence because I wanted a cheap and efficient way to store player progress data. Obviously one can argue it's silly to implement your own database system when your actual goal is to make a game... and sure it is. I just can't help myself. Originally I just wanted something extremely simple with a lot of assumptions, but ended up with something quite general purpose. 
 

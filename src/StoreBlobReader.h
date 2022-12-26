@@ -10,31 +10,26 @@
 namespace jelly
 {
 
-	namespace Impl
+	class StoreBlobReader
+		: public IStoreBlobReader
 	{
+	public:
+					StoreBlobReader(
+						const char*			aPath);
+		virtual		~StoreBlobReader();
 
-		class StoreBlobReader
-			: public IStoreBlobReader
-		{
-		public:
-						StoreBlobReader(
-							const char*			aPath);
-			virtual		~StoreBlobReader();
+		bool		IsValid() const;
 
-			bool		IsValid() const;
+		// IStoreBlobReader
+		void		ReadItemBlob(
+						size_t				aOffset, 
+						IItem*				aItem) override;
+		void		Close() override;
 
-			// IStoreBlobReader
-			void		ReadItemBlob(
-							size_t				aOffset, 
-							IItem*				aItem) override;
-			void		Close() override;
+	private:
 
-		private:
-
-			std::string					m_path;
-			std::unique_ptr<File>		m_file;			
-		};
-
-	}
+		std::string					m_path;
+		std::unique_ptr<File>		m_file;			
+	};
 
 }

@@ -14,34 +14,29 @@ namespace jelly
 		class IStreamCompressor;
 	}
 
-	namespace Impl
+	class WALWriter
+		: public IWALWriter
 	{
+	public:
+					WALWriter(
+						const char*						aPath,
+						Compression::IStreamCompressor*	aCompressor);
+		virtual		~WALWriter();
 
-		class WALWriter
-			: public IWALWriter
-		{
-		public:
-						WALWriter(
-							const char*						aPath,
-							Compression::IStreamCompressor*	aCompressor);
-			virtual		~WALWriter();
+		bool		IsValid() const;
 
-			bool		IsValid() const;
+		// IWALWriter implementation
+		size_t		GetSize() override;
+		void		WriteItem(
+						const IItem*					aItem,
+						CompletionEvent*				aCompletionEvent) override;
+		void		Flush() override;
 
-			// IWALWriter implementation
-			size_t		GetSize() override;
-			void		WriteItem(
-							const IItem*					aItem,
-							CompletionEvent*				aCompletionEvent) override;
-			void		Flush() override;
+	private:
 
-		private:
-
-			std::vector<std::pair<const IItem*, CompletionEvent*>>	m_pendingItemWrites;
-			File													m_file;
-			std::unique_ptr<Compression::IStreamCompressor>			m_compressor;
-		};		
-
-	}
+		std::vector<std::pair<const IItem*, CompletionEvent*>>	m_pendingItemWrites;
+		File													m_file;
+		std::unique_ptr<Compression::IStreamCompressor>			m_compressor;
+	};		
 
 }

@@ -7,29 +7,24 @@
 namespace jelly
 {
 
-	namespace Impl
+	class BufferReader
+		: public IReader
 	{
-
-		class BufferReader
-			: public IReader
-		{
-		public:
-					BufferReader(
-						const void*		aBuffer,
-						size_t			aBufferSize);
-					~BufferReader();
+	public:
+				BufferReader(
+					const void*		aBuffer,
+					size_t			aBufferSize);
+				~BufferReader();
 		
-			// IReader implementation
-			size_t	Read(
-						void*			aBuffer,
-						size_t			aBufferSize) override;
+		// IReader implementation
+		size_t	Read(
+					void*			aBuffer,
+					size_t			aBufferSize) override;
 
-		private:
+	private:
 
-			const uint8_t*	m_p;
-			size_t			m_remaining;
-		};
-
-	}
+		const uint8_t*	m_p;
+		size_t			m_remaining;
+	};
 
 }

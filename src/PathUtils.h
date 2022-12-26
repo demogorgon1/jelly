@@ -8,30 +8,25 @@
 namespace jelly
 {
 
-	namespace Impl
+	namespace PathUtils
 	{
 
-		namespace PathUtils
+		enum FileType
 		{
+			FILE_TYPE_WAL,
+			FILE_TYPE_STORE
+		};
 
-			enum FileType
-			{
-				FILE_TYPE_WAL,
-				FILE_TYPE_STORE
-			};
-
-			std::string	MakePath(
-							const char*						aRoot,
-							FileType						aFileType,
-							uint32_t						aNodeId,
-							uint32_t						aId);
-			bool		ParsePath(
-							const std::filesystem::path&	aPath,
-							FileType&						aOutFileType,
-							uint32_t&						aOutNodeId,
-							uint32_t&						aOutId);
-
-		}
+		std::string	MakePath(
+						const char*						aRoot,
+						FileType						aFileType,
+						uint32_t						aNodeId,
+						uint32_t						aId);
+		bool		ParsePath(
+						const std::filesystem::path&	aPath,
+						FileType&						aOutFileType,
+						uint32_t&						aOutNodeId,
+						uint32_t&						aOutId);
 
 	}
 

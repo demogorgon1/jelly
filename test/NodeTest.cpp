@@ -10,9 +10,8 @@
 #include <thread>
 #include <unordered_set>
 
-#include "../src/Host.h"
-
 #include <jelly/BlobNode.h>
+#include <jelly/Host.h>
 #include <jelly/LockNode.h>
 
 namespace jelly
@@ -25,13 +24,13 @@ namespace jelly
 		{
 
 			class TestHost
-				: public Impl::Host
+				: public Host
 			{
 			public:
 				TestHost(
 					const char*					aRoot,
-					Impl::Host::CompressionMode	aCompressionMode)
-					: Impl::Host(aRoot, aCompressionMode)
+					Host::CompressionMode	aCompressionMode)
+					: Host(aRoot, aCompressionMode)
 				{
 
 				}
@@ -180,7 +179,7 @@ namespace jelly
 			template <typename _ItemType>
 			void
 			_VerifyWAL(
-				Impl::Host*													aHost,
+				Host*														aHost,
 				uint32_t													aNodeId,
 				uint32_t													aId,
 				const std::vector<_ItemType>&								aExpected)
@@ -191,7 +190,7 @@ namespace jelly
 			template <typename _ItemType>
 			void
 			_VerifyStore(
-				Impl::Host*													aHost,
+				Host*														aHost,
 				uint32_t													aNodeId,
 				uint32_t													aId,
 				const std::vector<_ItemType>&								aExpected)
@@ -201,7 +200,7 @@ namespace jelly
 
 			void
 			_VerifyNoWAL(
-				Impl::Host*													aHost,
+				Host*														aHost,
 				uint32_t													aNodeId,
 				uint32_t													aId)
 			{
@@ -211,7 +210,7 @@ namespace jelly
 
 			void
 			_VerifyNoStore(
-				Impl::Host*													aHost,
+				Host*														aHost,
 				uint32_t													aNodeId,
 				uint32_t													aId)
 			{
@@ -497,7 +496,7 @@ namespace jelly
 
 			void
 			_HammerTest(
-				Impl::Host*		aHost,
+				Host*			aHost,
 				uint32_t		aKeyCount,
 				HammerTestMode	aHammerTestMode)
 			{
@@ -734,7 +733,7 @@ namespace jelly
 			
 			void
 			_TestBlobNode(
-				Impl::Host*	aHost)
+				Host*		aHost)
 			{
 				aHost->DeleteAllFiles(UINT32_MAX);
 
@@ -932,7 +931,7 @@ namespace jelly
 
 			void
 			_TestLockNode(
-				Impl::Host*	aHost)
+				Host*		aHost)
 			{
 				aHost->DeleteAllFiles(UINT32_MAX);
 		
@@ -1097,7 +1096,7 @@ namespace jelly
 
 			void
 			_TestBlobNodeMemoryLimit(
-				Impl::Host*	aHost)
+				Host*		aHost)
 			{
 				aHost->DeleteAllFiles(UINT32_MAX);
 
@@ -1257,9 +1256,9 @@ namespace jelly
 				std::filesystem::create_directories(aWorkingDirectory);
 
 				#if defined(JELLY_ZSTD)
-					TestHost host(aWorkingDirectory, Impl::Host::COMPRESSION_MODE_ZSTD);
+					TestHost host(aWorkingDirectory, Host::COMPRESSION_MODE_ZSTD);
 				#else 
-					TestHost host(aWorkingDirectory, Impl::Host::COMPRESSION_MODE_NONE);
+					TestHost host(aWorkingDirectory, Host::COMPRESSION_MODE_NONE);
 				#endif
 
 				// Test basic operation of BlobNode

@@ -4,7 +4,7 @@
 
 #include <sstream>
 
-#include "../src/ZstdCompression.h"
+#include <jelly/ZstdCompression.h>
 
 namespace jelly
 {

@@ -10,7 +10,7 @@ in a game server, similarily to sqlite or rocksdb, or as the inner-most moving p
 
 [Check out the wiki](https://github.com/demogorgon1/jelly/wiki) for more in-depth discussion of how _jelly_ works.
 
-## Blobs!
+## Why blobs?
 
 Binary blobs are usually the most flexible and robust way of storing player progress data for online games. Here are some reasons why:
 
@@ -19,11 +19,7 @@ Binary blobs are usually the most flexible and robust way of storing player prog
 * You can take snapshots of blobs and store them if previous player state needs to be restored.
 * No need to juggle around complex (and dangerous) SQL database upgrade scripts whenever you add anything to your game.
 
-Exactly how you serialize stuff into binary blobs is up to you and is outside of the scope of _jelly_. You could use something like Google Protocol Buffers. A few things to keep in mind:
-
-1. Make sure your blobs are compact. The tinier they are, the cheaper it will be to host your game. _Jelly_ supports compression using ZSTD, so you shouldn't compress your blobs as well. Just don't put things like big GUIDs or strings into your blobs. It all adds up.
-2. You need to have some kind of internal versioning system as you'll probably want to add new stuff to you game continuesly.
-3. It's tempting to use JSON, but don't. Way too verbose.
+Exactly how you serialize stuff into binary blobs is up to you and is outside of the scope of _jelly_. You could use something like Google Protocol Buffers. 
 
 ## In a nutshell
 
@@ -56,4 +52,4 @@ I've been working on an online RPG solo-project for a while now and _jelly_ came
 
 I'm under no illusion that _jelly_ is comparable to any of the well-known, mature, and robust database systems people usually use. What it does is that it offers a simple solution to the narrowly scoped problem of storing player progress data for an online game. Nothing more, nothing less. This allows _jelly_ to be small and quite efficient. This was important to me as it's for a solo-project with a very limited budget for hosting servers.
 
-Notice that _jelly_ doesn't offer any networking. If you want to use it as mainly intended, in a larger distributed system, you'll need to provide all the glue sticking everything together yourself.
+Notice that _jelly_ doesn't offer any networking. If you want to use it as intended, in a larger distributed system, you'll need to provide all the glue sticking everything together yourself.

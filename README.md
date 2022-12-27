@@ -44,7 +44,7 @@ _Jelly_ implements such a locking mechanism in addition to writing and reading b
 
 ## Limitations and things you should know
 
-* Your blobs should be small (preferably less than 10 KB).
+* Your blobs should be small (preferably less than 10 KB). Don't put GUIDs or strings in your blobs and you'll be fine.
 * All metadata (not the blobs themselves) is expected to fit in memory. You need to have a _lot_ of
 users before this becomes a problem, though.
 * _Jelly_ runs a pass on all data on disk (both stores and write-ahead logs) on startup. This means it can take some time if restart is required, but it's really not that bad even with a lot of users. Game servers will generate a lot of data,

@@ -1,4 +1,9 @@
 # jelly
+
+<span style="color:red">
+WARNING: This is very much work in progress. Here be dragons.
+</span>
+
 _Jelly_ is a simple database system designed to function as blob-storage for online games. It's a C++ library that can either be embedded 
 in a game server, similarily to sqlite or rocksdb, or as the inner-most moving parts of a larger distributed database system.
 

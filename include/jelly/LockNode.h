@@ -49,7 +49,17 @@ namespace jelly
 				PendingStoreType*	/*aPendingStoreType*/)
 			{
 				for (std::pair<const _KeyType, Item*>& i : m_pendingStore)
-					aWriter->WriteItem(i.second, NULL);
+				{
+					Item* item = i.second;
+
+					aWriter->WriteItem(item, NULL);
+
+					if (item->m_pendingWAL != NULL)
+					{
+						item->m_pendingWAL->RemoveReference();
+						item->m_pendingWAL = NULL;
+					}
+				}
 			};
 		}
 

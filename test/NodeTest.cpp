@@ -1209,7 +1209,7 @@ namespace jelly
 					BlobNodeType::Config config;
 					config.m_maxResidentBlobSize = 0; // No space for anything
 
-					BlobNodeType blobNode(aHost, 1);
+					BlobNodeType blobNode(aHost, 1, config);
 					
 					// Set a few keys
 					for(uint32_t i = 1; i <= 3; i++)
@@ -1227,21 +1227,77 @@ namespace jelly
 
 					// All keys should be resident because they're still in the WAL
 					_VerifyResidentKeys(&blobNode, { 1, 2, 3 });
+
+					blobNode.FlushPendingStore();
+
+					// After flushing store there should be nothing in WAL, hence nothing resident as well
+					_VerifyResidentKeys(&blobNode, { });
 				}
 
 				// Do a restart
 
 				{
 					BlobNodeType::Config config;
-					config.m_maxResidentBlobSize = 0; // No space for anything
+					config.m_maxResidentBlobSize = 0; // Still no space for anything
 
-					BlobNodeType blobNode(aHost, 2);
+					BlobNodeType blobNode(aHost, 1, config);
 
 					// We should no longer have any resident keys as memory limit caused nothing to be loaded from stores and there is no
 					// fresh updates in WALs
 					_VerifyResidentKeys(&blobNode, { });
 				}
 
+				// Again with the memory limit being immediate, but make two copies of the same blob across two stores
+
+				{
+					BlobNodeType::Config config;
+					config.m_maxResidentBlobSize = 0; 
+
+					BlobNodeType blobNode(aHost, 2, config);
+
+					// Store the same key twice
+					for (uint32_t i = 1; i <= 2; i++)
+					{
+						BlobNodeType::Request req;
+						req.m_key = 1;
+						req.m_seq = i;
+						req.m_blob = 100 + i;
+						blobNode.Set(&req);
+						assert(blobNode.ProcessRequests() == 1);
+						blobNode.FlushPendingWAL(0);
+						assert(req.m_completed.Poll());
+						assert(req.m_result == RESULT_OK); 
+
+						blobNode.FlushPendingStore();
+					}
+				}
+
+				_VerifyStore<BlobNodeItem<UInt32Key, UInt32Blob>>(aHost, 2, 0, { { 1, 1, 101 } });
+				_VerifyStore<BlobNodeItem<UInt32Key, UInt32Blob>>(aHost, 2, 1, { { 1, 2, 102 } });
+
+				// Restart
+
+				{
+					BlobNodeType::Config config;
+					config.m_maxResidentBlobSize = 0;
+
+					BlobNodeType blobNode(aHost, 2, config);
+
+					// Check nothing is resident
+					_VerifyResidentKeys(&blobNode, { });
+
+					// Read the blob and see that it's the latest
+					{
+						BlobNodeType::Request req;
+						req.m_key = 1;
+						blobNode.Get(&req);
+						assert(blobNode.ProcessRequests() == 1);
+						assert(req.m_completed.Poll());
+						assert(req.m_result == RESULT_OK);
+						assert(req.m_seq == 2);
+						assert(req.m_blob == 102);
+					}
+				}
 			}
 
 		}

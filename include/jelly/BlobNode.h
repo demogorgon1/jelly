@@ -51,7 +51,10 @@ namespace jelly
 		{
 			_Restore();
 
-			m_compactionCallback = [&](uint32_t a1, uint32_t a2, CompactionResult<_KeyType, _STLKeyHasher>* aOut) { _PerformCompaction(a1, a2, aOut); };
+			m_compactionCallback = [&](uint32_t a1, uint32_t a2, CompactionResult<_KeyType, _STLKeyHasher>* aOut) 
+			{ 
+				_PerformCompaction(a1, a2, aOut); 
+			};
 			
 			m_flushPendingStoreCallback = [&](
 				uint32_t			aStoreId,
@@ -60,10 +63,20 @@ namespace jelly
 			{ 				
 				for(std::pair<const _KeyType, Item*>& i : m_pendingStore)
 				{
-					i.second->m_storeId = aStoreId;
-					i.second->m_storeOffset = aWriter->WriteItem(i.second, m_host->GetCompressionProvider());
+					Item* item = i.second;
+
+					item->m_storeId = aStoreId;
+					item->m_storeOffset = aWriter->WriteItem(item, m_host->GetCompressionProvider());
+
+					if (item->m_pendingWAL != NULL)
+					{
+						item->m_pendingWAL->RemoveReference();
+						item->m_pendingWAL = NULL;
+					}
 				}
-			};
+
+				_ObeyResidentBlobSizeLimit();
+ 			};
 		}
 
 		~BlobNode()

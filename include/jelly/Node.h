@@ -121,22 +121,9 @@ namespace jelly
 				uint32_t storeId = CreateStoreId();
 
 				std::unique_ptr<IStoreWriter> writer(m_host->CreateStore(m_nodeId, storeId));
-				
+
 				assert(m_flushPendingStoreCallback);
 				m_flushPendingStoreCallback(storeId, writer.get(), &m_pendingStore);
-			}
-
-			{
-				for (std::pair<const _KeyType, _ItemType*>& i : m_pendingStore)
-				{
-					_ItemType* item = i.second;
-
-					if(item->m_pendingWAL != NULL)
-					{
-						item->m_pendingWAL->RemoveReference();
-						item->m_pendingWAL = NULL;
-					}
-				}
 			}
 
 			m_pendingStore.clear();

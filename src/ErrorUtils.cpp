@@ -1,8 +1,11 @@
-#pragma once
+#if defined(_WIN32)
+	#include <windows.h>
+#endif
 
 #include <stdlib.h>
 
 #include <jelly/ErrorUtils.h>
+#include <jelly/Log.h>
 #include <jelly/StringUtils.h>
 
 namespace jelly
@@ -19,7 +22,13 @@ namespace jelly
 			// FIXME: some kind of logging hook
 			char buffer[2048];
 			JELLY_STRING_FORMAT_VARARGS(buffer, sizeof(buffer), aFormat);
-			fprintf(stderr, "FATAL ERROR: %s\n", buffer);
+			Log::Print(Log::LEVEL_ERROR, buffer);
+
+			#if defined(_WIN32)
+				if(IsDebuggerPresent())
+					DebugBreak();
+			#endif
+
 			exit(EXIT_FAILURE);
 		}			
 

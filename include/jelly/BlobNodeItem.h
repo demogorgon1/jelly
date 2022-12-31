@@ -1,8 +1,7 @@
 #pragma once
 
-#include <assert.h>
-
 #include "Compression.h"
+#include "ErrorUtils.h"
 #include "IItem.h"
 #include "IReader.h"
 #include "IWriter.h"
@@ -67,20 +66,15 @@ namespace jelly
 		}
 
 		// IItem implementation
-		bool
+		void
 		Write(
 			IWriter*										aWriter,
 			const Compression::IProvider*					aItemCompression) const override
 		{
-			assert(m_blob.IsSet());
-
-			if(!m_blob.Write(aWriter, aItemCompression))
-				return false;
-			if(!m_key.Write(aWriter))
-				return false;
-			if(aWriter->Write(&m_meta, sizeof(m_meta)) != sizeof(m_meta))
-				return false;
-			return true;
+			JELLY_ASSERT(m_blob.IsSet());
+			JELLY_CHECK(m_blob.Write(aWriter, aItemCompression), "Failed to write blob item blob.");
+			JELLY_CHECK(m_key.Write(aWriter), "Failed to write blob item key.");
+			JELLY_CHECK(aWriter->Write(&m_meta, sizeof(m_meta)) == sizeof(m_meta), "Failed to write blob item meta data.");
 		}
 
 		bool
@@ -94,7 +88,7 @@ namespace jelly
 
 			if(aReadType != READ_TYPE_BLOB_ONLY)
 			{
-				assert(aReadType == READ_TYPE_ALL);
+				JELLY_ASSERT(aReadType == READ_TYPE_ALL);
 
 				if (!m_key.Read(aReader))
 					return false;

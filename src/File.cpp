@@ -2,8 +2,9 @@
 	#include <windows.h>
 #endif
 
-#include <assert.h>
 #include <stdint.h>
+
+#include <jelly/ErrorUtils.h>
 
 #include "File.h"
 
@@ -34,7 +35,7 @@ namespace jelly
 		void*			aBuffer,
 		size_t			aBufferSize) 
 	{
-		assert(m_internal->m_handle != INVALID_HANDLE_VALUE);
+		JELLY_ASSERT(m_internal->m_handle != INVALID_HANDLE_VALUE);
 
 		DWORD bytes;
 		if (!ReadFile(m_internal->m_handle, aBuffer, (DWORD)aBufferSize, &bytes, NULL))
@@ -50,7 +51,7 @@ namespace jelly
 		const void*		aBuffer,
 		size_t			aBufferSize) 
 	{
-		assert(m_internal->m_handle != INVALID_HANDLE_VALUE);
+		JELLY_ASSERT(m_internal->m_handle != INVALID_HANDLE_VALUE);
 
 		DWORD bytes;
 		if (!WriteFile(m_internal->m_handle, aBuffer, (DWORD)aBufferSize, &bytes, NULL))
@@ -67,6 +68,7 @@ namespace jelly
 		const char*		aPath,
 		Mode			aMode)
 		: m_mode(aMode)
+		, m_path(aPath)
 	{
 		m_internal = new Internal();
 
@@ -98,14 +100,14 @@ namespace jelly
 				break;
 
 			default:
-				assert(false);
+				JELLY_ASSERT(false);
 			}
 				
 			m_internal->m_handle = CreateFileA(aPath, desiredAccess, shareMode, NULL, creationDisposition, flags, NULL);
 
 			if (m_internal->m_handle != INVALID_HANDLE_VALUE && m_mode != MODE_WRITE_STREAM)
 			{
-				assert(sizeof(LARGE_INTEGER) == sizeof(uint64_t));
+				static_assert(sizeof(LARGE_INTEGER) == sizeof(uint64_t));
 				uint64_t fileSize;
 				if (!GetFileSizeEx(m_internal->m_handle, (LARGE_INTEGER*)&fileSize))
 				{
@@ -145,22 +147,22 @@ namespace jelly
 	{
 		if(aOffset != UINT64_MAX)
 		{
-			assert(m_mode == MODE_READ_RANDOM);
+			JELLY_ASSERT(m_mode == MODE_READ_RANDOM);
 
 			#if defined(_WIN32)
-				assert(m_internal->m_handle != INVALID_HANDLE_VALUE);
+				JELLY_ASSERT(m_internal->m_handle != INVALID_HANDLE_VALUE);
 
 				LARGE_INTEGER distance;
 				distance.LowPart = (DWORD)(aOffset & 0xFFFFFFFF);
 				distance.HighPart = (DWORD)(aOffset >> 32);
 
 				BOOL result = SetFilePointerEx(m_internal->m_handle, distance, NULL, FILE_BEGIN);
-				assert(result != 0);
+				JELLY_CHECK(result != 0, "SetFilePointerEx() failed (offset %llu, path %s)", aOffset, m_path.c_str());
 			#endif
 		}
 		else
 		{
-			assert(m_mode == MODE_READ_STREAM);
+			JELLY_ASSERT(m_mode == MODE_READ_STREAM);
 		}				
 
 		aOut.m_internal = m_internal;
@@ -170,7 +172,7 @@ namespace jelly
 	File::GetWriter(
 		Writer&			aOut)
 	{
-		assert(m_mode == MODE_WRITE_STREAM);
+		JELLY_ASSERT(m_mode == MODE_WRITE_STREAM);
 
 		aOut.m_internal = m_internal;
 	}
@@ -198,23 +200,26 @@ namespace jelly
 		void*			aBuffer,
 		size_t			aBufferSize)
 	{
-		assert(m_mode == MODE_READ_RANDOM);
+		JELLY_ASSERT(m_mode == MODE_READ_RANDOM);
 
 		#if defined(_WIN32)
-			assert(m_internal->m_handle != INVALID_HANDLE_VALUE);
+			JELLY_ASSERT(m_internal->m_handle != INVALID_HANDLE_VALUE);
 
 			LARGE_INTEGER distance;
 			distance.LowPart = (DWORD)(aOffset & 0xFFFFFFFF);
 			distance.HighPart = (DWORD)(aOffset >> 32);
 
-			BOOL result = SetFilePointerEx(m_internal->m_handle, distance, NULL, FILE_BEGIN);
-			assert(result != 0);
+			{
+				BOOL result = SetFilePointerEx(m_internal->m_handle, distance, NULL, FILE_BEGIN);
+				JELLY_CHECK(result != 0, "SetFilePointerEx() failed (offset %llu, path %s).", aOffset, m_path.c_str());
+			}
 
-			DWORD bytesRead;
-			if(!ReadFile(m_internal->m_handle, aBuffer, (DWORD)aBufferSize, &bytesRead, NULL))
-				assert(false);
-
-			assert(bytesRead == (DWORD)aBufferSize);
+			{
+				DWORD bytesRead;
+				BOOL result = ReadFile(m_internal->m_handle, aBuffer, (DWORD)aBufferSize, &bytesRead, NULL);
+				JELLY_CHECK(result != 0, "ReadFile() failed (offset %llu, buffer size %llu, path %s).", aOffset, aBufferSize, m_path.c_str());
+				JELLY_ASSERT(bytesRead == (DWORD)aBufferSize);
+			}
 		#endif
 	}
 

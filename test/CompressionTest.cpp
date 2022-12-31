@@ -1,7 +1,5 @@
 // Test compression implementations
 
-#include <assert.h>
-
 #include <sstream>
 
 #include <jelly/ZstdCompression.h>

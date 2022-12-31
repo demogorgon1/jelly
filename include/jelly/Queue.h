@@ -19,16 +19,16 @@ namespace jelly
 		~Queue()
 		{		
 			// Can't delete the queue if it has pending requests
-			assert(m_first == NULL);
-			assert(m_last == NULL);
-			assert(m_count == 0);
+			JELLY_ASSERT(m_first == NULL);
+			JELLY_ASSERT(m_last == NULL);
+			JELLY_ASSERT(m_count == 0);
 		}
 
 		void
 		Add(
 			_RequestType*	aRequest)
 		{
-			assert(!m_guard);
+			JELLY_ASSERT(!m_guard);
 
 			if (m_last != NULL)
 				m_last->m_next = aRequest;
@@ -43,7 +43,7 @@ namespace jelly
 		void
 		SetGuard()
 		{
-			assert(!m_guard);
+			JELLY_ASSERT(!m_guard);
 			m_guard = true;
 		}
 

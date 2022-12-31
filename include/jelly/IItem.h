@@ -24,7 +24,7 @@ namespace jelly
 		virtual			~IItem() {}
 
 		// Virtual interface
-		virtual bool	Write(
+		virtual void	Write(
 							IWriter*						aWriter,
 							const Compression::IProvider*	aItemCompression) const = 0;
 		virtual bool	Read(

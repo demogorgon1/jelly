@@ -1,5 +1,7 @@
 #include <sstream>
 
+#include <jelly/ErrorUtils.h>
+
 #include "PathUtils.h"
 
 namespace jelly
@@ -10,7 +12,7 @@ namespace jelly
 
 		std::string
 		MakePath(
-			const char* aRoot,
+			const char*						aRoot,
 			FileType						aFileType,
 			uint32_t						aNodeId,
 			uint32_t						aId)
@@ -18,8 +20,7 @@ namespace jelly
 			const char* typeString = (aFileType == FILE_TYPE_WAL) ? "wal" : "store";
 			char path[1024];
 			size_t result = (size_t)std::snprintf(path, sizeof(path), "%s/jelly-%s-%u-%u.bin", aRoot, typeString, aNodeId, aId);
-			if (result > sizeof(path))
-				throw std::exception("Path too long.");
+			JELLY_CHECK(result <= sizeof(path), "Path too long.");
 			return path;
 		}
 

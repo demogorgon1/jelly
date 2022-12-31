@@ -1,5 +1,6 @@
-#include <assert.h>
 #include <stdint.h>
+
+#include <jelly/ErrorUtils.h>
 
 #include "BufferReader.h"
 #include "StoreBlobReader.h"
@@ -34,7 +35,7 @@ namespace jelly
 		if(!m_file)
 			m_file = std::make_unique<File>(m_path.c_str(), File::MODE_READ_RANDOM);
 
-		assert(m_file);
+		JELLY_ASSERT(m_file);
 
 		size_t bufferSize = aItem->GetStoredBlobSize();
 		uint8_t* buffer = new uint8_t[bufferSize];
@@ -48,11 +49,11 @@ namespace jelly
 			BufferReader reader(buffer, bufferSize);
 
 			if (!aItem->Read(&reader, NULL, IItem::READ_TYPE_BLOB_ONLY))
-				assert(false);
+				JELLY_ASSERT(false);
 		}
 		catch(...)
 		{
-			assert(false);
+			JELLY_ASSERT(false);
 		}
 
 		delete [] buffer;

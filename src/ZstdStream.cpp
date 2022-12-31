@@ -1,9 +1,10 @@
 #if defined(JELLY_ZSTD)
 
-#include <assert.h>
 #include <stdio.h>
 
 #include <zstd.h>
+
+#include <jelly/ZstdStream.h>
 
 #include "ZstdStream.h"
 
@@ -43,7 +44,7 @@ namespace jelly
 			m_internal = new Internal();
 
 			m_internal->m_stream = ZSTD_createCStream();
-			assert(m_internal->m_stream != NULL);
+			JELLY_CHECK(m_internal->m_stream != NULL, "ZSTD_createCStream() failed.");
 		}
 
 		Compressor::~Compressor()
@@ -64,9 +65,9 @@ namespace jelly
 		void
 		Compressor::Flush()
 		{
-			assert(m_internal->m_stream != NULL);
-			assert(m_outputCallback);
-			assert(!m_error);
+			JELLY_ASSERT(m_internal->m_stream != NULL);
+			JELLY_ASSERT(m_outputCallback);
+			JELLY_ASSERT(!m_error);
 
 			ZSTD_inBuffer inBuffer;
 			inBuffer.src = NULL;
@@ -104,9 +105,9 @@ namespace jelly
 			const void*				aBuffer,
 			size_t					aBufferSize) 
 		{
-			assert(m_internal->m_stream != NULL);
-			assert(m_outputCallback);
-			assert(!m_error);
+			JELLY_ASSERT(m_internal->m_stream != NULL);
+			JELLY_ASSERT(m_outputCallback);
+			JELLY_ASSERT(!m_error);
 
 			ZSTD_inBuffer inBuffer;
 			inBuffer.src = aBuffer;
@@ -144,7 +145,7 @@ namespace jelly
 			m_internal = new Internal();
 
 			m_internal->m_stream = ZSTD_createDStream();
-			assert(m_internal->m_stream != NULL);
+			JELLY_CHECK(m_internal->m_stream != NULL, "ZSTD_createDStream() failed.");
 		}
 
 		Decompressor::~Decompressor()
@@ -167,9 +168,9 @@ namespace jelly
 			const void*					aBuffer,
 			size_t						aBufferSize)
 		{
-			assert(m_internal->m_stream != NULL);
-			assert(m_outputCallback);
-			assert(!m_error);
+			JELLY_ASSERT(m_internal->m_stream != NULL);
+			JELLY_ASSERT(m_outputCallback);
+			JELLY_ASSERT(!m_error);
 
 			ZSTD_inBuffer inBuffer;
 			inBuffer.src = aBuffer;

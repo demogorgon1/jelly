@@ -1,5 +1,3 @@
-#include <assert.h>
-
 #include <jelly/StoreManager.h>
 
 #include "PathUtils.h"

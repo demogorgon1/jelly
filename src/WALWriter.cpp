@@ -1,7 +1,6 @@
-#include <assert.h>
-
 #include <jelly/CompletionEvent.h>
 #include <jelly/Compression.h>
+#include <jelly/ErrorUtils.h>
 #include <jelly/IItem.h>
 
 #include "WALWriter.h"
@@ -24,7 +23,7 @@ namespace jelly
 				File::Writer writer;
 				m_file.GetWriter(writer);
 				if(writer.Write(aBuffer, aBufferSize) != aBufferSize)
-					assert(false);
+					JELLY_FATAL_ERROR("Failed to write compressed data to file: %s", m_file.GetPath());
 			});
 		}
 	}
@@ -78,7 +77,7 @@ namespace jelly
 			m_compressor->Flush();
 
 		if(!m_file.Flush())
-			assert(false);
+			JELLY_ASSERT(false);
 
 		for (std::pair<const IItem*, CompletionEvent*> i : m_pendingItemWrites)
 			i.second->Signal();

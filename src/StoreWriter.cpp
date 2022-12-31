@@ -1,5 +1,4 @@
-#include <assert.h>
-
+#include <jelly/ErrorUtils.h>
 #include <jelly/IItem.h>
 
 #include "StoreWriter.h"
@@ -35,8 +34,7 @@ namespace jelly
 		File::Writer writer;
 		m_file.GetWriter(writer);
 
-		if (!aItem->Write(&writer, aItemCompression))
-			assert(false);
+		aItem->Write(&writer, aItemCompression);
 
 		return offset;
 	}

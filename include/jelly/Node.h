@@ -68,9 +68,9 @@ namespace jelly
 			{
 				for (_RequestType* request = queue->m_first; request != NULL; request = request->m_next)
 				{
-					assert(request->m_result == RESULT_NONE);
-					assert(!request->m_completed.Poll());
-					assert(request->m_callback);
+					JELLY_ASSERT(request->m_result == RESULT_NONE);
+					JELLY_ASSERT(!request->m_completed.Poll());
+					JELLY_ASSERT(request->m_callback);
 
 					request->m_callback();
 				}
@@ -100,7 +100,7 @@ namespace jelly
 		FlushPendingWAL(
 			uint32_t		aWALConcurrentIndex)
 		{
-			assert(aWALConcurrentIndex < m_pendingWALs.size());
+			JELLY_ASSERT(aWALConcurrentIndex < m_pendingWALs.size());
 
 			WAL* pendingWAL = m_pendingWALs[aWALConcurrentIndex];
 			if(pendingWAL != NULL)
@@ -122,7 +122,7 @@ namespace jelly
 
 				std::unique_ptr<IStoreWriter> writer(m_host->CreateStore(m_nodeId, storeId));
 
-				assert(m_flushPendingStoreCallback);
+				JELLY_ASSERT(m_flushPendingStoreCallback);
 				m_flushPendingStoreCallback(storeId, writer.get(), &m_pendingStore);
 			}
 
@@ -156,9 +156,9 @@ namespace jelly
 		void
 		PerformCompaction()
 		{
-			assert(m_compactionCallback);
-			assert(!m_hasPendingCompaction);
-			assert(!m_pendingCompactionResult);
+			JELLY_ASSERT(m_compactionCallback);
+			JELLY_ASSERT(!m_hasPendingCompaction);
+			JELLY_ASSERT(!m_pendingCompactionResult);
 
 			m_hasPendingCompaction = true;
 			m_pendingCompactionResult = std::make_unique<CompactionResult<_KeyType, _STLKeyHasher>>();
@@ -189,7 +189,7 @@ namespace jelly
 						small2 = &t;
 				}
 
-				assert(small1 != NULL && small2 != NULL);
+				JELLY_ASSERT(small1 != NULL && small2 != NULL);
 
 				m_compactionCallback(small1->m_id, small2->m_id, m_pendingCompactionResult.get());
 			}
@@ -200,14 +200,14 @@ namespace jelly
 		void
 		ApplyCompactionResult()
 		{
-			assert(m_hasPendingCompaction);
-			assert(m_pendingCompactionResult);
+			JELLY_ASSERT(m_hasPendingCompaction);
+			JELLY_ASSERT(m_pendingCompactionResult);
 
 			for(CompactionResult<_KeyType, _STLKeyHasher>::CompactedStore* compactedStore : m_pendingCompactionResult->GetCompactedStores())
 			{
 				if(compactedStore->m_redirect)
 				{	
-					assert(m_compactionRedirectMap.find(compactedStore->m_storeId) == m_compactionRedirectMap.end());
+					JELLY_ASSERT(m_compactionRedirectMap.find(compactedStore->m_storeId) == m_compactionRedirectMap.end());
 					
 					m_compactionRedirectMap[compactedStore->m_storeId] = compactedStore->m_redirect.release();
 				}
@@ -357,7 +357,7 @@ namespace jelly
 		{
 			// Get the pending WAL for the concurrent WAL index - if it's getting too big close it and make a new one
 
-			assert(aConcurrentWALIndex < m_pendingWALs.size());
+			JELLY_ASSERT(aConcurrentWALIndex < m_pendingWALs.size());
 
 			WAL*& pendingWAL = m_pendingWALs[aConcurrentWALIndex];
 

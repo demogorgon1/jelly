@@ -1,7 +1,7 @@
-#include <assert.h>
 #include <stdint.h>
 
 #include <jelly/Compression.h>
+#include <jelly/ErrorUtils.h>
 
 #include "FileStreamReader.h"
 
@@ -149,7 +149,7 @@ namespace jelly
 						break;
 				}
 
-				assert(m_head->m_numBytes > m_head->m_readOffset);
+				JELLY_ASSERT(m_head->m_numBytes > m_head->m_readOffset);
 
 				size_t toCopy = std::min(m_head->m_numBytes - m_head->m_readOffset, remaining);
 				memcpy(p, &m_head->m_data[m_head->m_readOffset], toCopy);

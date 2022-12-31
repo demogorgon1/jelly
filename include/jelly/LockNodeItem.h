@@ -1,7 +1,5 @@
 #pragma once
 
-#include <assert.h>
-
 #include "IItem.h"
 #include "MetaData.h"
 
@@ -65,18 +63,14 @@ namespace jelly
 		}
 
 		// IItem implementation
-		bool
+		void
 		Write(
 			IWriter*										aWriter,
 			const Compression::IProvider*					/*aItemCompression*/) const override
 		{
-			if (!m_key.Write(aWriter))
-				return false;
-			if (!m_lock.Write(aWriter))
-				return false;
-			if (aWriter->Write(&m_meta, sizeof(m_meta)) != sizeof(m_meta))
-				return false;
-			return true;
+			JELLY_CHECK(m_key.Write(aWriter), "Failed to write lock item key.");
+			JELLY_CHECK(m_lock.Write(aWriter), "Failed to write lock item lock.");
+			JELLY_CHECK(aWriter->Write(&m_meta, sizeof(m_meta)) == sizeof(m_meta), "Failed to write lock item meta data.");
 		}
 
 		bool
@@ -85,7 +79,7 @@ namespace jelly
 			const Compression::IProvider*					/*aItemCompression*/,
 			ReadType										aReadType = READ_TYPE_ALL) override
 		{
-			assert(aReadType == READ_TYPE_ALL);
+			JELLY_ASSERT(aReadType == READ_TYPE_ALL);
 
 			if (!m_key.Read(aReader))
 				return false;
@@ -99,7 +93,7 @@ namespace jelly
 		size_t
 		GetStoredBlobSize() const
 		{
-			assert(false);
+			JELLY_ASSERT(false);
 			return 0;
 		}
 

@@ -1,8 +1,7 @@
-#include <assert.h>
-
 #include <filesystem>
 
 #include <jelly/Compression.h>
+#include <jelly/ErrorUtils.h>
 #include <jelly/Host.h>
 #include <jelly/ZstdCompression.h>
 
@@ -28,7 +27,7 @@ namespace jelly
 			#if defined(JELLY_ZSTD)
 				m_compressionProvider = std::make_unique<ZstdCompression>(); 
 			#else
-				assert(false);
+				JELLY_ASSERT(false);
 			#endif
 			break;
 
@@ -85,26 +84,33 @@ namespace jelly
 		std::vector<uint32_t>&		aOutWriteAheadLogIds,
 		std::vector<uint32_t>&		aOutStoreIds) 
 	{
-		for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(m_root))
+		try
 		{
-			PathUtils::FileType fileType;
-			uint32_t id;
-			uint32_t nodeId;
-			if (entry.is_regular_file() && PathUtils::ParsePath(entry.path(), fileType, nodeId, id))
+			for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(m_root))
 			{
-				if(nodeId == aNodeId)
+				PathUtils::FileType fileType;
+				uint32_t id;
+				uint32_t nodeId;
+				if (entry.is_regular_file() && PathUtils::ParsePath(entry.path(), fileType, nodeId, id))
 				{
-					switch(fileType)
+					if(nodeId == aNodeId)
 					{
-					case PathUtils::FILE_TYPE_STORE:	aOutStoreIds.push_back(id); break;
-					case PathUtils::FILE_TYPE_WAL:		aOutWriteAheadLogIds.push_back(id); break;
+						switch(fileType)
+						{
+						case PathUtils::FILE_TYPE_STORE:	aOutStoreIds.push_back(id); break;
+						case PathUtils::FILE_TYPE_WAL:		aOutWriteAheadLogIds.push_back(id); break;
+						}
 					}
 				}
 			}
-		}
 
-		std::sort(aOutStoreIds.begin(), aOutStoreIds.end());
-		std::sort(aOutWriteAheadLogIds.begin(), aOutWriteAheadLogIds.end());
+			std::sort(aOutStoreIds.begin(), aOutStoreIds.end());
+			std::sort(aOutWriteAheadLogIds.begin(), aOutWriteAheadLogIds.end());
+		}
+		catch (std::exception& e)
+		{
+			JELLY_FATAL_ERROR("Host: Failed to enumerate files for node id: %u (%s)", aNodeId, e.what());
+		}
 	}
 
 	void		
@@ -112,24 +118,31 @@ namespace jelly
 		uint32_t					aNodeId,
 		std::vector<StoreInfo>&		aOut) 
 	{
-		for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(m_root))
+		try
 		{
-			PathUtils::FileType fileType;
-			uint32_t nodeId;
-			uint32_t id;
-			if (entry.is_regular_file() && PathUtils::ParsePath(entry.path(), fileType, nodeId, id))
-			{	
-				if(nodeId == aNodeId && fileType == PathUtils::FILE_TYPE_STORE)
-				{
-					StoreInfo t;
-					t.m_id = id;
-					t.m_size = (size_t)entry.file_size();
-					aOut.push_back(t);
+			for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(m_root))
+			{
+				PathUtils::FileType fileType;
+				uint32_t nodeId;
+				uint32_t id;
+				if (entry.is_regular_file() && PathUtils::ParsePath(entry.path(), fileType, nodeId, id))
+				{	
+					if(nodeId == aNodeId && fileType == PathUtils::FILE_TYPE_STORE)
+					{
+						StoreInfo t;
+						t.m_id = id;
+						t.m_size = (size_t)entry.file_size();
+						aOut.push_back(t);
+					}
 				}
 			}
-		}
 
-		std::sort(aOut.begin(), aOut.end());
+			std::sort(aOut.begin(), aOut.end());
+		}
+		catch (std::exception& e)
+		{
+			JELLY_FATAL_ERROR("Host: Failed to get store info fornode id: %u (%s)", aNodeId, e.what());
+		}
 	}
 
 	IFileStreamReader*
@@ -167,7 +180,14 @@ namespace jelly
 		uint32_t					aNodeId,
 		uint32_t					aId) 
 	{
-		std::filesystem::remove(PathUtils::MakePath(m_root.c_str(), PathUtils::FILE_TYPE_WAL, aNodeId, aId).c_str());
+		try
+		{
+			std::filesystem::remove(PathUtils::MakePath(m_root.c_str(), PathUtils::FILE_TYPE_WAL, aNodeId, aId).c_str());
+		}
+		catch (std::exception& e)
+		{
+			JELLY_FATAL_ERROR("Host: Failed to delete WAL (%u) for node id: %u (%s)", aId, aNodeId, e.what());
+		}
 	}
 	
 	IFileStreamReader*

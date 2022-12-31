@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include <jelly/IReader.h>
 #include <jelly/IWriter.h>
 
@@ -42,28 +44,32 @@ namespace jelly
 			MODE_WRITE_STREAM
 		};
 
-				File(
-					const char*		aPath,
-					Mode			aMode);
-				~File();
+					File(
+						const char*		aPath,
+						Mode			aMode);
+					~File();
 
-		bool	IsValid() const;
-		void	GetReader(
-					size_t			aOffset,
-					Reader&			aOut);
-		void	GetWriter(
-					Writer&			aOut);
-		size_t	GetSize() const;
-		bool	Flush();
-		void	ReadAtOffset(
-					size_t			aOffset,
-					void*			aBuffer,
-					size_t			aBufferSize);
+		bool		IsValid() const;
+		void		GetReader(
+						size_t			aOffset,
+						Reader&			aOut);
+		void		GetWriter(
+						Writer&			aOut);
+		size_t		GetSize() const;
+		bool		Flush();
+		void		ReadAtOffset(
+						size_t			aOffset,
+						void*			aBuffer,
+						size_t			aBufferSize);
+
+		// Data access
+		const char*	GetPath() const { return m_path.c_str(); }
 
 	private:
 
 		Mode		m_mode;
 		Internal*	m_internal;
+		std::string	m_path;
 	};
 
 }

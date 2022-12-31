@@ -1,8 +1,6 @@
 // Big pile of node testing mess. Not making any allusions about this providing full covering of everything,
 // as it's more of a "shotgun" approach to testing. It covers a lot of stuff, but definetely not all.
 
-#include <assert.h>
-
 #include <chrono>
 #include <filesystem>
 #include <optional>
@@ -11,6 +9,7 @@
 #include <unordered_set>
 
 #include <jelly/BlobNode.h>
+#include <jelly/ErrorUtils.h>
 #include <jelly/Host.h>
 #include <jelly/LockNode.h>
 
@@ -88,7 +87,7 @@ namespace jelly
 					IWriter*						aWriter,
 					const Compression::IProvider*	/*aCompression*/) const
 				{ 
-					assert(m_loaded); 
+					JELLY_ASSERT(m_loaded); 
 					
 					if(aWriter->Write(&m_value, sizeof(m_value)) != sizeof(m_value))
 						return false;
@@ -118,14 +117,14 @@ namespace jelly
 						return false;
 
 					for (uint32_t i = 0; i < 10; i++)
-						assert(fluff[i] == m_value * i);
+						JELLY_ASSERT(fluff[i] == m_value * i);
 
 					return true;
 				}
 
-				bool		operator==(const UInt32Blob& aOther) const { assert(m_loaded && aOther.m_loaded); return m_value == aOther.m_value; }				
+				bool		operator==(const UInt32Blob& aOther) const { JELLY_ASSERT(m_loaded && aOther.m_loaded); return m_value == aOther.m_value; }				
 				bool		IsSet() const { return m_loaded; }
-				void		Reset() { assert(m_loaded); m_value = 0; m_loaded = false; }
+				void		Reset() { JELLY_ASSERT(m_loaded); m_value = 0; m_loaded = false; }
 				size_t		GetSize() const { return sizeof(uint32_t) + 10 * sizeof(uint32_t); }
 				size_t		GetStoredSize() const { return GetSize(); }
 				void		Move(UInt32Blob& aOther) { *this = aOther; }
@@ -163,17 +162,17 @@ namespace jelly
 				const std::vector<_ItemType>&								aExpected)
 			{
 				std::unique_ptr<IFileStreamReader> f(aFileStreamReader);
-				assert(f);
+				JELLY_ASSERT(f);
 
 				for (const _ItemType& expected : aExpected)
 				{
-					assert(!f->IsEnd());
+					JELLY_ASSERT(!f->IsEnd());
 					_ItemType item;
-					assert(item.Read(f.get(), aCompression));
-					assert(item.Compare(&expected));
+					JELLY_ASSERT(item.Read(f.get(), aCompression));
+					JELLY_ASSERT(item.Compare(&expected));
 				}
 
-				assert(f->IsEnd());
+				JELLY_ASSERT(f->IsEnd());
 			}
 
 			template <typename _ItemType>
@@ -205,7 +204,7 @@ namespace jelly
 				uint32_t													aId)
 			{
 				std::unique_ptr<IFileStreamReader> f(aHost->ReadWALStream(aNodeId, aId));
-				assert(!f);
+				JELLY_ASSERT(!f);
 			}
 
 			void
@@ -215,7 +214,7 @@ namespace jelly
 				uint32_t													aId)
 			{
 				std::unique_ptr<IFileStreamReader> f(aHost->ReadStoreStream(aNodeId, aId));
-				assert(!f);
+				JELLY_ASSERT(!f);
 			}
 
 			template <typename _NodeType>
@@ -226,7 +225,7 @@ namespace jelly
 			{
 				std::vector<UInt32Key> keys;
 				aNode->GetResidentKeys(keys);
-				assert(keys == aExpected);
+				JELLY_ASSERT(keys == aExpected);
 			}
 
 			void
@@ -258,7 +257,7 @@ namespace jelly
 							std::this_thread::yield();
 						if(req.m_result == RESULT_ALREADY_LOCKED)
 							continue;
-						assert(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.m_result == RESULT_OK);
 						blobSeq = req.m_blobSeq;
 						if(req.m_blobNodeIds != UINT32_MAX)
 						{	
@@ -271,7 +270,7 @@ namespace jelly
 					// If we have a blob, get it
 					if(blobSeq != UINT32_MAX)
 					{
-						assert(blobNodeId == 1);
+						JELLY_ASSERT(blobNodeId == 1);
 
 						BlobNodeType::Request req;
 						req.m_key = aKey;
@@ -279,8 +278,8 @@ namespace jelly
 						aBlobNode->Get(&req);
 						while (!req.m_completed.Poll())
 							std::this_thread::yield();
-						assert(req.m_result == RESULT_OK);
-						assert(req.m_blob == aKey);
+						JELLY_ASSERT(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.m_blob == aKey);
 
 						blobSeq = req.m_seq;
 
@@ -301,7 +300,7 @@ namespace jelly
 						aBlobNode->Set(&req);
 						while (!req.m_completed.Poll())
 							std::this_thread::yield();
-						assert(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.m_result == RESULT_OK);
 
 						(*aSetCounter)++;
 					}
@@ -316,7 +315,7 @@ namespace jelly
 						aLockNode->Unlock(&req);
 						while (!req.m_completed.Poll())
 							std::this_thread::yield();
-						assert(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.m_result == RESULT_OK);
 					}
 				}
 
@@ -403,7 +402,7 @@ namespace jelly
 							std::this_thread::yield();
 						if(req.m_result == RESULT_ALREADY_LOCKED)
 							continue;
-						assert(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.m_result == RESULT_OK);
 						blobSeq = req.m_blobSeq;
 						if(req.m_blobNodeIds != UINT32_MAX)
 							blobNodeId = req.m_blobNodeIds & 0x000000FF;
@@ -424,7 +423,7 @@ namespace jelly
 						if(req.m_result == RESULT_OUTDATED)
 							blobSeq = req.m_seq;
 						else
-							assert(req.m_result == RESULT_OK);
+							JELLY_ASSERT(req.m_result == RESULT_OK);
 
 						(*aSetCounter)++;
 					}
@@ -439,7 +438,7 @@ namespace jelly
 						aLockNode->Unlock(&req);
 						while (!req.m_completed.Poll())
 							std::this_thread::yield();
-						assert(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.m_result == RESULT_OK);
 
 						aValidKeySet->Add(key);
 					}
@@ -478,8 +477,8 @@ namespace jelly
 						aBlobNode->Get(&req);
 						while (!req.m_completed.Poll())
 							std::this_thread::yield();
-						assert(req.m_result == RESULT_OK);
-						assert(req.m_blob == key);
+						JELLY_ASSERT(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.m_blob == key);
 
 						(*aGetCounter)++;
 					}
@@ -635,7 +634,7 @@ namespace jelly
 						break;
 
 					default:
-						assert(false);
+						JELLY_ASSERT(false);
 					}
 
 					ThreadPool threadPool(lockNodeConfig.m_node.m_walConcurrency + blobNodeConfig.m_node.m_walConcurrency);
@@ -724,7 +723,7 @@ namespace jelly
 						std::this_thread::yield();
 					}
 
-					assert(stopEvent);
+					JELLY_ASSERT(stopEvent);
 
 					for(std::thread& t : threads)
 						t.join();
@@ -747,10 +746,10 @@ namespace jelly
 						req.m_seq = 1;
 						req.m_blob = 123;
 						blobNode.Set(&req);
-						assert(blobNode.ProcessRequests() == 1);
+						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
-						assert(req.m_completed.Poll());
-						assert(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.m_completed.Poll());
+						JELLY_ASSERT(req.m_result == RESULT_OK);
 					}
 
 					// Do another set with lower sequence number, should fail
@@ -760,10 +759,10 @@ namespace jelly
 						req.m_seq = 0;
 						req.m_blob = 456;
 						blobNode.Set(&req);
-						assert(blobNode.ProcessRequests() == 1);
+						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
-						assert(req.m_completed.Poll());
-						assert(req.m_result == RESULT_OUTDATED);
+						JELLY_ASSERT(req.m_completed.Poll());
+						JELLY_ASSERT(req.m_result == RESULT_OUTDATED);
 					}
 
 					// Now do a get
@@ -771,12 +770,12 @@ namespace jelly
 						BlobNodeType::Request req;
 						req.m_key = 1;
 						blobNode.Get(&req);
-						assert(blobNode.ProcessRequests() == 1);
+						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
-						assert(req.m_completed.Poll());
-						assert(req.m_result == RESULT_OK);
-						assert(req.m_blob == 123);
-						assert(req.m_seq == 1);
+						JELLY_ASSERT(req.m_completed.Poll());
+						JELLY_ASSERT(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.m_blob == 123);
+						JELLY_ASSERT(req.m_seq == 1);
 					}
 
 					_VerifyResidentKeys(&blobNode, { 1 });
@@ -798,10 +797,10 @@ namespace jelly
 						req.m_seq = 0;
 						req.m_blob = 456;
 						blobNode.Set(&req);
-						assert(blobNode.ProcessRequests() == 1);
+						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
-						assert(req.m_completed.Poll());
-						assert(req.m_result == RESULT_OUTDATED);
+						JELLY_ASSERT(req.m_completed.Poll());
+						JELLY_ASSERT(req.m_result == RESULT_OUTDATED);
 					}
 
 					// Do a proper set with updated sequence number
@@ -811,10 +810,10 @@ namespace jelly
 						req.m_seq = 2;
 						req.m_blob = 789;
 						blobNode.Set(&req);
-						assert(blobNode.ProcessRequests() == 1);
+						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
-						assert(req.m_completed.Poll());
-						assert(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.m_completed.Poll());
+						JELLY_ASSERT(req.m_result == RESULT_OK);
 					}
 
 					// Verify with a get
@@ -822,12 +821,12 @@ namespace jelly
 						BlobNodeType::Request req;
 						req.m_key = 1;
 						blobNode.Get(&req);
-						assert(blobNode.ProcessRequests() == 1);
+						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
-						assert(req.m_completed.Poll());
-						assert(req.m_result == RESULT_OK);
-						assert(req.m_blob == 789);
-						assert(req.m_seq == 2);
+						JELLY_ASSERT(req.m_completed.Poll());
+						JELLY_ASSERT(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.m_blob == 789);
+						JELLY_ASSERT(req.m_seq == 2);
 					}
 
 					// Try getting something with a minimum sequence number that doesn't exist
@@ -836,10 +835,10 @@ namespace jelly
 						req.m_key = 1;
 						req.m_seq = 100;
 						blobNode.Get(&req);
-						assert(blobNode.ProcessRequests() == 1);
+						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
-						assert(req.m_completed.Poll());
-						assert(req.m_result == RESULT_OUTDATED);
+						JELLY_ASSERT(req.m_completed.Poll());
+						JELLY_ASSERT(req.m_result == RESULT_OUTDATED);
 					}
 
 					blobNode.FlushPendingStore();
@@ -861,10 +860,10 @@ namespace jelly
 					req.m_seq = 1;
 					req.m_blob = 1234;
 					blobNode.Set(&req);
-					assert(blobNode.ProcessRequests() == 1);
+					JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 					blobNode.FlushPendingWAL(0);
-					assert(req.m_completed.Poll());
-					assert(req.m_result == RESULT_OK);
+					JELLY_ASSERT(req.m_completed.Poll());
+					JELLY_ASSERT(req.m_result == RESULT_OK);
 				}
 
 				// Do 2 writes, each with a flush pending store. This will cause us to have 3
@@ -880,10 +879,10 @@ namespace jelly
 						req.m_seq = 3 + i;
 						req.m_blob = 1000 + i;
 						blobNode.Set(&req);
-						assert(blobNode.ProcessRequests() == 1);
+						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
-						assert(req.m_completed.Poll());
-						assert(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.m_completed.Poll());
+						JELLY_ASSERT(req.m_result == RESULT_OK);
 					}
 
 					blobNode.FlushPendingStore();
@@ -912,12 +911,12 @@ namespace jelly
 						req.m_key = 2;
 						req.m_seq = 0;
 						blobNode.Get(&req);
-						assert(blobNode.ProcessRequests() == 1);
+						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
-						assert(req.m_completed.Poll());
-						assert(req.m_result == RESULT_OK);
-						assert(req.m_blob == 1234);
-						assert(req.m_seq == 1);
+						JELLY_ASSERT(req.m_completed.Poll());
+						JELLY_ASSERT(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.m_blob == 1234);
+						JELLY_ASSERT(req.m_seq == 1);
 					}
 
 					_VerifyResidentKeys(&blobNode, { });
@@ -944,12 +943,12 @@ namespace jelly
 						req.m_key = 1;
 						req.m_lock = 123;
 						lockNode.Lock(&req);
-						assert(lockNode.ProcessRequests() == 1);
+						JELLY_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
-						assert(req.m_completed.Poll());
-						assert(req.m_result == RESULT_OK);
-						assert(req.m_blobSeq == UINT32_MAX);
-						assert(req.m_blobNodeIds == 0xFFFFFFFF);
+						JELLY_ASSERT(req.m_completed.Poll());
+						JELLY_ASSERT(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.m_blobSeq == UINT32_MAX);
+						JELLY_ASSERT(req.m_blobNodeIds == 0xFFFFFFFF);
 					}
 				}	
 
@@ -966,10 +965,10 @@ namespace jelly
 						req.m_key = 1;
 						req.m_lock = 456;
 						lockNode.Lock(&req);
-						assert(lockNode.ProcessRequests() == 1);
+						JELLY_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
-						assert(req.m_completed.Poll());
-						assert(req.m_result == RESULT_ALREADY_LOCKED);
+						JELLY_ASSERT(req.m_completed.Poll());
+						JELLY_ASSERT(req.m_result == RESULT_ALREADY_LOCKED);
 					}
 
 					// Apply existing lock again, should work
@@ -978,12 +977,12 @@ namespace jelly
 						req.m_key = 1;
 						req.m_lock = 123;
 						lockNode.Lock(&req);
-						assert(lockNode.ProcessRequests() == 1);
+						JELLY_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
-						assert(req.m_completed.Poll());
-						assert(req.m_result == RESULT_OK);
-						assert(req.m_blobSeq == UINT32_MAX);
-						assert(req.m_blobNodeIds == 0xFFFFFFFF);
+						JELLY_ASSERT(req.m_completed.Poll());
+						JELLY_ASSERT(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.m_blobSeq == UINT32_MAX);
+						JELLY_ASSERT(req.m_blobNodeIds == 0xFFFFFFFF);
 					}
 
 					// Unlock with wrong lock, should fail
@@ -992,10 +991,10 @@ namespace jelly
 						req.m_key = 1;
 						req.m_lock = 456;
 						lockNode.Unlock(&req);
-						assert(lockNode.ProcessRequests() == 1);
+						JELLY_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
-						assert(req.m_completed.Poll());
-						assert(req.m_result == RESULT_ALREADY_LOCKED);
+						JELLY_ASSERT(req.m_completed.Poll());
+						JELLY_ASSERT(req.m_result == RESULT_ALREADY_LOCKED);
 					}
 
 					// Unlock key that doesn't exist
@@ -1004,10 +1003,10 @@ namespace jelly
 						req.m_key = 2;
 						req.m_lock = 123;
 						lockNode.Unlock(&req);
-						assert(lockNode.ProcessRequests() == 1);
+						JELLY_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
-						assert(req.m_completed.Poll());
-						assert(req.m_result == RESULT_DOES_NOT_EXIST);
+						JELLY_ASSERT(req.m_completed.Poll());
+						JELLY_ASSERT(req.m_result == RESULT_DOES_NOT_EXIST);
 					}
 
 					// Unlock correctly
@@ -1018,10 +1017,10 @@ namespace jelly
 						req.m_blobSeq = 1;
 						req.m_blobNodeIds = 0xFF030201;
 						lockNode.Unlock(&req);
-						assert(lockNode.ProcessRequests() == 1);
+						JELLY_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
-						assert(req.m_completed.Poll());
-						assert(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.m_completed.Poll());
+						JELLY_ASSERT(req.m_result == RESULT_OK);
 					}
 				}
 
@@ -1039,12 +1038,12 @@ namespace jelly
 						req.m_key = 1;
 						req.m_lock = 456;
 						lockNode.Lock(&req);
-						assert(lockNode.ProcessRequests() == 1);
+						JELLY_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
-						assert(req.m_completed.Poll());
-						assert(req.m_result == RESULT_OK);
-						assert(req.m_blobSeq == 1);
-						assert(req.m_blobNodeIds == 0xFF030201);
+						JELLY_ASSERT(req.m_completed.Poll());
+						JELLY_ASSERT(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.m_blobSeq == 1);
+						JELLY_ASSERT(req.m_blobNodeIds == 0xFF030201);
 					}
 
 					// Also apply locks on another two keys in descending order, 
@@ -1054,12 +1053,12 @@ namespace jelly
 						req.m_key = 3;
 						req.m_lock = 456;
 						lockNode.Lock(&req);
-						assert(lockNode.ProcessRequests() == 1);
+						JELLY_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
-						assert(req.m_completed.Poll());
-						assert(req.m_result == RESULT_OK);
-						assert(req.m_blobSeq == UINT32_MAX);
-						assert(req.m_blobNodeIds == 0xFFFFFFFF);
+						JELLY_ASSERT(req.m_completed.Poll());
+						JELLY_ASSERT(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.m_blobSeq == UINT32_MAX);
+						JELLY_ASSERT(req.m_blobNodeIds == 0xFFFFFFFF);
 					}
 
 					{
@@ -1067,12 +1066,12 @@ namespace jelly
 						req.m_key = 2;
 						req.m_lock = 456;
 						lockNode.Lock(&req);
-						assert(lockNode.ProcessRequests() == 1);
+						JELLY_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
-						assert(req.m_completed.Poll());
-						assert(req.m_result == RESULT_OK);
-						assert(req.m_blobSeq == UINT32_MAX);
-						assert(req.m_blobNodeIds == 0xFFFFFFFF);
+						JELLY_ASSERT(req.m_completed.Poll());
+						JELLY_ASSERT(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.m_blobSeq == UINT32_MAX);
+						JELLY_ASSERT(req.m_blobNodeIds == 0xFFFFFFFF);
 					}
 
 					lockNode.FlushPendingStore();
@@ -1114,10 +1113,10 @@ namespace jelly
 						req.m_seq = 1;
 						req.m_blob = 100 + key;
 						blobNode.Set(&req);
-						assert(blobNode.ProcessRequests() == 1);
+						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
-						assert(req.m_completed.Poll());
-						assert(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.m_completed.Poll());
+						JELLY_ASSERT(req.m_result == RESULT_OK);
 					}
 
 					// Verify all of them are now resident
@@ -1130,10 +1129,10 @@ namespace jelly
 						req.m_seq = 1;
 						req.m_blob = 100 + 6;
 						blobNode.Set(&req);
-						assert(blobNode.ProcessRequests() == 1);
+						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
-						assert(req.m_completed.Poll());
-						assert(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.m_completed.Poll());
+						JELLY_ASSERT(req.m_result == RESULT_OK);
 					}
 
 					_VerifyResidentKeys(&blobNode, { 1, 2, 3, 4, 5, 6 });
@@ -1148,10 +1147,10 @@ namespace jelly
 						req.m_seq = 1;
 						req.m_blob = 100 + 7;
 						blobNode.Set(&req);
-						assert(blobNode.ProcessRequests() == 1);
+						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
-						assert(req.m_completed.Poll());
-						assert(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.m_completed.Poll());
+						JELLY_ASSERT(req.m_result == RESULT_OK);
 					}
 
 					// Now oldest should be expelled down to 5 blobs
@@ -1164,10 +1163,10 @@ namespace jelly
 						req.m_seq = 2; // Incremented sequence number
 						req.m_blob = 103;
 						blobNode.Set(&req);
-						assert(blobNode.ProcessRequests() == 1);
+						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
-						assert(req.m_completed.Poll());
-						assert(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.m_completed.Poll());
+						JELLY_ASSERT(req.m_result == RESULT_OK);
 					}
 
 					_VerifyResidentKeys(&blobNode, { 4, 5, 6, 7, 3 });
@@ -1177,12 +1176,12 @@ namespace jelly
 						BlobNodeType::Request req;
 						req.m_key = 1;
 						blobNode.Get(&req);
-						assert(blobNode.ProcessRequests() == 1);
+						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
-						assert(req.m_completed.Poll());
-						assert(req.m_result == RESULT_OK);
-						assert(req.m_blob == 101);
-						assert(req.m_seq == 1);
+						JELLY_ASSERT(req.m_completed.Poll());
+						JELLY_ASSERT(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.m_blob == 101);
+						JELLY_ASSERT(req.m_seq == 1);
 					}
 
 					_VerifyResidentKeys(&blobNode, { 5, 6, 7, 3, 1 });
@@ -1194,10 +1193,10 @@ namespace jelly
 						req.m_seq = 2; // Incremented sequence number
 						req.m_blob = 102;
 						blobNode.Set(&req);
-						assert(blobNode.ProcessRequests() == 1);
+						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
-						assert(req.m_completed.Poll());
-						assert(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.m_completed.Poll());
+						JELLY_ASSERT(req.m_result == RESULT_OK);
 					}
 
 					_VerifyResidentKeys(&blobNode, { 6, 7, 3, 1, 2 });
@@ -1219,10 +1218,10 @@ namespace jelly
 						req.m_seq = 1; 
 						req.m_blob = 100 + i;
 						blobNode.Set(&req);
-						assert(blobNode.ProcessRequests() == 1);
+						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
-						assert(req.m_completed.Poll());
-						assert(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.m_completed.Poll());
+						JELLY_ASSERT(req.m_result == RESULT_OK);
 					}
 
 					// All keys should be resident because they're still in the WAL
@@ -1263,10 +1262,10 @@ namespace jelly
 						req.m_seq = i;
 						req.m_blob = 100 + i;
 						blobNode.Set(&req);
-						assert(blobNode.ProcessRequests() == 1);
+						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
-						assert(req.m_completed.Poll());
-						assert(req.m_result == RESULT_OK); 
+						JELLY_ASSERT(req.m_completed.Poll());
+						JELLY_ASSERT(req.m_result == RESULT_OK); 
 
 						blobNode.FlushPendingStore();
 					}
@@ -1291,11 +1290,11 @@ namespace jelly
 						BlobNodeType::Request req;
 						req.m_key = 1;
 						blobNode.Get(&req);
-						assert(blobNode.ProcessRequests() == 1);
-						assert(req.m_completed.Poll());
-						assert(req.m_result == RESULT_OK);
-						assert(req.m_seq == 2);
-						assert(req.m_blob == 102);
+						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
+						JELLY_ASSERT(req.m_completed.Poll());
+						JELLY_ASSERT(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.m_seq == 2);
+						JELLY_ASSERT(req.m_blob == 102);
 					}
 				}
 			}

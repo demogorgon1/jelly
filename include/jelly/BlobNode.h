@@ -96,7 +96,7 @@ namespace jelly
 		Set(
 			Request*										aRequest)
 		{
-			assert(aRequest->m_blob.IsSet());
+			JELLY_ASSERT(aRequest->m_blob.IsSet());
 
 			aRequest->m_callback = [=]()
 			{
@@ -181,7 +181,7 @@ namespace jelly
 
 				if(item->m_blob.IsSet())
 				{
-					assert(m_totalResidentBlobSize >= item->m_blob.GetSize());
+					JELLY_ASSERT(m_totalResidentBlobSize >= item->m_blob.GetSize());
 					m_totalResidentBlobSize -= item->m_blob.GetSize();
 					m_totalResidentBlobSize += aRequest->m_blob.GetSize();
 
@@ -230,8 +230,8 @@ namespace jelly
 			if(!item->m_blob.IsSet())
 			{
 				// FIXME: slooow
-				assert(item->m_storeId != UINT32_MAX);
-				assert(item->m_storeOffset != -1);
+				JELLY_ASSERT(item->m_storeId != UINT32_MAX);
+				JELLY_ASSERT(item->m_storeOffset != -1);
 
 				uint32_t storeId = item->m_storeId;
 				size_t storeOffset = item->m_storeOffset;
@@ -247,7 +247,7 @@ namespace jelly
 					uint32_t newStoreId;
 					if(!_GetCompactionRedirect(storeId, item->m_key, newStoreId, storeOffset))
 					{
-						assert(false);
+						JELLY_ASSERT(false);
 					}
 
 					storeId = newStoreId;
@@ -300,38 +300,47 @@ namespace jelly
 			}
 			
 			// All stores loaded into memory, sort items by timestamp
-			struct TimeStampedKey
 			{
-				_KeyType	m_key;
-				uint64_t	m_timeStamp;
+				struct TimeStampedKey
+				{
+					_KeyType	m_key;
+					uint64_t	m_timeStamp;
 
-				bool 
-				operator<(
-					const TimeStampedKey& aOther) const 
-				{ 
-					if(m_timeStamp == aOther.m_timeStamp)
-						return m_key < aOther.m_key;
+					bool
+						operator<(
+							const TimeStampedKey& aOther) const
+					{
+						if (m_timeStamp == aOther.m_timeStamp)
+							return m_key < aOther.m_key;
 
-					return m_timeStamp < aOther.m_timeStamp; 
-				}
-			};
+						return m_timeStamp < aOther.m_timeStamp;
+					}
+				};
 
-			typedef std::map<TimeStampedKey, Item*> TimeStampSorter;
-			typedef std::pair<const TimeStampedKey, Item*> TimeStampSorterValue;
+				typedef std::map<TimeStampedKey, Item*> TimeStampSorter;
+				typedef std::pair<const TimeStampedKey, Item*> TimeStampSorterValue;
 
-			TimeStampSorter timeStampSorter;
-			for (std::pair<const _KeyType, Item*>& i : m_table)
-			{
-				Item* item = i.second;
+				TimeStampSorter timeStampSorter;
+				size_t totalSize = 0;
 
-				if(item->m_blob.IsSet())
-					timeStampSorter.insert(TimeStampSorterValue({ item->m_key, item->m_meta.m_timeStamp }, item));
-			};
+				for (std::pair<const _KeyType, Item*>& i : m_table)
+				{
+					Item* item = i.second;
 
-			assert(m_residentItems.IsEmpty());
+					if (item->m_blob.IsSet())
+					{
+						timeStampSorter.insert(TimeStampSorterValue({ item->m_key, item->m_meta.m_timeStamp }, item));
 
-			for(TimeStampSorterValue& value : timeStampSorter)
-				m_residentItems.Add(value.second);
+						totalSize += item->m_blob.GetSize();
+					}
+				};
+
+				JELLY_ASSERT(totalSize == m_totalResidentBlobSize);
+				JELLY_ASSERT(m_residentItems.IsEmpty());
+
+				for (TimeStampSorterValue& value : timeStampSorter)
+					m_residentItems.Add(value.second);
+			}
 
 			for (uint32_t id : walIds)
 			{
@@ -368,8 +377,12 @@ namespace jelly
 				{
 					if (item.get()->m_meta.m_seq > existing->m_meta.m_seq)
 					{
-						assert(m_totalResidentBlobSize >= existing->m_blob.GetSize());
-						m_totalResidentBlobSize -= existing->m_blob.GetSize();
+						if(existing->m_blob.IsSet())
+						{
+							JELLY_ASSERT(m_totalResidentBlobSize >= existing->m_blob.GetSize());
+							m_totalResidentBlobSize -= existing->m_blob.GetSize();
+						}
+
 						m_totalResidentBlobSize += item->m_blob.GetSize();
 
 						existing->CopyFrom(item.get());
@@ -433,7 +446,7 @@ namespace jelly
 					{
 						if(existing->m_blob.IsSet())
 						{
-							assert(m_totalResidentBlobSize >= existing->m_blob.GetSize());
+							JELLY_ASSERT(m_totalResidentBlobSize >= existing->m_blob.GetSize());
 							m_totalResidentBlobSize -= existing->m_blob.GetSize();
 						}
 
@@ -491,7 +504,7 @@ namespace jelly
 
 				std::unique_ptr<IStoreWriter> fOut(m_host->CreateStore(m_nodeId, newStoreId));
 
-				assert(f1 && f2 && fOut);
+				JELLY_ASSERT(f1 && f2 && fOut);
 
 				Item item1;
 				bool hasItem1 = false;
@@ -534,7 +547,7 @@ namespace jelly
 					}
 					else
 					{
-						assert(hasItem1 && hasItem2);
+						JELLY_ASSERT(hasItem1 && hasItem2);
 
 						if (item1.m_key < item2.m_key)
 						{								
@@ -572,12 +585,6 @@ namespace jelly
 
 			aOut->AddCompactedStore(aStoreId1, compactionRedirect1.release());
 			aOut->AddCompactedStore(aStoreId2, compactionRedirect2.release());
-
-			//assert(m_compactionRedirectMap.find(aStoreId1) == m_compactionRedirectMap.end());
-			//assert(m_compactionRedirectMap.find(aStoreId2) == m_compactionRedirectMap.end());
-			//	
-			//m_compactionRedirectMap[aStoreId1] = compactionRedirect1.release();
-			//m_compactionRedirectMap[aStoreId2] = compactionRedirect2.release();
 		}
 
 		void
@@ -586,7 +593,7 @@ namespace jelly
 			while(m_totalResidentBlobSize > m_blobNodeConfig.m_maxResidentBlobSize)
 			{
 				Item* head = m_residentItems.m_head;
-				assert(head != NULL);
+				JELLY_ASSERT(head != NULL);
 
 				if(head->m_pendingWAL != NULL)
 				{
@@ -594,7 +601,7 @@ namespace jelly
 					break;
 				}
 
-				assert(head->m_blob.IsSet());
+				JELLY_ASSERT(head->m_blob.IsSet());
 				m_totalResidentBlobSize -= head->m_blob.GetSize();
 				head->m_blob.Reset();
 				m_residentItems.Remove(head);

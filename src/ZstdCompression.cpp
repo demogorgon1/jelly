@@ -1,7 +1,5 @@
 #if defined(JELLY_ZSTD)
 
-#include <assert.h>
-
 #include "ZstdCompression.h"
 #include "ZstdStream.h"
 
@@ -41,7 +39,7 @@ namespace jelly
 		ZstdStream::Compressor compressor;
 		compressor.SetOutputCallback(aOutputCallback);
 		size_t bytes = compressor.Write(aBuffer, aBufferSize);
-		assert(bytes == aBufferSize);
+		JELLY_ASSERT(bytes == aBufferSize);
 		compressor.Flush();
 	}
 		

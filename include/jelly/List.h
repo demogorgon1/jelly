@@ -19,8 +19,8 @@ namespace jelly
 		Add(
 			_Type*	aItem)
 		{
-			assert(aItem->m_next == NULL);
-			assert(aItem->m_prev == NULL);
+			JELLY_ASSERT(aItem->m_next == NULL);
+			JELLY_ASSERT(aItem->m_prev == NULL);
 
 			aItem->m_prev = m_tail;
 

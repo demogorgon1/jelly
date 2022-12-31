@@ -1,7 +1,6 @@
 #pragma once
 
-#include <assert.h>
-
+#include "ErrorUtils.h"
 #include "IWALWriter.h"
 
 namespace jelly
@@ -38,14 +37,14 @@ namespace jelly
 		void
 		RemoveReference()
 		{
-			assert(m_refCount > 0);
+			JELLY_ASSERT(m_refCount > 0);
 			m_refCount--;
 		}
 
 		void
 		Close()
 		{
-			assert(m_writer);
+			JELLY_ASSERT(m_writer);
 			m_writer = NULL;
 		}
 

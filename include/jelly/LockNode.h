@@ -315,7 +315,7 @@ namespace jelly
 
 				std::unique_ptr<IStoreWriter> fOut(m_host->CreateStore(m_nodeId, newStoreId));
 
-				assert(f1 && f2 && fOut);
+				JELLY_ASSERT(f1 && f2 && fOut);
 
 				Item item1;
 				bool hasItem1 = false;
@@ -346,7 +346,7 @@ namespace jelly
 					}
 					else
 					{
-						assert(hasItem1 && hasItem2);
+						JELLY_ASSERT(hasItem1 && hasItem2);
 
 						if (item1.m_key < item2.m_key)
 						{								

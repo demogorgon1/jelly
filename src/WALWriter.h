@@ -29,12 +29,21 @@ namespace jelly
 		size_t		GetSize() override;
 		void		WriteItem(
 						const IItem*					aItem,
-						CompletionEvent*				aCompletionEvent) override;
+						CompletionEvent*				aCompletionEvent,
+						Result*							aResult) override;
 		void		Flush() override;
+		void		Cancel() override;
 
 	private:
 
-		std::vector<std::pair<const IItem*, CompletionEvent*>>	m_pendingItemWrites;
+		struct PendingItemWrite
+		{
+			const IItem*										m_item;
+			CompletionEvent*									m_completionEvent;
+			Result*												m_result;
+		};
+
+		std::vector<PendingItemWrite>							m_pendingItemWrites;
 		File													m_file;
 		std::unique_ptr<Compression::IStreamCompressor>			m_compressor;
 	};		

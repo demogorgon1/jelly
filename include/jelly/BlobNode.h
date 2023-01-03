@@ -202,7 +202,7 @@ namespace jelly
 			item->m_meta.m_seq = aRequest->m_seq;
 			item->m_meta.m_timeStamp = aRequest->m_timeStamp;
 
-			WriteToWAL(item, &aRequest->m_completed);
+			WriteToWAL(item, &aRequest->m_completed, &aRequest->m_result);
 
 			aRequest->m_hasPendingWrite = true;
 

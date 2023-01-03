@@ -154,7 +154,7 @@ namespace jelly
 
 			aRequest->m_hasPendingWrite = true;
 
-			WriteToWAL(item, &aRequest->m_completed);
+			WriteToWAL(item, &aRequest->m_completed, &aRequest->m_result);
 
 			return RESULT_OK;
 		}
@@ -189,7 +189,7 @@ namespace jelly
 	
 			aRequest->m_hasPendingWrite = true;
 
-			WriteToWAL(item, &aRequest->m_completed);
+			WriteToWAL(item, &aRequest->m_completed, &aRequest->m_result);
 
 			return RESULT_OK;
 		}

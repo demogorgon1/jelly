@@ -48,6 +48,13 @@ namespace jelly
 			m_writer = NULL;
 		}
 
+		void
+		Cancel()
+		{
+			if(m_writer)
+				m_writer->Cancel();
+		}
+
 		// Data access
 		uint32_t	GetId() const { return m_id; }
 		uint32_t	GetRefCount() const { return m_refCount; }

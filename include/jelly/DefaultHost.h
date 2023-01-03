@@ -8,7 +8,7 @@
 namespace jelly
 {
 
-	class Host
+	class DefaultHost
 		: public IHost
 	{
 	public:
@@ -17,10 +17,10 @@ namespace jelly
 			COMPRESSION_MODE_NONE,
 			COMPRESSION_MODE_ZSTD
 		};
-								Host(	
+								DefaultHost(	
 									const char*					aRoot,
 									CompressionMode				aCompressionMode);
-		virtual					~Host();
+		virtual					~DefaultHost();
 
 		void					DeleteAllFiles(
 									uint32_t					aNodeId);

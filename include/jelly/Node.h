@@ -7,6 +7,7 @@
 #include "IHost.h"
 #include "IStoreWriter.h"
 #include "NodeConfig.h"
+#include "Result.h"
 #include "Queue.h"
 #include "WAL.h"
 
@@ -35,6 +36,7 @@ namespace jelly
 			, m_host(aHost)
 			, m_nodeId(aNodeId)
 			, m_config(aConfig)
+			, m_stopped(false)
 		{
 			for(uint32_t i = 0; i < m_config.m_walConcurrency; i++)
 				m_pendingWALs.push_back(NULL);
@@ -46,6 +48,44 @@ namespace jelly
 				delete wal;
 		}
 
+		// Stop accepting new requests and cancel all pending requests, including the ones currently waiting for a WAL.
+		void
+		Stop()
+		{
+			std::vector<_RequestType*> pendingRequests;
+
+			// Flag request queue as locked, get any pending requests there are
+			{
+				std::lock_guard lock(m_requestsLock);
+
+				if(m_stopped)
+					return;
+
+				m_stopped = true;
+
+				for(size_t i = 0; i < 2; i++)
+				{
+					for (_RequestType* request = m_requests[i].m_first; request != NULL; request = request->m_next)
+						pendingRequests.push_back(request);
+
+					m_requests[i].Reset();
+				}
+			}
+
+			// Cancel all pending requests
+			for(_RequestType* request : pendingRequests)
+			{
+				request->m_result = RESULT_CANCELED;
+				request->m_completed.Signal();
+			}
+
+			// Notify WALs
+			for(WAL* wal : m_wals)
+			{
+				wal->Cancel();
+			}
+		}
+
 		// Process all pending requests and return the number of requests processed. Must be called on the main thread.
 		uint32_t
 		ProcessRequests()
@@ -54,6 +94,8 @@ namespace jelly
 
 			{
 				std::lock_guard lock(m_requestsLock);
+
+				JELLY_ASSERT(!m_stopped);
 
 				queue = &m_requests[m_requestsWriteIndex];
 
@@ -221,6 +263,7 @@ namespace jelly
 
 		// Data access
 		uint32_t			GetNodeId() const { return m_nodeId; }
+		bool				IsStopped() const { std::lock_guard lock(m_requestsLock); return m_stopped; }
 
 	protected:
 
@@ -268,14 +311,29 @@ namespace jelly
 		{
 			aRequest->m_timeStamp = m_host->GetTimeStamp();
 
-			std::lock_guard lock(m_requestsLock);
-			m_requests[m_requestsWriteIndex].Add(aRequest);
+			bool canceled = false;
+
+			{
+				std::lock_guard lock(m_requestsLock);
+
+				if(!m_stopped)
+					m_requests[m_requestsWriteIndex].Add(aRequest);
+				else
+					canceled = true;
+			}
+
+			if(canceled)
+			{
+				aRequest->m_result = RESULT_CANCELED;
+				aRequest->m_completed.Signal();
+			}
 		}
 
 		void
 		WriteToWAL(
 			_ItemType*				aItem,
-			CompletionEvent*		aCompletionEvent)
+			CompletionEvent*		aCompletionEvent,
+			Result*					aResult)
 		{
 			if (aItem->m_pendingWAL != NULL)
 			{
@@ -298,7 +356,7 @@ namespace jelly
 
 				WAL* wal = _GetPendingWAL(walConcurrencyIndex);
 
-				wal->GetWriter()->WriteItem(aItem, aCompletionEvent);
+				wal->GetWriter()->WriteItem(aItem, aCompletionEvent, aResult);
 								
 				aItem->m_pendingWAL = wal;
 				aItem->m_pendingWAL->AddReference();
@@ -335,6 +393,7 @@ namespace jelly
 		FlushPendingStoreCallback									m_flushPendingStoreCallback;
 		PendingStoreType											m_pendingStore;
 		CompactionRedirectMap										m_compactionRedirectMap;
+		bool														m_stopped;
 
 	private:
 

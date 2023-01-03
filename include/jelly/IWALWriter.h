@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Result.h"
+
 namespace jelly
 {
 
@@ -16,8 +18,10 @@ namespace jelly
 		virtual size_t	GetSize() = 0;
 		virtual void	WriteItem(
 							const IItem*		aItem,
-							CompletionEvent*	aCompletionEvent) = 0;
+							CompletionEvent*	aCompletionEvent,
+							Result*				aResult) = 0;
 		virtual void	Flush() = 0;
+		virtual void	Cancel() = 0;
 	
 	};
 

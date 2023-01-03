@@ -48,10 +48,11 @@ namespace jelly
 
 	void
 	WALWriter::WriteItem(
-		const IItem*		aItem,
-		CompletionEvent*	aCompletionEvent) 
+		const IItem*					aItem,
+		CompletionEvent*				aCompletionEvent,
+		Result*							aResult) 
 	{
-		m_pendingItemWrites.push_back(std::make_pair(aItem, aCompletionEvent));
+		m_pendingItemWrites.push_back({aItem, aCompletionEvent, aResult});
 	}
 
 	void
@@ -70,8 +71,8 @@ namespace jelly
 			writer = &uncompressedWriter;
 		}
 
-		for(std::pair<const IItem*, CompletionEvent*> i : m_pendingItemWrites)					
-			i.first->Write(writer, NULL);
+		for(PendingItemWrite& t : m_pendingItemWrites)					
+			t.m_item->Write(writer, NULL);
 
 		if(m_compressor)
 			m_compressor->Flush();
@@ -79,8 +80,20 @@ namespace jelly
 		if(!m_file.Flush())
 			JELLY_ASSERT(false);
 
-		for (std::pair<const IItem*, CompletionEvent*> i : m_pendingItemWrites)
-			i.second->Signal();
+		for (PendingItemWrite& t : m_pendingItemWrites)
+			t.m_completionEvent->Signal();
+
+		m_pendingItemWrites.clear();
+	}
+
+	void		
+	WALWriter::Cancel() 
+	{
+		for (PendingItemWrite& t : m_pendingItemWrites)
+		{
+			*t.m_result = RESULT_CANCELED;
+			t.m_completionEvent->Signal();
+		}
 
 		m_pendingItemWrites.clear();
 	}

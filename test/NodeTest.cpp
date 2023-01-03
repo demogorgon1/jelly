@@ -10,8 +10,12 @@
 
 #include <jelly/BlobNode.h>
 #include <jelly/ErrorUtils.h>
-#include <jelly/Host.h>
+#include <jelly/DefaultHost.h>
 #include <jelly/LockNode.h>
+#include <jelly/UIntLock.h>
+#include <jelly/UIntKey.h>
+
+#include "TestDefaultHost.h"
 
 namespace jelly
 {
@@ -21,62 +25,6 @@ namespace jelly
 		
 		namespace
 		{
-
-			class TestHost
-				: public Host
-			{
-			public:
-				TestHost(
-					const char*					aRoot,
-					Host::CompressionMode	aCompressionMode)
-					: Host(aRoot, aCompressionMode)
-				{
-
-				}
-
-				~TestHost()
-				{
-
-				}
-
-				// IHost implementation
-				uint64_t
-				GetTimeStamp() override
-				{
-					// Predictable current timestamp that always increments by 1 when queried
-					return m_timeStamp++;
-				}
-
-			private:
-				std::atomic_uint64_t	m_timeStamp;
-			};
-
-			struct UInt32Lock
-			{
-				UInt32Lock(uint32_t aValue = 0) : m_value(aValue) {}
-
-				bool	Write(IWriter* aWriter) const { return aWriter->Write(&m_value, sizeof(m_value)) == sizeof(m_value); }
-				bool	Read(IReader* aReader) { return aReader->Read(&m_value, sizeof(m_value)) == sizeof(m_value); }
-				bool	operator==(const UInt32Lock& aOther) const { return m_value == aOther.m_value; }
-				bool	operator!=(const UInt32Lock& aOther) const { return m_value != aOther.m_value; }
-				bool	IsSet() const { return m_value != 0; }
-				void	Clear() { m_value = 0; }
-
-				uint32_t	m_value;
-			};
-
-			struct UInt32Key
-			{
-				UInt32Key(uint32_t aValue = 0) : m_value(aValue) {}
-
-				bool	Write(IWriter* aWriter) const { return aWriter->Write(&m_value, sizeof(m_value)) == sizeof(m_value); }
-				bool	Read(IReader* aReader) { return aReader->Read(&m_value, sizeof(m_value)) == sizeof(m_value); }
-				bool	operator==(const UInt32Key& aOther) const { return m_value == aOther.m_value; }
-				bool	operator!=(const UInt32Key& aOther) const { return m_value != aOther.m_value; }
-				bool	operator<(const UInt32Key& aOther) const { return m_value < aOther.m_value; }
-
-				uint32_t	m_value;
-			};
 
 			struct UInt32Blob
 			{
@@ -138,20 +86,20 @@ namespace jelly
 			{
 				std::size_t 
 				operator()(
-					const UInt32Key& aKey) const 
+					const UIntKey<uint32_t>& aKey) const 
 				{ 
 					return std::hash<uint32_t>{}(aKey.m_value);
 				}
 			};
 
 			typedef BlobNode<
-				UInt32Key,
+				UIntKey<uint32_t>,
 				UInt32Blob,
 				UInt32KeyHasher> BlobNodeType;
 
 			typedef LockNode<
-				UInt32Key,
-				UInt32Lock,
+				UIntKey<uint32_t>,
+				UIntLock<uint32_t>,
 				UInt32KeyHasher> LockNodeType;
 
 			template <typename _ItemType>
@@ -178,7 +126,7 @@ namespace jelly
 			template <typename _ItemType>
 			void
 			_VerifyWAL(
-				Host*														aHost,
+				DefaultHost*												aHost,
 				uint32_t													aNodeId,
 				uint32_t													aId,
 				const std::vector<_ItemType>&								aExpected)
@@ -189,7 +137,7 @@ namespace jelly
 			template <typename _ItemType>
 			void
 			_VerifyStore(
-				Host*														aHost,
+				DefaultHost*												aHost,
 				uint32_t													aNodeId,
 				uint32_t													aId,
 				const std::vector<_ItemType>&								aExpected)
@@ -199,7 +147,7 @@ namespace jelly
 
 			void
 			_VerifyNoWAL(
-				Host*														aHost,
+				DefaultHost*												aHost,
 				uint32_t													aNodeId,
 				uint32_t													aId)
 			{
@@ -209,7 +157,7 @@ namespace jelly
 
 			void
 			_VerifyNoStore(
-				Host*														aHost,
+				DefaultHost*												aHost,
 				uint32_t													aNodeId,
 				uint32_t													aId)
 			{
@@ -221,9 +169,9 @@ namespace jelly
 			void
 			_VerifyResidentKeys(
 				_NodeType*													aNode,
-				const std::vector<UInt32Key>&								aExpected)
+				const std::vector<UIntKey<uint32_t>>&						aExpected)
 			{
-				std::vector<UInt32Key> keys;
+				std::vector<UIntKey<uint32_t>> keys;
 				aNode->GetResidentKeys(keys);
 				JELLY_ASSERT(keys == aExpected);
 			}
@@ -495,7 +443,7 @@ namespace jelly
 
 			void
 			_HammerTest(
-				Host*			aHost,
+				DefaultHost*	aHost,
 				uint32_t		aKeyCount,
 				HammerTestMode	aHammerTestMode)
 			{
@@ -732,7 +680,7 @@ namespace jelly
 			
 			void
 			_TestBlobNode(
-				Host*		aHost)
+				DefaultHost*	aHost)
 			{
 				aHost->DeleteAllFiles(UINT32_MAX);
 
@@ -781,7 +729,7 @@ namespace jelly
 					_VerifyResidentKeys(&blobNode, { 1 });
 				}
 
-				_VerifyWAL<BlobNodeItem<UInt32Key, UInt32Blob>>(aHost, 0, 0, { { 1, 1, 123 } });
+				_VerifyWAL<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 0, 0, { { 1, 1, 123 } });
 				_VerifyNoWAL(aHost, 0, 1);
 
 				// Restart node and try more requests
@@ -848,8 +796,8 @@ namespace jelly
 				}
 
 				_VerifyNoWAL(aHost, 0, 0);
-				_VerifyWAL<BlobNodeItem<UInt32Key, UInt32Blob>>(aHost, 0, 1, { { 1, 2, 789 } });
-				_VerifyStore<BlobNodeItem<UInt32Key, UInt32Blob>>(aHost, 0, 0, { { 1, 2, 789 } });
+				_VerifyWAL<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 0, 1, { { 1, 2, 789 } });
+				_VerifyStore<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 0, 0, { { 1, 2, 789 } });
 
 				// Do 1 write with another key which we'll try to load later after compaction
 				{
@@ -890,9 +838,9 @@ namespace jelly
 					_VerifyResidentKeys(&blobNode, { 2, 1 });
 				}
 
-				_VerifyStore<BlobNodeItem<UInt32Key, UInt32Blob>>(aHost, 0, 0, { { 1, 2, 789 } });
-				_VerifyStore<BlobNodeItem<UInt32Key, UInt32Blob>>(aHost, 0, 1, { { 1, 3, 1000 }, {2, 1, 1234 } });
-				_VerifyStore<BlobNodeItem<UInt32Key, UInt32Blob>>(aHost, 0, 2, { { 1, 4, 1001 } });
+				_VerifyStore<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 0, 0, { { 1, 2, 789 } });
+				_VerifyStore<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 0, 1, { { 1, 3, 1000 }, {2, 1, 1234 } });
+				_VerifyStore<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 0, 2, { { 1, 4, 1001 } });
 
 				// Perform compaction, which should remove two of the store files and create a new one
 				{
@@ -924,13 +872,13 @@ namespace jelly
 
 				_VerifyNoStore(aHost, 0, 0);
 				_VerifyNoStore(aHost, 0, 1);
-				_VerifyStore<BlobNodeItem<UInt32Key, UInt32Blob>>(aHost, 0, 2, { { 1, 4, 1001 } });
-				_VerifyStore<BlobNodeItem<UInt32Key, UInt32Blob>>(aHost, 0, 3, { { 1, 3, 1000 }, { 2, 1, 1234 } });
+				_VerifyStore<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 0, 2, { { 1, 4, 1001 } });
+				_VerifyStore<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 0, 3, { { 1, 3, 1000 }, { 2, 1, 1234 } });
 			}
 
 			void
 			_TestLockNode(
-				Host*		aHost)
+				DefaultHost*		aHost)
 			{
 				aHost->DeleteAllFiles(UINT32_MAX);
 		
@@ -952,7 +900,7 @@ namespace jelly
 					}
 				}	
 
-				_VerifyWAL<LockNodeItem<UInt32Key, UInt32Lock>>(aHost, 0, 0, { { 1, 1, 123, UINT32_MAX, 0xFFFFFFFF } });
+				_VerifyWAL<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 0, { { 1, 1, 123, UINT32_MAX, 0xFFFFFFFF } });
 				
 				// Restart node
 
@@ -1024,8 +972,8 @@ namespace jelly
 					}
 				}
 
-				_VerifyWAL<LockNodeItem<UInt32Key, UInt32Lock>>(aHost, 0, 0, { { 1, 1, 123, UINT32_MAX, 0xFFFFFFFF } });
-				_VerifyWAL<LockNodeItem<UInt32Key, UInt32Lock>>(aHost, 0, 1, { { 1, 2, 0, 1, 0xFF030201 } });
+				_VerifyWAL<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 0, { { 1, 1, 123, UINT32_MAX, 0xFFFFFFFF } });
+				_VerifyWAL<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 1, { { 1, 2, 0, 1, 0xFF030201 } });
 
 				// Restart
 
@@ -1078,14 +1026,14 @@ namespace jelly
 				}
 
 				_VerifyNoWAL(aHost, 0, 0);
-				_VerifyWAL<LockNodeItem<UInt32Key, UInt32Lock>>(aHost, 0, 1, { { 1, 2, 0, 1, 0xFF030201 } });
-				_VerifyWAL<LockNodeItem<UInt32Key, UInt32Lock>>(aHost, 0, 2, 
+				_VerifyWAL<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 1, { { 1, 2, 0, 1, 0xFF030201 } });
+				_VerifyWAL<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 2,
 				{ 
 					{ 1, 3, 456, 1, 0xFF030201 },
 					{ 3, 1, 456, UINT32_MAX, 0xFFFFFFFF },
 					{ 2, 1, 456, UINT32_MAX, 0xFFFFFFFF }
 				});
-				_VerifyStore<LockNodeItem<UInt32Key, UInt32Lock>>(aHost, 0, 0, 
+				_VerifyStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 0,
 				{ 
 					{ 1, 3, 456, 1, 0xFF030201 },
 					{ 2, 1, 456, UINT32_MAX, 0xFFFFFFFF },
@@ -1094,8 +1042,90 @@ namespace jelly
 			}
 
 			void
+			_TestCancel(
+				DefaultHost*		aHost)
+			{
+				aHost->DeleteAllFiles(UINT32_MAX);
+
+				// Do a little request without canceling it
+				{
+					BlobNodeType blobNode(aHost, 0);
+
+					BlobNodeType::Request req;
+					req.m_key = 1;
+					req.m_seq = 1;
+					req.m_blob = 101;
+					blobNode.Set(&req);
+					JELLY_ASSERT(blobNode.ProcessRequests() == 1);
+					blobNode.FlushPendingWAL(0);
+					JELLY_ASSERT(req.m_completed.Poll());
+					JELLY_ASSERT(req.m_result == RESULT_OK);
+				}
+
+				// Do another little request, but cancel it (before processing it)
+				{
+					BlobNodeType blobNode(aHost, 0);
+
+					BlobNodeType::Request req;
+					req.m_key = 2;
+					req.m_seq = 1;
+					req.m_blob = 101;
+					blobNode.Set(&req);
+					blobNode.Stop();
+					JELLY_ASSERT(req.m_completed.Poll());
+					JELLY_ASSERT(req.m_result == RESULT_CANCELED);
+				}
+
+				// Cancel after processing, but before flushing WAL
+				{
+					BlobNodeType blobNode(aHost, 0);
+
+					BlobNodeType::Request req;
+					req.m_key = 3;
+					req.m_seq = 1;
+					req.m_blob = 101;
+					blobNode.Set(&req);
+					JELLY_ASSERT(blobNode.ProcessRequests() == 1);
+					blobNode.Stop();
+					JELLY_ASSERT(req.m_completed.Poll());
+					JELLY_ASSERT(req.m_result == RESULT_CANCELED);
+				}
+
+				// Cancel after processing and flushing WAL (request should be completed succesfully)
+				{
+					BlobNodeType blobNode(aHost, 0);
+
+					BlobNodeType::Request req;
+					req.m_key = 4;
+					req.m_seq = 1;
+					req.m_blob = 101;
+					blobNode.Set(&req);
+					JELLY_ASSERT(blobNode.ProcessRequests() == 1);
+					blobNode.FlushPendingWAL(0);
+					blobNode.Stop();
+					JELLY_ASSERT(req.m_completed.Poll());
+					JELLY_ASSERT(req.m_result == RESULT_OK);
+				}
+
+				// Do request after stopping node, should be canceled immediately
+				{
+					BlobNodeType blobNode(aHost, 0);
+
+					blobNode.Stop();
+
+					BlobNodeType::Request req;
+					req.m_key = 5;
+					req.m_seq = 1;
+					req.m_blob = 101;
+					blobNode.Set(&req);
+					JELLY_ASSERT(req.m_completed.Poll());
+					JELLY_ASSERT(req.m_result == RESULT_CANCELED);
+				}
+			}
+
+			void
 			_TestBlobNodeMemoryLimit(
-				Host*		aHost)
+				DefaultHost*		aHost)
 			{
 				aHost->DeleteAllFiles(UINT32_MAX);
 
@@ -1271,8 +1301,8 @@ namespace jelly
 					}
 				}
 
-				_VerifyStore<BlobNodeItem<UInt32Key, UInt32Blob>>(aHost, 2, 0, { { 1, 1, 101 } });
-				_VerifyStore<BlobNodeItem<UInt32Key, UInt32Blob>>(aHost, 2, 1, { { 1, 2, 102 } });
+				_VerifyStore<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 2, 0, { { 1, 1, 101 } });
+				_VerifyStore<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 2, 1, { { 1, 2, 102 } });
 
 				// Restart
 
@@ -1311,9 +1341,9 @@ namespace jelly
 				std::filesystem::create_directories(aWorkingDirectory);
 
 				#if defined(JELLY_ZSTD)
-					TestHost host(aWorkingDirectory, Host::COMPRESSION_MODE_ZSTD);
+					TestDefaultHost host(aWorkingDirectory, DefaultHost::COMPRESSION_MODE_ZSTD);
 				#else 
-					TestHost host(aWorkingDirectory, Host::COMPRESSION_MODE_NONE);
+					TestDefaultHost host(aWorkingDirectory, DefaultHost::COMPRESSION_MODE_NONE);
 				#endif
 
 				// Test basic operation of BlobNode
@@ -1321,7 +1351,10 @@ namespace jelly
 
 				// Test basic operatoin of LockNode
 				_TestLockNode(&host);
-				
+
+				// Test canceling requests (exactly same code for lock and blob nodes)
+				_TestCancel(&host); 
+
 				// Test blob node with memory limit turned on
 				_TestBlobNodeMemoryLimit(&host);
 

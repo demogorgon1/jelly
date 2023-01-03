@@ -2,7 +2,7 @@
 
 #include <jelly/Compression.h>
 #include <jelly/ErrorUtils.h>
-#include <jelly/Host.h>
+#include <jelly/DefaultHost.h>
 #include <jelly/ZstdCompression.h>
 
 #include "FileStreamReader.h"
@@ -14,7 +14,7 @@
 namespace jelly
 {
 
-	Host::Host(
+	DefaultHost::DefaultHost(
 		const char*					aRoot,
 		CompressionMode				aCompressionMode)
 		: m_root(aRoot)
@@ -36,13 +36,13 @@ namespace jelly
 		}
 	}
 	
-	Host::~Host()
+	DefaultHost::~DefaultHost()
 	{
 
 	}
 
 	void		
-	Host::DeleteAllFiles(
+	DefaultHost::DeleteAllFiles(
 		uint32_t					aNodeId)
 	{			
 		m_storeManager->CloseAll();
@@ -67,19 +67,19 @@ namespace jelly
 	//---------------------------------------------------------------
 
 	Compression::IProvider* 
-	Host::GetCompressionProvider() 
+	DefaultHost::GetCompressionProvider() 
 	{
 		return m_compressionProvider.get();
 	}
 
 	uint64_t	
-	Host::GetTimeStamp() 
+	DefaultHost::GetTimeStamp() 
 	{
 		return (uint64_t)time(NULL);
 	}
 
 	void		
-	Host::EnumerateFiles(
+	DefaultHost::EnumerateFiles(
 		uint32_t					aNodeId,
 		std::vector<uint32_t>&		aOutWriteAheadLogIds,
 		std::vector<uint32_t>&		aOutStoreIds) 
@@ -114,7 +114,7 @@ namespace jelly
 	}
 
 	void		
-	Host::GetStoreInfo(
+	DefaultHost::GetStoreInfo(
 		uint32_t					aNodeId,
 		std::vector<StoreInfo>&		aOut) 
 	{
@@ -146,7 +146,7 @@ namespace jelly
 	}
 
 	IFileStreamReader*
-	Host::ReadWALStream(
+	DefaultHost::ReadWALStream(
 		uint32_t					aNodeId,
 		uint32_t					aId) 
 	{
@@ -161,7 +161,7 @@ namespace jelly
 	}
 	
 	IWALWriter*
-	Host::CreateWAL(
+	DefaultHost::CreateWAL(
 		uint32_t					aNodeId,
 		uint32_t					aId) 
 	{
@@ -176,7 +176,7 @@ namespace jelly
 	}
 	
 	void		
-	Host::DeleteWAL(
+	DefaultHost::DeleteWAL(
 		uint32_t					aNodeId,
 		uint32_t					aId) 
 	{
@@ -191,7 +191,7 @@ namespace jelly
 	}
 	
 	IFileStreamReader*
-	Host::ReadStoreStream(
+	DefaultHost::ReadStoreStream(
 		uint32_t					aNodeId,
 		uint32_t					aId) 
 	{
@@ -209,7 +209,7 @@ namespace jelly
 	}
 
 	IStoreBlobReader* 
-	Host::GetStoreBlobReader(
+	DefaultHost::GetStoreBlobReader(
 		uint32_t					aNodeId,
 		uint32_t					aId) 
 	{
@@ -217,7 +217,7 @@ namespace jelly
 	}
 
 	void					
-	Host::CloseStoreBlobReader(
+	DefaultHost::CloseStoreBlobReader(
 		uint32_t					aNodeId,
 		uint32_t					aId) 
 	{
@@ -228,7 +228,7 @@ namespace jelly
 	}
 	
 	IStoreWriter*
-	Host::CreateStore(
+	DefaultHost::CreateStore(
 		uint32_t					aNodeId,
 		uint32_t					aId) 
 	{
@@ -242,7 +242,7 @@ namespace jelly
 	}
 
 	void		
-	Host::DeleteStore(
+	DefaultHost::DeleteStore(
 		uint32_t					aNodeId,
 		uint32_t					aId) 
 	{

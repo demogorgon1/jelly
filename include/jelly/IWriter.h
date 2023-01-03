@@ -9,6 +9,15 @@ namespace jelly
 	public:
 		virtual			~IWriter() {}
 
+		template <typename _T>
+		bool
+		WriteUInt(
+			_T							aValue)
+		{
+			// FIXME: varsize int
+			return Write(&aValue, sizeof(aValue)) == sizeof(aValue);
+		}
+
 		// Virtual interface
 		virtual size_t	Write(
 							const void*	aBuffer,

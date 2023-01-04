@@ -44,6 +44,8 @@ namespace jelly
 
 		~Node()
 		{
+			Stop();
+
 			for(WAL* wal : m_wals)
 				delete wal;
 		}

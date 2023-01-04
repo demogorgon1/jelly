@@ -80,6 +80,8 @@ namespace jelly
 		Lock(
 			Request*											aRequest)
 		{
+			JELLY_ASSERT(aRequest->m_result == RESULT_NONE);
+
 			aRequest->m_callback = [=]()
 			{
 				aRequest->m_result = _Lock(aRequest);
@@ -99,6 +101,8 @@ namespace jelly
 		Unlock(
 			Request*											aRequest)
 		{
+			JELLY_ASSERT(aRequest->m_result == RESULT_NONE);
+
 			aRequest->m_callback = [=]()
 			{
 				aRequest->m_result = _Unlock(aRequest);

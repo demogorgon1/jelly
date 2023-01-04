@@ -1,13 +1,17 @@
 #include <stdlib.h>
 
 #include "AllTests.h"
+#include "Config.h"
 
 int
 main(
-	int		/*aNumArgs*/,
-	char**	/*aArgs*/)
+	int		aNumArgs,
+	char**	aArgs)
 {	
-	jelly::Test::AllTests::Run(".");
+	jelly::Test::Config config;
+	config.InitFromCommandLine(aNumArgs, aArgs);
+
+	jelly::Test::AllTests::Run(".", &config);
 
 	return EXIT_SUCCESS;
 }

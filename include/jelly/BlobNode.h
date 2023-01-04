@@ -96,6 +96,7 @@ namespace jelly
 		Set(
 			Request*										aRequest)
 		{
+			JELLY_ASSERT(aRequest->m_result == RESULT_NONE);
 			JELLY_ASSERT(aRequest->m_blob.IsSet());
 
 			aRequest->m_callback = [=]()
@@ -119,6 +120,8 @@ namespace jelly
 		Get(
 			Request*										aRequest)
 		{
+			JELLY_ASSERT(aRequest->m_result == RESULT_NONE);
+
 			aRequest->m_callback = [=]()
 			{
 				aRequest->m_result = _Get(aRequest);

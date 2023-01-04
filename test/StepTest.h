@@ -8,11 +8,10 @@ namespace jelly
 
 		struct Config;
 
-		namespace AllTests
+		namespace StepTest
 		{
 
 			void		Run(
-							const char*		aWorkingDirectory,
 							const Config*	aConfig);
 
 		}

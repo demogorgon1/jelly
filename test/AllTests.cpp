@@ -1,5 +1,6 @@
 #include "CompressionTest.h"
 #include "NodeTest.h"
+#include "StepTest.h"
 
 namespace jelly
 {
@@ -12,10 +13,12 @@ namespace jelly
 
 			void		
 			Run(
-				const char*		aWorkingDirectory)
+				const char*		aWorkingDirectory,
+				const Config*	aConfig)
 			{
 				CompressionTest::Run();
-				NodeTest::Run(aWorkingDirectory);
+				NodeTest::Run(aWorkingDirectory, aConfig);
+				StepTest::Run(aConfig);
 			}
 
 		}

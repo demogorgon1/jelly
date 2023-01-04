@@ -15,6 +15,8 @@
 #include <jelly/UIntLock.h>
 #include <jelly/UIntKey.h>
 
+#include "Config.h"
+#include "NodeTest.h"
 #include "TestDefaultHost.h"
 
 namespace jelly
@@ -1336,7 +1338,8 @@ namespace jelly
 
 			void		
 			Run(
-				const char*		aWorkingDirectory)
+				const char*		aWorkingDirectory,
+				const Config*	aConfig)
 			{
 				std::filesystem::create_directories(aWorkingDirectory);
 
@@ -1349,7 +1352,7 @@ namespace jelly
 				// Test basic operation of BlobNode
 				_TestBlobNode(&host);
 
-				// Test basic operatoin of LockNode
+				// Test basic operation of LockNode
 				_TestLockNode(&host);
 
 				// Test canceling requests (exactly same code for lock and blob nodes)
@@ -1358,14 +1361,15 @@ namespace jelly
 				// Test blob node with memory limit turned on
 				_TestBlobNodeMemoryLimit(&host);
 
-				// Run a general "hammer test" that will test LockNode and BlobNode in a multithreaded environment
-				_HammerTest(&host, 100, HAMMER_TEST_MODE_GENERAL);
+				if(aConfig->m_hammerTest)
+				{
+					// Run a general "hammer test" that will test LockNode and BlobNode in a multithreaded environment
+					_HammerTest(&host, 100, HAMMER_TEST_MODE_GENERAL);
 
-				// Another "hammer test" which will have memory caching turned off and thus will trigger a lot of 
-				// reads from disk
-				_HammerTest(&host, 1000000, HAMMER_TEST_MODE_DISK_READ);
-
-				printf("All tests completed.\n");
+					// Another "hammer test" which will have memory caching turned off and thus will trigger a lot of 
+					// reads from disk
+					_HammerTest(&host, 1000000, HAMMER_TEST_MODE_DISK_READ);
+				}
 			}
 
 		}

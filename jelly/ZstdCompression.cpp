@@ -1,7 +1,8 @@
 #if defined(JELLY_ZSTD)
 
-#include "ZstdCompression.h"
-#include "ZstdStream.h"
+#include <jelly/ErrorUtils.h>
+#include <jelly/ZstdCompression.h>
+#include <jelly/ZstdStream.h>
 
 namespace jelly
 {

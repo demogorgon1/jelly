@@ -4,9 +4,8 @@
 
 #include <zstd.h>
 
+#include <jelly/ErrorUtils.h>
 #include <jelly/ZstdStream.h>
-
-#include "ZstdStream.h"
 
 namespace jelly
 {

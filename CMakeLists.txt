@@ -14,10 +14,22 @@ macro(jelly_option OPTION_NAME OPTION_TEXT OPTION_DEFAULT)
     message(STATUS "${OPTION_NAME}: ${${OPTION_NAME}}")
 endmacro()
 
+jelly_option(JELLY_ZSTD "Use ZSTD." OFF)
+
 enable_testing()
 
 include(FetchContent)
 include(GNUInstallDirs)
+
+set(CMAKE_MODULE_PATH
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake"
+  ${CMAKE_MODULE_PATH})
+
+# --------------------------------------------------------------------
+
+if (JELLY_ZSTD)
+	find_package(ZSTD REQUIRED)
+endif()
 
 # --------------------------------------------------------------------
 
@@ -30,6 +42,6 @@ else()
     add_compile_options(-Wall -Wextra -pedantic -Werror -Wno-unused-function)
 endif()
 
-add_subdirectory(src)
+add_subdirectory(jelly)
 add_subdirectory(test)
 add_subdirectory(include)

@@ -2,6 +2,7 @@
 
 #include <sstream>
 
+#include <jelly/ErrorUtils.h>
 #include <jelly/ZstdCompression.h>
 
 namespace jelly
@@ -49,8 +50,8 @@ namespace jelly
 					const void* aBuffer,
 					size_t		aBufferSize)
 				{
-					assert(aBufferSize <= compareRemaining);
-					assert(memcmp(aBuffer, comparePointer, aBufferSize) == 0);					
+					JELLY_ASSERT(aBufferSize <= compareRemaining);
+					JELLY_ASSERT(memcmp(aBuffer, comparePointer, aBufferSize) == 0);
 					comparePointer += aBufferSize;
 					compareRemaining -= aBufferSize;
 				});
@@ -59,7 +60,7 @@ namespace jelly
 				{
 					for (size_t i = 0; i < aDataSize; i++)
 					{
-						assert(compressor->Write((const uint8_t*)aData + i, 1) == 1);
+						JELLY_ASSERT(compressor->Write((const uint8_t*)aData + i, 1) == 1);
 
 						if(aFlushAfterEachByte)
 							compressor->Flush();
@@ -70,11 +71,11 @@ namespace jelly
 				}
 				else
 				{
-					assert(compressor->Write(aData, aDataSize) == aDataSize);
+					JELLY_ASSERT(compressor->Write(aData, aDataSize) == aDataSize);
 					compressor->Flush();
 				}
 
-				assert(compareRemaining == 0);
+				JELLY_ASSERT(compareRemaining == 0);
 			}
 
 			template<typename _ProviderType>
@@ -105,7 +106,7 @@ namespace jelly
 					for (int i = 0; i < 200; i++)
 					{
 						char buffer[64];
-						assert(snprintf(buffer, sizeof(buffer), "%d", i * 349104) <= sizeof(buffer));
+						JELLY_ASSERT(snprintf(buffer, sizeof(buffer), "%d", i * 349104) <= sizeof(buffer));
 						longString << buffer;
 					}
 
@@ -127,7 +128,7 @@ namespace jelly
 					}
 					catch(...)
 					{
-						assert(false);
+						JELLY_ASSERT(false);
 					}
 
 					delete [] bigBuffer;
@@ -143,7 +144,7 @@ namespace jelly
 			Run()
 			{
 				#if defined(JELLY_ZSTD)
-					_TestCompressionProvider<Impl::ZstdCompression>();
+					_TestCompressionProvider<ZstdCompression>();
 				#endif
 			}
 

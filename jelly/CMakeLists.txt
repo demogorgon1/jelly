@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.15)
 
 include_directories(
 	include
+	${ZSTD_INCLUDE_DIR}
 )
 
 file(GLOB C_FILES "*.cpp")
@@ -12,6 +13,10 @@ add_library(jelly STATIC ${C_FILES} ${H_FILES})
 add_library(jelly::jelly ALIAS jelly)
 
 target_compile_features(jelly PRIVATE cxx_std_17)
+
+if(JELLY_ZSTD)
+	target_link_libraries(jelly PUBLIC ${ZSTD_LIBRARIES})
+endif()
 
 install(TARGETS jelly
 	RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}

@@ -1,4 +1,5 @@
 # jelly
+[![CMake](https://github.com/demogorgon1/jelly/actions/workflows/cmake.yml/badge.svg)](https://github.com/demogorgon1/jelly/actions/workflows/cmake.yml)
 
 ___WARNING: This is very much work in progress. Here be dragons.___
 

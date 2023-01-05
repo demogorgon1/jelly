@@ -58,7 +58,7 @@ namespace jelly
 		void		GetWriter(
 						Writer&			aOut);
 		size_t		GetSize() const;
-		bool		Flush();
+		void		Flush();
 		void		ReadAtOffset(
 						size_t			aOffset,
 						void*			aBuffer,

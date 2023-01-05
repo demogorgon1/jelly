@@ -19,6 +19,7 @@
 #include <stdint.h>
 
 #include <jelly/ErrorUtils.h>
+#include <jelly/Log.h>
 
 #include "File.h"
 
@@ -144,6 +145,8 @@ namespace jelly
 			}
 				
 			m_internal->m_handle = CreateFileA(aPath, desiredAccess, shareMode, NULL, creationDisposition, flags, NULL);
+			if(m_internal->m_handle == INVALID_HANDLE_VALUE)
+				Log::PrintF(Log::LEVEL_WARNING, "CreateFileA() failed (path %s): %u", m_path.c_str(), GetLastError());
 
 			if (m_internal->m_handle != INVALID_HANDLE_VALUE && m_mode != MODE_WRITE_STREAM)
 			{
@@ -151,7 +154,9 @@ namespace jelly
 				uint64_t fileSize;
 				if (!GetFileSizeEx(m_internal->m_handle, (LARGE_INTEGER*)&fileSize))
 				{
-					CloseHandle(m_internal->m_handle);
+					if(!CloseHandle(m_internal->m_handle))
+						JELLY_FATAL_ERROR("CloseHandle() failed (path %s): %u", m_path.c_str(), GetLastError());
+
 					m_internal->m_handle = INVALID_HANDLE_VALUE;
 				}
 				else
@@ -186,13 +191,18 @@ namespace jelly
 
 			m_internal->m_fd = open(aPath, flags, mode);
 
+			if(m_internal->m_fd == -1)
+				Log::PrintF(Log::LEVEL_WARNING, "open() failed (path %s): %u", m_path.c_str(), GetLastError());
+
 			if(m_internal->m_fd != -1 && m_mode != MODE_WRITE_STREAM)
 			{
 				struct stat s;
 				int result = fstat(m_internal->m_fd, &s);
 				if(result == -1)
 				{
-					close(m_internal->m_fd);
+					int closeResult = close(m_internal->m_fd);
+					JELLY_CHECK(closeResult != -1, "close() failed (path %s): %u", m_path.c_str(), errno);
+
 					m_internal->m_fd = -1;
 				}
 				else
@@ -208,10 +218,20 @@ namespace jelly
 	{
 		#if defined(JELLY_WINDOWS_FILE_IO)	
 			if(m_internal->m_handle != INVALID_HANDLE_VALUE)
-				CloseHandle(m_internal->m_handle);
+			{
+				Flush();
+
+				if(!CloseHandle(m_internal->m_handle))
+					JELLY_FATAL_ERROR("CloseHandle() failed (path %s): %u", m_path.c_str(), GetLastError());
+			}
 		#elif defined(JELLY_POSIX_FILE_IO)
 			if(m_internal->m_fd != -1)
-				close(m_internal->m_fd);
+			{
+				Flush();
+
+				int result = close(m_internal->m_fd);
+				JELLY_CHECK(result != -1, "close() failed (path %s): %u", m_path.c_str(), errno);
+			}
 		#endif
 
 		delete m_internal;
@@ -275,23 +295,20 @@ namespace jelly
 		return m_internal->m_size;
 	}
 
-	bool	
+	void
 	File::Flush()
 	{
 		#if defined(JELLY_WINDOWS_FILE_IO)	
 			JELLY_ASSERT(m_internal->m_handle != INVALID_HANDLE_VALUE);
 
 			if (!FlushFileBuffers(m_internal->m_handle))
-				return false;
+				JELLY_FATAL_ERROR("FlushFileBuffers() failed (path %s): %u", m_path.c_str(), GetLastError());
 		#elif defined(JELLY_POSIX_FILE_IO)	
 			JELLY_ASSERT(m_internal->m_fd != -1);
 
 			int result = fsync(m_internal->m_fd);
-			if(result < 0)
-				return false;
+			JELLY_CHECK(result != -1, "fsync() failed (path %s): %u", m_path.c_str(), errno);
 		#endif
-
-		return true;
 	}
 
 	void	

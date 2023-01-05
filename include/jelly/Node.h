@@ -162,8 +162,6 @@ namespace jelly
 			if(m_pendingStore.size() == 0)
 				return;
 
-			// FIXME: handle failure
-
 			{
 				uint32_t storeId = CreateStoreId();
 

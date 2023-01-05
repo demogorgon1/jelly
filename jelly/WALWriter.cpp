@@ -77,8 +77,7 @@ namespace jelly
 		if(m_compressor)
 			m_compressor->Flush();
 
-		if(!m_file.Flush())
-			JELLY_ASSERT(false);
+		m_file.Flush();
 
 		for (PendingItemWrite& t : m_pendingItemWrites)
 			t.m_completionEvent->Signal();

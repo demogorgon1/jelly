@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include <jelly/CompletionEvent.h>
 #include <jelly/ErrorUtils.h>
 #include <jelly/IFileStreamReader.h>

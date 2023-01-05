@@ -1,5 +1,7 @@
 #if defined(_WIN32)
 	#include <windows.h>
+#else
+	#include <signal.h>
 #endif
 
 #include <stdlib.h>

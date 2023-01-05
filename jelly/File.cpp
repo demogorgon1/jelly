@@ -192,7 +192,7 @@ namespace jelly
 			m_internal->m_fd = open(aPath, flags, mode);
 
 			if(m_internal->m_fd == -1)
-				Log::PrintF(Log::LEVEL_WARNING, "open() failed (path %s): %u", m_path.c_str(), GetLastError());
+				Log::PrintF(Log::LEVEL_WARNING, "open() failed (path %s): %u", m_path.c_str(), errno());
 
 			if(m_internal->m_fd != -1 && m_mode != MODE_WRITE_STREAM)
 			{

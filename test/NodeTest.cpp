@@ -125,8 +125,6 @@ namespace jelly
 				std::atomic_int*		aGetCounter,
 				std::atomic_int*		aThreadCounter)
 			{
-				(*aThreadCounter)++;
-
 				while(!*aStopEvent)
 				{	
 					uint32_t blobSeq = UINT32_MAX;
@@ -263,8 +261,6 @@ namespace jelly
 				ValidKeySet*			aValidKeySet,
 				std::atomic_int*		aThreadCounter)
 			{
-				(*aThreadCounter)++;
-
 				std::default_random_engine generator;
 				generator.seed(aLockId);
 
@@ -346,8 +342,6 @@ namespace jelly
 				ValidKeySet*			aValidKeySet,
 				std::atomic_int*		aThreadCounter)
 			{
-				(*aThreadCounter)++;
-
 				while(!*aStopEvent)
 				{	
 					uint32_t key;
@@ -499,6 +493,8 @@ namespace jelly
 							for (uint32_t i = 0; i < aKeyCount; i++)
 							{
 								// Two threads fighting over the same key
+								threadCounter += 2;
+
 								threads.push_back(std::thread(_HammerTestThreadGeneral, &lockNode, &blobNode, &stopEvent, lockId++, i + 1, &lockCounter, &setCounter, &getCounter, &threadCounter));
 								threads.push_back(std::thread(_HammerTestThreadGeneral, &lockNode, &blobNode, &stopEvent, lockId++, i + 1, &lockCounter, &setCounter, &getCounter, &threadCounter));
 							}
@@ -513,11 +509,17 @@ namespace jelly
 
 							// Make a few threads for writing blobs
 							for (uint32_t i = 0; i < 10; i++)
+							{
+								threadCounter++;
 								threads.push_back(std::thread(_HammerTestThreadWriteBlobs, &lockNode, &blobNode, &stopEvent, lockId++, aKeyCount, &lockCounter, &setCounter, &getCounter, validKeySet.get(), &threadCounter));
+							}
 
 							// And some threads for reading blobs
 							for (uint32_t i = 0; i < 100; i++)
+							{
+								threadCounter++;
 								threads.push_back(std::thread(_HammerTestThreadReadBlobs, &blobNode, &stopEvent, aKeyCount, &lockCounter, &setCounter, &getCounter, validKeySet.get(), &threadCounter));
+							}
 					}
 						break;
 

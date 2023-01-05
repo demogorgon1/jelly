@@ -546,8 +546,8 @@ namespace jelly
 			std::unique_ptr<IFileStreamReader> f1(this->m_host->ReadStoreStream(this->m_nodeId, aStoreId1));
 			std::unique_ptr<IFileStreamReader> f2(this->m_host->ReadStoreStream(this->m_nodeId, aStoreId2));
 
-			std::unique_ptr<NodeBase::CompactionRedirectType> compactionRedirect1(new NodeBase::CompactionRedirectType());
-			std::unique_ptr<NodeBase::CompactionRedirectType> compactionRedirect2(new NodeBase::CompactionRedirectType());
+			std::unique_ptr<typename NodeBase::CompactionRedirectType> compactionRedirect1(new NodeBase::CompactionRedirectType());
+			std::unique_ptr<typename NodeBase::CompactionRedirectType> compactionRedirect2(new NodeBase::CompactionRedirectType());
 
 			{
 				uint32_t newStoreId = this->CreateStoreId();

@@ -5,6 +5,7 @@
 #include <memory>
 #include <sstream>
 
+#include <jelly/Compression.h>
 #include <jelly/ErrorUtils.h>
 #include <jelly/ZstdCompression.h>
 

@@ -1,3 +1,5 @@
+#include <stdint.h>
+
 #include <jelly/BlobNode.h>
 #include <jelly/LockNode.h>
 #include <jelly/UIntKey.h>

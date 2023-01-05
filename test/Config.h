@@ -29,11 +29,11 @@ namespace jelly
 				{
 					const char* arg = aArgs[i];
 					
-					if(strcmp(arg, "-hammertest") != 0)
+					if(strcmp(arg, "-hammertest") == 0)
 					{
 						m_hammerTest = true;
 					}
-					else if(strcmp(arg, "-steptestseed") != 0)
+					else if(strcmp(arg, "-steptestseed") == 0)
 					{
 						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
 						m_stepTestSeed = (uint32_t)atoi(aArgs[i + 1]);

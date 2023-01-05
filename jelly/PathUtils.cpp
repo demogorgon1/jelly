@@ -1,4 +1,5 @@
 #include <sstream>
+#include <vector>
 
 #include <jelly/ErrorUtils.h>
 

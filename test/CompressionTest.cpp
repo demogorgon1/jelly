@@ -110,7 +110,7 @@ namespace jelly
 					for (int i = 0; i < 200; i++)
 					{
 						char buffer[64];
-						JELLY_ASSERT(snprintf(buffer, sizeof(buffer), "%d", i * 349104) <= sizeof(buffer));
+						JELLY_ASSERT((size_t)snprintf(buffer, sizeof(buffer), "%d", i * 349104) <= sizeof(buffer));
 						longString << buffer;
 					}
 

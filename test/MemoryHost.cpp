@@ -40,6 +40,7 @@ namespace jelly
 				: m_head(NULL)
 				, m_tail(NULL)
 				, m_totalBytes(0)
+				, m_writeGuard(false)
 			{
 				
 			}

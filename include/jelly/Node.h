@@ -39,6 +39,7 @@ namespace jelly
 			, m_nodeId(aNodeId)
 			, m_config(aConfig)
 			, m_stopped(false)
+			, m_hasPendingCompaction(false)
 		{
 			for(uint32_t i = 0; i < m_config.m_walConcurrency; i++)
 				m_pendingWALs.push_back(NULL);

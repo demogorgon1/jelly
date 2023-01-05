@@ -270,7 +270,7 @@ namespace jelly
 			JELLY_ASSERT(m_hasPendingCompaction);
 			JELLY_ASSERT(m_pendingCompactionResult);
 
-			for(CompactionResult<_KeyType, _STLKeyHasher>::CompactedStore* compactedStore : m_pendingCompactionResult->GetCompactedStores())
+			for(typename CompactionResult<_KeyType, _STLKeyHasher>::CompactedStore* compactedStore : m_pendingCompactionResult->GetCompactedStores())
 			{
 				if(compactedStore->m_redirect)
 				{	
@@ -313,7 +313,7 @@ namespace jelly
 			const _KeyType&					aKey,
 			_ItemType*&						aOut)
 		{
-			TableType::iterator i = m_table.find(aKey);
+			typename TableType::iterator i = m_table.find(aKey);
 			if (i == m_table.end())
 				return false;
 

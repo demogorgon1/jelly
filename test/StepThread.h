@@ -122,7 +122,7 @@ namespace jelly
 			{
 				_AddStep(0, 0, [&]()
 				{
-					_LockNodeType::Config config;
+					typename _LockNodeType::Config config;
 						
 					if (!m_lockNode)
 					{
@@ -145,7 +145,7 @@ namespace jelly
 			{
 				_AddStep(0, 0, [&, aMaxResidentBlobSize]()
 				{
-					_BlobNodeType::Config config;
+					typename _BlobNodeType::Config config;
 					config.m_maxResidentBlobSize = aMaxResidentBlobSize;
 						
 					if (!m_blobNode)

@@ -55,11 +55,7 @@ namespace jelly
 			if(entry.is_regular_file() && PathUtils::ParsePath(entry.path(), fileType, nodeId, id))
 			{
 				if(aNodeId == UINT32_MAX || nodeId == aNodeId)
-				{
-					std::string p = entry.path().u8string();
-
-					std::filesystem::remove(p);
-				}
+					std::filesystem::remove(entry.path());
 			}
 		}
 	}

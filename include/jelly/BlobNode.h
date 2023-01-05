@@ -26,6 +26,8 @@ namespace jelly
 			_STLKeyHasher>
 	{
 	public:
+		typedef Node<_KeyType, BlobNodeRequest<_KeyType, _BlobType>, BlobNodeItem<_KeyType, _BlobType>, _STLKeyHasher> NodeBase;
+
 		struct Config
 		{
 			Config()
@@ -45,28 +47,28 @@ namespace jelly
 			IHost*												aHost,
 			uint32_t											aNodeId,
 			const Config&										aConfig = Config())
-			: Node(aHost, aNodeId, aConfig.m_node)
+			: NodeBase(aHost, aNodeId, aConfig.m_node)
 			, m_blobNodeConfig(aConfig)
 			, m_totalResidentBlobSize(0)
 		{
 			_Restore();
 
-			m_compactionCallback = [&](uint32_t aOldest, uint32_t a1, uint32_t a2, CompactionResult<_KeyType, _STLKeyHasher>* aOut) 
+			this->m_compactionCallback = [&](uint32_t aOldest, uint32_t a1, uint32_t a2, CompactionResult<_KeyType, _STLKeyHasher>* aOut) 
 			{ 
 				_PerformCompaction(aOldest, a1, a2, aOut); 
 			};
 			
-			m_flushPendingStoreCallback = [&](
-				uint32_t			aStoreId,
-				IStoreWriter*		aWriter,
-				PendingStoreType*	/*aPendingStoreType*/) 
+			this->m_flushPendingStoreCallback = [&](
+				uint32_t					aStoreId,
+				IStoreWriter*				aWriter,
+				NodeBase::PendingStoreType*	/*aPendingStoreType*/)
 			{ 				
-				for(std::pair<const _KeyType, Item*>& i : m_pendingStore)
+				for(std::pair<const _KeyType, Item*>& i : this->m_pendingStore)
 				{
 					Item* item = i.second;
 
 					item->m_storeId = aStoreId;
-					item->m_storeOffset = aWriter->WriteItem(item, m_host->GetCompressionProvider());
+					item->m_storeOffset = aWriter->WriteItem(item, this->m_host->GetCompressionProvider());
 
 					if (item->m_pendingWAL != NULL)
 					{
@@ -104,7 +106,7 @@ namespace jelly
 				aRequest->m_result = _Update(aRequest, false); // Update: Set
 			};
 
-			AddRequestToQueue(aRequest);
+			this->AddRequestToQueue(aRequest);
 		}
 
 		// Get a blob
@@ -127,7 +129,7 @@ namespace jelly
 				aRequest->m_result = _Get(aRequest);
 			};
 
-			AddRequestToQueue(aRequest);
+			this->AddRequestToQueue(aRequest);
 		}
 
 		// Delete a blob
@@ -149,7 +151,7 @@ namespace jelly
 				aRequest->m_result = _Update(aRequest, true); // Update: Delete
 			};
 
-			AddRequestToQueue(aRequest);
+			this->AddRequestToQueue(aRequest);
 		}
 
 		// Testing: get keys of blobs stored in memory
@@ -184,7 +186,7 @@ namespace jelly
 			bool obeyResidentBlobSizeLimit = false;
 
 			Item* item;
-			if (!GetItem(aRequest->m_key, item))
+			if (!this->GetItem(aRequest->m_key, item))
 			{
 				if(aDelete)
 				{
@@ -194,7 +196,7 @@ namespace jelly
 				{
 					m_totalResidentBlobSize += aRequest->m_blob.GetSize();
 
-					SetItem(aRequest->m_key, item = new Item(aRequest->m_key, aRequest->m_seq));				
+					this->SetItem(aRequest->m_key, item = new Item(aRequest->m_key, aRequest->m_seq));				
 
 					item->m_blob.Move(aRequest->m_blob);
 
@@ -242,11 +244,11 @@ namespace jelly
 			item->m_meta.m_timeStamp = aRequest->m_timeStamp;
 
 			if(aDelete)
-				item->m_tombstone.Set(GetNextStoreId());
+				item->m_tombstone.Set(this->GetNextStoreId());
 			else
 				item->m_tombstone.Clear();
 				
-			WriteToWAL(item, &aRequest->m_completed, &aRequest->m_result);
+			this->WriteToWAL(item, &aRequest->m_completed, &aRequest->m_result);
 
 			aRequest->m_hasPendingWrite = true;
 
@@ -261,7 +263,7 @@ namespace jelly
 			Request*										aRequest)
 		{
 			Item* item;
-			if (!GetItem(aRequest->m_key, item))
+			if (!this->GetItem(aRequest->m_key, item))
 				return RESULT_DOES_NOT_EXIST;
 
 			if(item->m_tombstone.IsSet())
@@ -286,7 +288,7 @@ namespace jelly
 				
 				for(;;)
 				{
-					storeBlobReader = m_host->GetStoreBlobReader(m_nodeId, storeId);
+					storeBlobReader = this->m_host->GetStoreBlobReader(this->m_nodeId, storeId);
 					if(storeBlobReader != NULL)
 						break;
 
@@ -329,11 +331,11 @@ namespace jelly
 			std::vector<uint32_t> walIds;
 			std::vector<uint32_t> storeIds;
 
-			m_host->EnumerateFiles(m_nodeId, walIds, storeIds);
+			this->m_host->EnumerateFiles(this->m_nodeId, walIds, storeIds);
 
 			// Set next store id to be +1 of the current highest one
 			if(storeIds.size() > 0)
-				SetNextStoreId(storeIds[storeIds.size() - 1] + 1);
+				this->SetNextStoreId(storeIds[storeIds.size() - 1] + 1);
 
 			// Load stores in reverse order, newest first. This means that if we hit the memory limit while loading, we'll probably 
 			// have the newer data in memory.
@@ -341,7 +343,7 @@ namespace jelly
 			{
 				uint32_t id = *i;
 
-				std::unique_ptr<IFileStreamReader> f(m_host->ReadStoreStream(m_nodeId, id));
+				std::unique_ptr<IFileStreamReader> f(this->m_host->ReadStoreStream(this->m_nodeId, id));
 				if (f)
 					_LoadStore(f.get(), id);
 			}
@@ -370,7 +372,7 @@ namespace jelly
 				TimeStampSorter timeStampSorter;
 				size_t totalSize = 0;
 
-				for (std::pair<const _KeyType, Item*>& i : m_table)
+				for (std::pair<const _KeyType, Item*>& i : this->m_table)
 				{
 					Item* item = i.second;
 
@@ -391,17 +393,17 @@ namespace jelly
 
 			for (uint32_t id : walIds)
 			{
-				WAL* wal = AddWAL(id, NULL);
+				WAL* wal = this->AddWAL(id, NULL);
 
-				std::unique_ptr<IFileStreamReader> f(m_host->ReadWALStream(m_nodeId, id));
+				std::unique_ptr<IFileStreamReader> f(this->m_host->ReadWALStream(this->m_nodeId, id));
 				if (f)
 					_LoadWAL(f.get(), wal);
 
 				if (wal->GetRefCount() > 0)
-					m_nextWALId = id + 1;
+					this->m_nextWALId = id + 1;
 			}
 
-			CleanupWALs();
+			this->CleanupWALs();
 
 			_ObeyResidentBlobSizeLimit();
 		}
@@ -420,7 +422,7 @@ namespace jelly
 				_KeyType key = item.get()->m_key;
 
 				Item* existing;
-				if (GetItem(key, existing))
+				if (this->GetItem(key, existing))
 				{
 					if (item.get()->m_meta.m_seq > existing->m_meta.m_seq)
 					{
@@ -443,7 +445,7 @@ namespace jelly
 						}
 						else
 						{
-							m_pendingStore.insert(std::pair<const _KeyType, Item*>(existing->m_key, existing));
+							this->m_pendingStore.insert(std::pair<const _KeyType, Item*>(existing->m_key, existing));
 						}
 
 						existing->m_pendingWAL = aWAL;
@@ -457,11 +459,11 @@ namespace jelly
 					item->m_pendingWAL = aWAL;
 					item->m_pendingWAL->AddReference();
 
-					m_pendingStore.insert(std::pair<const _KeyType, Item*>(item->m_key, item.get()));
+					this->m_pendingStore.insert(std::pair<const _KeyType, Item*>(item->m_key, item.get()));
 
 					m_totalResidentBlobSize += item->m_blob.GetSize();
 
-					SetItem(key, item.release());
+					this->SetItem(key, item.release());
 				}
 			}
 		}
@@ -478,7 +480,7 @@ namespace jelly
 				item->m_storeOffset = aReader->GetReadOffset();
 				item->m_storeId = aStoreId;
 
-				if(!item->Read(aReader, m_host->GetCompressionProvider()))
+				if(!item->Read(aReader, this->m_host->GetCompressionProvider()))
 					break;
 
 				_KeyType key = item.get()->m_key;
@@ -487,7 +489,7 @@ namespace jelly
 					item->m_blob.Reset();
 
 				Item* existing;
-				if (GetItem(key, existing))
+				if (this->GetItem(key, existing))
 				{
 					if (item.get()->m_meta.m_seq > existing->m_meta.m_seq)
 					{
@@ -508,7 +510,7 @@ namespace jelly
 					if(item->m_blob.IsSet())
 						m_totalResidentBlobSize += item->m_blob.GetSize();
 
-					SetItem(key, item.release());
+					this->SetItem(key, item.release());
 				}
 			}
 		}
@@ -520,11 +522,11 @@ namespace jelly
 			uint32_t&				aOutStoreId,
 			size_t&					aOutOffset)
 		{
-			CompactionRedirectMap::const_iterator i = m_compactionRedirectMap.find(aStoreId);
-			if(i == m_compactionRedirectMap.end())
+			auto i = this-> m_compactionRedirectMap.find(aStoreId);
+			if(i == this->m_compactionRedirectMap.end())
 				return false;
 
-			CompactionRedirectType::Entry t;
+			typename NodeBase::CompactionRedirectType::Entry t;
 			if(!i->second->GetEntry(aKey, t))
 				return false;
 
@@ -541,16 +543,16 @@ namespace jelly
 			CompactionResult<_KeyType, _STLKeyHasher>*	aOut)
 		{
 			// Stores are always written in ascendening key order, so merging them is easy
-			std::unique_ptr<IFileStreamReader> f1(m_host->ReadStoreStream(m_nodeId, aStoreId1));
-			std::unique_ptr<IFileStreamReader> f2(m_host->ReadStoreStream(m_nodeId, aStoreId2));
+			std::unique_ptr<IFileStreamReader> f1(this->m_host->ReadStoreStream(this->m_nodeId, aStoreId1));
+			std::unique_ptr<IFileStreamReader> f2(this->m_host->ReadStoreStream(this->m_nodeId, aStoreId2));
 
-			std::unique_ptr<CompactionRedirectType> compactionRedirect1(new CompactionRedirectType());
-			std::unique_ptr<CompactionRedirectType> compactionRedirect2(new CompactionRedirectType());
+			std::unique_ptr<NodeBase::CompactionRedirectType> compactionRedirect1(new NodeBase::CompactionRedirectType());
+			std::unique_ptr<NodeBase::CompactionRedirectType> compactionRedirect2(new NodeBase::CompactionRedirectType());
 
 			{
-				uint32_t newStoreId = CreateStoreId();
+				uint32_t newStoreId = this->CreateStoreId();
 
-				std::unique_ptr<IStoreWriter> fOut(m_host->CreateStore(m_nodeId, newStoreId));
+				std::unique_ptr<IStoreWriter> fOut(this->m_host->CreateStore(this->m_nodeId, newStoreId));
 
 				JELLY_ASSERT(f1 && f2 && fOut);
 
@@ -567,13 +569,13 @@ namespace jelly
 					if (!hasItem1)
 					{
 						item1.m_storeOffset = f1->GetReadOffset();
-						hasItem1 = item1.Read(f1.get(), m_host->GetCompressionProvider());
+						hasItem1 = item1.Read(f1.get(), this->m_host->GetCompressionProvider());
 					}
 
 					if (!hasItem2)
 					{
 						item2.m_storeOffset = f2->GetReadOffset();
-						hasItem2 = item2.Read(f2.get(), m_host->GetCompressionProvider());
+						hasItem2 = item2.Read(f2.get(), this->m_host->GetCompressionProvider());
 					}
 
 					if (!hasItem1 && !hasItem2)
@@ -583,7 +585,7 @@ namespace jelly
 					{
 						if(!item1.m_tombstone.ShouldPrune(aOldestStoreId))
 						{
-							item1.m_storeOffset = fOut->WriteItem(&item1, m_host->GetCompressionProvider());					
+							item1.m_storeOffset = fOut->WriteItem(&item1, this->m_host->GetCompressionProvider());
 							compactionRedirect1->AddEntry(item1.m_key, newStoreId, item1.m_storeOffset);
 						}
 
@@ -593,7 +595,7 @@ namespace jelly
 					{
 						if (!item2.m_tombstone.ShouldPrune(aOldestStoreId))
 						{
-							item2.m_storeOffset = fOut->WriteItem(&item2, m_host->GetCompressionProvider());
+							item2.m_storeOffset = fOut->WriteItem(&item2, this->m_host->GetCompressionProvider());
 							compactionRedirect2->AddEntry(item2.m_key, newStoreId, item2.m_storeOffset);
 						}
 
@@ -607,7 +609,7 @@ namespace jelly
 						{								
 							if (!item1.m_tombstone.ShouldPrune(aOldestStoreId))
 							{
-								item1.m_storeOffset = fOut->WriteItem(&item1, m_host->GetCompressionProvider());
+								item1.m_storeOffset = fOut->WriteItem(&item1, this->m_host->GetCompressionProvider());
 								compactionRedirect1->AddEntry(item1.m_key, newStoreId, item1.m_storeOffset);
 							}
 
@@ -617,7 +619,7 @@ namespace jelly
 						{
 							if (!item2.m_tombstone.ShouldPrune(aOldestStoreId))
 							{
-								item2.m_storeOffset = fOut->WriteItem(&item2, m_host->GetCompressionProvider());
+								item2.m_storeOffset = fOut->WriteItem(&item2, this->m_host->GetCompressionProvider());
 								compactionRedirect2->AddEntry(item2.m_key, newStoreId, item2.m_storeOffset);
 							}
 
@@ -631,12 +633,12 @@ namespace jelly
 							if (item1.m_meta.m_seq > item2.m_meta.m_seq)
 							{
 								if (!item1.m_tombstone.ShouldPrune(aOldestStoreId))
-									offset = fOut->WriteItem(&item1, m_host->GetCompressionProvider());
+									offset = fOut->WriteItem(&item1, this->m_host->GetCompressionProvider());
 							}
 							else
 							{
 								if (!item2.m_tombstone.ShouldPrune(aOldestStoreId))
-									offset = fOut->WriteItem(&item2, m_host->GetCompressionProvider());
+									offset = fOut->WriteItem(&item2, this->m_host->GetCompressionProvider());
 							}
 
 							if(offset != UINT64_MAX)

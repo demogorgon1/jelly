@@ -24,6 +24,8 @@ namespace jelly
 			_STLKeyHasher>
 	{
 	public:
+		typedef Node<_KeyType, LockNodeRequest<_KeyType, _LockType>, LockNodeItem<_KeyType, _LockType>, _STLKeyHasher> NodeBase;
+
 		struct Config
 		{
 			NodeConfig		m_node;
@@ -36,12 +38,12 @@ namespace jelly
 			IHost*												aHost,
 			uint32_t											aNodeId,
 			const Config&										aConfig = Config())
-			: Node(aHost, aNodeId, aConfig.m_node)
+			: NodeBase(aHost, aNodeId, aConfig.m_node)
 			, m_lockNodeConfig(aConfig)
 		{
 			_Restore();
 
-			m_compactionCallback = [&](
+			this->m_compactionCallback = [&](
 				uint32_t										aOldest, 
 				uint32_t										a1, 
 				uint32_t										a2, 
@@ -50,12 +52,12 @@ namespace jelly
 				_PerformCompaction(aOldest, a1, a2, aOut); 
 			};
 
-			m_flushPendingStoreCallback = [&](
+			this->m_flushPendingStoreCallback = [&](
 				uint32_t										/*aStoreId*/,
 				IStoreWriter*									aWriter,
-				PendingStoreType*								/*aPendingStoreType*/)
+				NodeBase::PendingStoreType*						/*aPendingStoreType*/)
 			{
-				for (std::pair<const _KeyType, Item*>& i : m_pendingStore)
+				for (std::pair<const _KeyType, Item*>& i : this->m_pendingStore)
 				{
 					Item* item = i.second;
 
@@ -94,7 +96,7 @@ namespace jelly
 				aRequest->m_result = _Lock(aRequest);
 			};
 
-			AddRequestToQueue(aRequest);			
+			this->AddRequestToQueue(aRequest);
 		}
 
 		// Unlock a key previously locked with the same lock id
@@ -115,7 +117,7 @@ namespace jelly
 				aRequest->m_result = _Unlock(aRequest);
 			};
 
-			AddRequestToQueue(aRequest);			
+			this->AddRequestToQueue(aRequest);
 		}
 
 		// Deletes an unlocked key
@@ -133,7 +135,7 @@ namespace jelly
 				aRequest->m_result = _Delete(aRequest);
 			};
 
-			AddRequestToQueue(aRequest);			
+			this->AddRequestToQueue(aRequest);			
 		}
 
 	private:
@@ -145,10 +147,10 @@ namespace jelly
 			Request*											aRequest)
 		{
 			Item* item;
-			if (!GetItem(aRequest->m_key, item))
+			if (!this->GetItem(aRequest->m_key, item))
 			{
 				// Never seen before, apply lock
-				SetItem(aRequest->m_key, item = new Item(aRequest->m_key, aRequest->m_lock));
+				this->SetItem(aRequest->m_key, item = new Item(aRequest->m_key, aRequest->m_lock));
 			}
 			else
 			{
@@ -185,7 +187,7 @@ namespace jelly
 
 			aRequest->m_hasPendingWrite = true;
 
-			WriteToWAL(item, &aRequest->m_completed, &aRequest->m_result);
+			this->WriteToWAL(item, &aRequest->m_completed, &aRequest->m_result);
 
 			return RESULT_OK;
 		}
@@ -195,7 +197,7 @@ namespace jelly
 			Request*											aRequest)
 		{
 			Item* item;
-			if (!GetItem(aRequest->m_key, item))
+			if (!this->GetItem(aRequest->m_key, item))
 			{
 				// Doesn't exist
 				return RESULT_DOES_NOT_EXIST;
@@ -220,7 +222,7 @@ namespace jelly
 	
 			aRequest->m_hasPendingWrite = true;
 
-			WriteToWAL(item, &aRequest->m_completed, &aRequest->m_result);
+			this->WriteToWAL(item, &aRequest->m_completed, &aRequest->m_result);
 
 			return RESULT_OK;
 		}
@@ -230,7 +232,7 @@ namespace jelly
 			Request*											aRequest)
 		{
 			Item* item;
-			if (!GetItem(aRequest->m_key, item))
+			if (!this->GetItem(aRequest->m_key, item))
 			{
 				// Doesn't exist
 				return RESULT_DOES_NOT_EXIST;
@@ -246,11 +248,11 @@ namespace jelly
 			item->m_meta.m_timeStamp = aRequest->m_timeStamp;
 			item->m_meta.m_seq++;
 
-			item->m_tombstone.Set(GetNextStoreId());
+			item->m_tombstone.Set(this->GetNextStoreId());
 
 			aRequest->m_hasPendingWrite = true;
 
-			WriteToWAL(item, &aRequest->m_completed, &aRequest->m_result);
+			this->WriteToWAL(item, &aRequest->m_completed, &aRequest->m_result);
 
 			return RESULT_OK;
 		}
@@ -261,29 +263,29 @@ namespace jelly
 			std::vector<uint32_t> walIds;
 			std::vector<uint32_t> storeIds;
 
-			m_host->EnumerateFiles(m_nodeId, walIds, storeIds);
+			this->m_host->EnumerateFiles(this->m_nodeId, walIds, storeIds);
 
 			for (uint32_t id : storeIds)
 			{
-				SetNextStoreId(id + 1);
-				std::unique_ptr<IFileStreamReader> f(m_host->ReadStoreStream(m_nodeId, id));
+				this->SetNextStoreId(id + 1);
+				std::unique_ptr<IFileStreamReader> f(this->m_host->ReadStoreStream(this->m_nodeId, id));
 				if (f)
 					_LoadStore(f.get(), id);
 			}
 			
 			for (uint32_t id : walIds)
 			{
-				WAL* wal = AddWAL(id, NULL);
+				WAL* wal = this->AddWAL(id, NULL);
 
-				std::unique_ptr<IFileStreamReader> f(m_host->ReadWALStream(m_nodeId, id));
+				std::unique_ptr<IFileStreamReader> f(this->m_host->ReadWALStream(this->m_nodeId, id));
 				if (f)
 					_LoadWAL(f.get(), wal);
 
 				if (wal->GetRefCount() > 0)
-					m_nextWALId = id + 1;
+					this->m_nextWALId = id + 1;
 			}
 
-			CleanupWALs();
+			this->CleanupWALs();
 		}
 
 		void
@@ -300,7 +302,7 @@ namespace jelly
 				_KeyType key = item.get()->m_key;
 
 				Item* existing;
-				if (GetItem(key, existing))
+				if (this->GetItem(key, existing))
 				{
 					if (item.get()->m_meta.m_seq > existing->m_meta.m_seq)
 					{
@@ -313,7 +315,7 @@ namespace jelly
 						}
 						else
 						{
-							m_pendingStore.insert(std::pair<const _KeyType, Item*>(existing->m_key, existing));
+							this->m_pendingStore.insert(std::pair<const _KeyType, Item*>(existing->m_key, existing));
 						}
 
 						existing->m_pendingWAL = aWAL;
@@ -325,9 +327,9 @@ namespace jelly
 					item->m_pendingWAL = aWAL;
 					item->m_pendingWAL->AddReference();
 
-					m_pendingStore.insert(std::pair<const _KeyType, Item*>(item->m_key, item.get()));
+					this->m_pendingStore.insert(std::pair<const _KeyType, Item*>(item->m_key, item.get()));
 
-					SetItem(key, item.release());
+					this->SetItem(key, item.release());
 				}
 			}
 		}
@@ -346,7 +348,7 @@ namespace jelly
 				_KeyType key = item.get()->m_key;
 
 				Item* existing;
-				if (GetItem(key, existing))
+				if (this->GetItem(key, existing))
 				{
 					if (item.get()->m_meta.m_seq > existing->m_meta.m_seq)
 					{
@@ -355,7 +357,7 @@ namespace jelly
 				}
 				else
 				{
-					SetItem(key, item.release());
+					this->SetItem(key, item.release());
 				}
 			}
 		}
@@ -369,13 +371,13 @@ namespace jelly
 			CompactionResult<_KeyType, _STLKeyHasher>*	aOut)
 		{
 			// Stores are always written in ascendening key order, so merging them is easy
-			std::unique_ptr<IFileStreamReader> f1(m_host->ReadStoreStream(m_nodeId, aStoreId1));
-			std::unique_ptr<IFileStreamReader> f2(m_host->ReadStoreStream(m_nodeId, aStoreId2));
+			std::unique_ptr<IFileStreamReader> f1(this->m_host->ReadStoreStream(this->m_nodeId, aStoreId1));
+			std::unique_ptr<IFileStreamReader> f2(this->m_host->ReadStoreStream(this->m_nodeId, aStoreId2));
 
 			{
-				uint32_t newStoreId = CreateStoreId();
+				uint32_t newStoreId = this->CreateStoreId();
 
-				std::unique_ptr<IStoreWriter> fOut(m_host->CreateStore(m_nodeId, newStoreId));
+				std::unique_ptr<IStoreWriter> fOut(this->m_host->CreateStore(this->m_nodeId, newStoreId));
 
 				JELLY_ASSERT(f1 && f2 && fOut);
 

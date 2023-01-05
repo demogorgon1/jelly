@@ -1,5 +1,7 @@
 // Test compression implementations
 
+#include <string.h>
+
 #include <sstream>
 
 #include <jelly/ErrorUtils.h>

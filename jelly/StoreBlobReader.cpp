@@ -1,4 +1,7 @@
+#include <stddef.h>
 #include <stdint.h>
+
+#include <memory>
 
 #include <jelly/ErrorUtils.h>
 

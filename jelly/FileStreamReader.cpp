@@ -11,7 +11,7 @@ namespace jelly
 
 	struct FileStreamReader::Buffer
 	{
-		static const size_t SIZE = 16 * 1024;
+		static constexpr size_t SIZE = 16 * 1024;
 
 		Buffer()
 			: m_numBytes(0)

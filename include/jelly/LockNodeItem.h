@@ -28,7 +28,8 @@ namespace jelly
 			uint32_t										aSeq,
 			const _LockType&								aLock,			
 			uint32_t										aBlobSeq,
-			uint32_t										aBlobNodeIds)
+			uint32_t										aBlobNodeIds,
+			uint32_t										aTombstoneStoreId = UINT32_MAX)
 			: m_key(aKey)
 			, m_lock(aLock)
 			, m_pendingWAL(NULL)
@@ -36,6 +37,7 @@ namespace jelly
 			m_meta.m_seq = aSeq;
 			m_meta.m_blobSeq = aBlobSeq;
 			m_meta.m_blobNodeIds = aBlobNodeIds;
+			m_tombstone.m_storeId = aTombstoneStoreId;
 		}
 
 		void
@@ -44,6 +46,7 @@ namespace jelly
 		{
 			m_key = aOther->m_key;
 			m_lock = aOther->m_lock;
+			m_tombstone = aOther->m_tombstone;
 			m_meta.m_seq = aOther->m_meta.m_seq;
 			m_meta.m_blobNodeIds = aOther->m_meta.m_blobNodeIds;
 			m_meta.m_blobSeq = aOther->m_meta.m_blobSeq;
@@ -59,7 +62,8 @@ namespace jelly
 				&& m_lock == aOther->m_lock 
 				&& m_meta.m_seq == aOther->m_meta.m_seq
 				&& m_meta.m_blobNodeIds == aOther->m_meta.m_blobNodeIds
-				&& m_meta.m_blobSeq == aOther->m_meta.m_blobSeq;
+				&& m_meta.m_blobSeq == aOther->m_meta.m_blobSeq 
+				&& m_tombstone == aOther->m_tombstone;
 		}
 
 		// IItem implementation
@@ -71,6 +75,7 @@ namespace jelly
 			JELLY_CHECK(m_key.Write(aWriter), "Failed to write lock item key.");
 			JELLY_CHECK(m_lock.Write(aWriter), "Failed to write lock item lock.");
 			JELLY_CHECK(aWriter->Write(&m_meta, sizeof(m_meta)) == sizeof(m_meta), "Failed to write lock item meta data.");
+			JELLY_CHECK(aWriter->Write(&m_tombstone, sizeof(m_tombstone)) == sizeof(m_tombstone), "Failed to write lock item tombstone data.");
 		}
 
 		bool
@@ -87,6 +92,8 @@ namespace jelly
 				return false;
 			if (aReader->Read(&m_meta, sizeof(m_meta)) != sizeof(m_meta))
 				return false;
+			if (aReader->Read(&m_tombstone, sizeof(m_tombstone)) != sizeof(m_tombstone))
+				return false;
 			return true;
 		}
 
@@ -101,6 +108,7 @@ namespace jelly
 		_KeyType							m_key;
 		_LockType							m_lock;	
 		MetaData::Lock						m_meta;
+		MetaData::Tombstone					m_tombstone;
 
 		// Runtime state, not serialized
 		WAL*								m_pendingWAL;

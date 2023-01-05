@@ -32,7 +32,6 @@ namespace jelly
 							const Compression::IProvider*	aItemCompression,
 							ReadType						aReadType = READ_TYPE_ALL) = 0;
 		virtual size_t	GetStoredBlobSize() const = 0;
-
 	};
 
 }

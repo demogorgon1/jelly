@@ -4,6 +4,7 @@
 #include <mutex>
 
 #include "CompactionResult.h"
+#include "CompactionStrategy.h"
 #include "IHost.h"
 #include "IStoreWriter.h"
 #include "NodeConfig.h"
@@ -198,7 +199,8 @@ namespace jelly
 		// This can be called from any thread, but only when compaction operation can be happening
 		// at the same time.
 		void
-		PerformCompaction()
+		PerformCompaction(
+			CompactionStrategy		aCompactionStrategy)
 		{
 			JELLY_ASSERT(m_compactionCallback);
 			JELLY_ASSERT(!m_hasPendingCompaction);
@@ -215,27 +217,48 @@ namespace jelly
 			// of 3 stores to proceed.
 			if(storeInfo.size() >= 3)
 			{
-				const IHost::StoreInfo* small1 = NULL;
-				const IHost::StoreInfo* small2 = NULL;
+				uint32_t oldestStoreId = storeInfo[0].m_id;
 
-				// Find two smallest stores
-				for(size_t i = 0; i < storeInfo.size() - 1; i++)
+				switch(aCompactionStrategy)
 				{
-					const IHost::StoreInfo& t = storeInfo[i];
+				case COMPACTION_STRATEGY_SMALLEST:
+					{
+						const IHost::StoreInfo* small1 = NULL;
+						const IHost::StoreInfo* small2 = NULL;
 
-					if(small1 == NULL)
-						small1 = &t;
-					else if(small2 == NULL)
-						small2 = &t;
-					else if(small1->m_size > t.m_size)
-						small1 = &t;
-					else if(small2->m_size > t.m_size)
-						small2 = &t;
+						// Find two smallest stores
+						for (size_t i = 0; i < storeInfo.size() - 1; i++)
+						{
+							const IHost::StoreInfo& t = storeInfo[i];
+
+							if (small1 == NULL)
+								small1 = &t;
+							else if (small2 == NULL)
+								small2 = &t;
+							else if (small1->m_size > t.m_size)
+								small1 = &t;
+							else if (small2->m_size > t.m_size)
+								small2 = &t;
+						}
+
+						JELLY_ASSERT(small1 != NULL && small2 != NULL);
+
+						m_compactionCallback(oldestStoreId, small1->m_id, small2->m_id, m_pendingCompactionResult.get());
+					}
+					break;
+
+				case COMPACTION_STRATEGY_NEWEST:
+					{
+						const IHost::StoreInfo* newest1 = &storeInfo[storeInfo.size() - 2];
+						const IHost::StoreInfo* newest2 = &storeInfo[storeInfo.size() - 3];
+
+						m_compactionCallback(oldestStoreId, newest1->m_id, newest2->m_id, m_pendingCompactionResult.get());
+					}
+					break;
+
+				default:
+					JELLY_ASSERT(false);
 				}
-
-				JELLY_ASSERT(small1 != NULL && small2 != NULL);
-
-				m_compactionCallback(small1->m_id, small2->m_id, m_pendingCompactionResult.get());
 			}
 		}
 
@@ -271,8 +294,7 @@ namespace jelly
 
 		typedef std::unordered_map<_KeyType, _ItemType*, _STLKeyHasher> TableType;
 		typedef std::map<_KeyType, _ItemType*> PendingStoreType;
-		typedef std::function<void(uint32_t, uint32_t, CompactionResult<_KeyType, _STLKeyHasher>*)> CompactionCallback;
-		typedef std::function<void(uint32_t, uint32_t, CompactionResult<_KeyType, _STLKeyHasher>*)> CompactionCallback;
+		typedef std::function<void(uint32_t, uint32_t, uint32_t, CompactionResult<_KeyType, _STLKeyHasher>*)> CompactionCallback;
 		typedef std::function<void(uint32_t, IStoreWriter*, PendingStoreType*)> FlushPendingStoreCallback;
 		typedef CompactionRedirect<_KeyType, _STLKeyHasher> CompactionRedirectType;
 		typedef std::unordered_map<uint32_t, CompactionRedirectType*> CompactionRedirectMap;
@@ -384,6 +406,13 @@ namespace jelly
 		{
 			std::lock_guard lock(m_nextStoreIdLock);
 			m_nextStoreId = aNextStoreId;
+		}
+
+		uint32_t
+		GetNextStoreId()
+		{
+			std::lock_guard lock(m_nextStoreIdLock);
+			return m_nextStoreId;
 		}
 
 		IHost*														m_host;

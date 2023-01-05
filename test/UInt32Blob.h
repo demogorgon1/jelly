@@ -57,10 +57,11 @@ namespace jelly
 			bool		operator==(const UInt32Blob& aOther) const { JELLY_ASSERT(m_loaded && aOther.m_loaded); return m_value == aOther.m_value; }				
 			bool		IsSet() const { return m_loaded; }
 			void		Reset() { JELLY_ASSERT(m_loaded); m_value = 0; m_loaded = false; }
-			size_t		GetSize() const { return sizeof(uint32_t) + 10 * sizeof(uint32_t); }
+			size_t		GetSize() const { return m_value == UINT32_MAX ? 0 : sizeof(uint32_t) + 10 * sizeof(uint32_t); }
 			size_t		GetStoredSize() const { return GetSize(); }
 			void		Move(UInt32Blob& aOther) { *this = aOther; }
 			void		Copy(const UInt32Blob& aOther) { *this = aOther; }
+			void		Delete() { JELLY_ASSERT(m_loaded); m_value = UINT32_MAX; }
 
 			uint32_t	m_value;
 			bool		m_loaded;

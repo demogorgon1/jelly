@@ -51,9 +51,9 @@ namespace jelly
 		{
 			_Restore();
 
-			m_compactionCallback = [&](uint32_t a1, uint32_t a2, CompactionResult<_KeyType, _STLKeyHasher>* aOut) 
+			m_compactionCallback = [&](uint32_t aOldest, uint32_t a1, uint32_t a2, CompactionResult<_KeyType, _STLKeyHasher>* aOut) 
 			{ 
-				_PerformCompaction(a1, a2, aOut); 
+				_PerformCompaction(aOldest, a1, a2, aOut); 
 			};
 			
 			m_flushPendingStoreCallback = [&](
@@ -101,7 +101,7 @@ namespace jelly
 
 			aRequest->m_callback = [=]()
 			{
-				aRequest->m_result = _Set(aRequest);
+				aRequest->m_result = _Update(aRequest, false); // Update: Set
 			};
 
 			AddRequestToQueue(aRequest);
@@ -130,10 +130,32 @@ namespace jelly
 			AddRequestToQueue(aRequest);
 		}
 
+		// Delete a blob
+		//
+		// In: 
+		//   m_key			Request key
+		//   m_seq			Sequence number of the blob being deleted
+		// Out:
+		//   m_seq			If RESULT_OUTDATED this returns the sequence number of the 
+		//                  currently stored blob
+		void
+		Delete(
+			Request*										aRequest)
+		{
+			JELLY_ASSERT(aRequest->m_result == RESULT_NONE);
+
+			aRequest->m_callback = [=]()
+			{
+				aRequest->m_result = _Update(aRequest, true); // Update: Delete
+			};
+
+			AddRequestToQueue(aRequest);
+		}
+
 		// Testing: get keys of blobs stored in memory
 		void
 		GetResidentKeys(
-			std::vector<_KeyType>&								aOut)
+			std::vector<_KeyType>&							aOut)
 		{
 			for (Item* item = m_residentItems.m_head; item != NULL; item = item->m_next)
 				aOut.push_back(item->m_key);
@@ -155,23 +177,31 @@ namespace jelly
 		List<Item>								m_residentItems;
 
 		Result
-		_Set(
-			Request*										aRequest)
+		_Update(
+			Request*									aRequest,
+			bool										aDelete)
 		{
 			bool obeyResidentBlobSizeLimit = false;
 
 			Item* item;
 			if (!GetItem(aRequest->m_key, item))
 			{
-				m_totalResidentBlobSize += aRequest->m_blob.GetSize();
+				if(aDelete)
+				{
+					return RESULT_DOES_NOT_EXIST;
+				}
+				else
+				{
+					m_totalResidentBlobSize += aRequest->m_blob.GetSize();
 
-				SetItem(aRequest->m_key, item = new Item(aRequest->m_key, aRequest->m_seq));				
+					SetItem(aRequest->m_key, item = new Item(aRequest->m_key, aRequest->m_seq));				
 
-				item->m_blob.Move(aRequest->m_blob);
+					item->m_blob.Move(aRequest->m_blob);
 
-				m_residentItems.Add(item);
+					m_residentItems.Add(item);
 
-				obeyResidentBlobSizeLimit = true;
+					obeyResidentBlobSizeLimit = true;
+				}
 			}
 			else
 			{
@@ -186,25 +216,36 @@ namespace jelly
 				{
 					JELLY_ASSERT(m_totalResidentBlobSize >= item->m_blob.GetSize());
 					m_totalResidentBlobSize -= item->m_blob.GetSize();
-					m_totalResidentBlobSize += aRequest->m_blob.GetSize();
+
+					if(!aDelete)
+						m_totalResidentBlobSize += aRequest->m_blob.GetSize();
 
 					m_residentItems.MoveToTail(item);
 				}
 				else
 				{
-					m_totalResidentBlobSize += aRequest->m_blob.GetSize();
+					if(!aDelete)
+						m_totalResidentBlobSize += aRequest->m_blob.GetSize();
 
 					m_residentItems.Add(item);
 
 					obeyResidentBlobSizeLimit = true;
 				}
 
-				item->m_blob.Move(aRequest->m_blob);
+				if(aDelete)
+					item->m_blob.Delete();
+				else
+					item->m_blob.Move(aRequest->m_blob);
 			}
 
 			item->m_meta.m_seq = aRequest->m_seq;
 			item->m_meta.m_timeStamp = aRequest->m_timeStamp;
 
+			if(aDelete)
+				item->m_tombstone.Set(GetNextStoreId());
+			else
+				item->m_tombstone.Clear();
+				
 			WriteToWAL(item, &aRequest->m_completed, &aRequest->m_result);
 
 			aRequest->m_hasPendingWrite = true;
@@ -221,6 +262,9 @@ namespace jelly
 		{
 			Item* item;
 			if (!GetItem(aRequest->m_key, item))
+				return RESULT_DOES_NOT_EXIST;
+
+			if(item->m_tombstone.IsSet())
 				return RESULT_DOES_NOT_EXIST;
 
 			if(item->m_meta.m_seq < aRequest->m_seq)
@@ -310,8 +354,8 @@ namespace jelly
 					uint64_t	m_timeStamp;
 
 					bool
-						operator<(
-							const TimeStampedKey& aOther) const
+					operator<(
+						const TimeStampedKey& aOther) const
 					{
 						if (m_timeStamp == aOther.m_timeStamp)
 							return m_key < aOther.m_key;
@@ -491,6 +535,7 @@ namespace jelly
 
 		void
 		_PerformCompaction(
+			uint32_t									aOldestStoreId,
 			uint32_t									aStoreId1,
 			uint32_t									aStoreId2,
 			CompactionResult<_KeyType, _STLKeyHasher>*	aOut)
@@ -536,17 +581,23 @@ namespace jelly
 
 					if (hasItem1 && !hasItem2)
 					{
-						item1.m_storeOffset = fOut->WriteItem(&item1, m_host->GetCompressionProvider());
-						hasItem1 = false;
+						if(!item1.m_tombstone.ShouldPrune(aOldestStoreId))
+						{
+							item1.m_storeOffset = fOut->WriteItem(&item1, m_host->GetCompressionProvider());					
+							compactionRedirect1->AddEntry(item1.m_key, newStoreId, item1.m_storeOffset);
+						}
 
-						compactionRedirect1->AddEntry(item1.m_key, newStoreId, item1.m_storeOffset);
+						hasItem1 = false;
 					}
 					else if (!hasItem1 && hasItem2)
 					{
-						item2.m_storeOffset = fOut->WriteItem(&item2, m_host->GetCompressionProvider());
-						hasItem2 = false;
+						if (!item2.m_tombstone.ShouldPrune(aOldestStoreId))
+						{
+							item2.m_storeOffset = fOut->WriteItem(&item2, m_host->GetCompressionProvider());
+							compactionRedirect2->AddEntry(item2.m_key, newStoreId, item2.m_storeOffset);
+						}
 
-						compactionRedirect2->AddEntry(item2.m_key, newStoreId, item2.m_storeOffset);
+						hasItem2 = false;
 					}
 					else
 					{
@@ -554,30 +605,45 @@ namespace jelly
 
 						if (item1.m_key < item2.m_key)
 						{								
-							item1.m_storeOffset = fOut->WriteItem(&item1, m_host->GetCompressionProvider());
-							hasItem1 = false;
+							if (!item1.m_tombstone.ShouldPrune(aOldestStoreId))
+							{
+								item1.m_storeOffset = fOut->WriteItem(&item1, m_host->GetCompressionProvider());
+								compactionRedirect1->AddEntry(item1.m_key, newStoreId, item1.m_storeOffset);
+							}
 
-							compactionRedirect1->AddEntry(item1.m_key, newStoreId, item1.m_storeOffset);
+							hasItem1 = false;
 						}
 						else if (item2.m_key < item1.m_key)
 						{
-							item2.m_storeOffset = fOut->WriteItem(&item2, m_host->GetCompressionProvider());
-							hasItem2 = false;
+							if (!item2.m_tombstone.ShouldPrune(aOldestStoreId))
+							{
+								item2.m_storeOffset = fOut->WriteItem(&item2, m_host->GetCompressionProvider());
+								compactionRedirect2->AddEntry(item2.m_key, newStoreId, item2.m_storeOffset);
+							}
 
-							compactionRedirect2->AddEntry(item2.m_key, newStoreId, item2.m_storeOffset);
+							hasItem2 = false;
 						}
 						else
 						{
 							// Items are the same - keep the one with the highest sequence number
-							size_t offset;
+							size_t offset = UINT64_MAX;
 
 							if (item1.m_meta.m_seq > item2.m_meta.m_seq)
-								offset = fOut->WriteItem(&item1, m_host->GetCompressionProvider());
+							{
+								if (!item1.m_tombstone.ShouldPrune(aOldestStoreId))
+									offset = fOut->WriteItem(&item1, m_host->GetCompressionProvider());
+							}
 							else
-								offset = fOut->WriteItem(&item2, m_host->GetCompressionProvider());
+							{
+								if (!item2.m_tombstone.ShouldPrune(aOldestStoreId))
+									offset = fOut->WriteItem(&item2, m_host->GetCompressionProvider());
+							}
 
-							compactionRedirect1->AddEntry(item1.m_key, newStoreId, offset);
-							compactionRedirect2->AddEntry(item2.m_key, newStoreId, offset);
+							if(offset != UINT64_MAX)
+							{
+								compactionRedirect1->AddEntry(item1.m_key, newStoreId, offset);
+								compactionRedirect2->AddEntry(item2.m_key, newStoreId, offset);
+							}
 
 							hasItem1 = false;
 							hasItem2 = false;

@@ -41,12 +41,19 @@ namespace jelly
 		{
 			_Restore();
 
-			m_compactionCallback = [&](uint32_t a1, uint32_t a2, CompactionResult<_KeyType, _STLKeyHasher>* aOut) { _PerformCompaction(a1, a2, aOut); };
+			m_compactionCallback = [&](
+				uint32_t										aOldest, 
+				uint32_t										a1, 
+				uint32_t										a2, 
+				CompactionResult<_KeyType, _STLKeyHasher>*		aOut) 
+			{ 
+				_PerformCompaction(aOldest, a1, a2, aOut); 
+			};
 
 			m_flushPendingStoreCallback = [&](
-				uint32_t			/*aStoreId*/,
-				IStoreWriter*		aWriter,
-				PendingStoreType*	/*aPendingStoreType*/)
+				uint32_t										/*aStoreId*/,
+				IStoreWriter*									aWriter,
+				PendingStoreType*								/*aPendingStoreType*/)
 			{
 				for (std::pair<const _KeyType, Item*>& i : m_pendingStore)
 				{
@@ -111,6 +118,24 @@ namespace jelly
 			AddRequestToQueue(aRequest);			
 		}
 
+		// Deletes an unlocked key
+		//
+		// In:
+		//   m_key			Request key
+		void
+		Delete(
+			Request*											aRequest)
+		{
+			JELLY_ASSERT(aRequest->m_result == RESULT_NONE);
+
+			aRequest->m_callback = [=]()
+			{
+				aRequest->m_result = _Delete(aRequest);
+			};
+
+			AddRequestToQueue(aRequest);			
+		}
+
 	private:
 		
 		Config			m_lockNodeConfig;
@@ -156,6 +181,8 @@ namespace jelly
 			item->m_meta.m_timeStamp = aRequest->m_timeStamp;
 			item->m_meta.m_seq++;
 
+			item->m_tombstone.Clear();
+
 			aRequest->m_hasPendingWrite = true;
 
 			WriteToWAL(item, &aRequest->m_completed, &aRequest->m_result);
@@ -191,6 +218,36 @@ namespace jelly
 			item->m_meta.m_timeStamp = aRequest->m_timeStamp;
 			item->m_meta.m_seq++;
 	
+			aRequest->m_hasPendingWrite = true;
+
+			WriteToWAL(item, &aRequest->m_completed, &aRequest->m_result);
+
+			return RESULT_OK;
+		}
+
+		Result
+		_Delete(
+			Request*											aRequest)
+		{
+			Item* item;
+			if (!GetItem(aRequest->m_key, item))
+			{
+				// Doesn't exist
+				return RESULT_DOES_NOT_EXIST;
+			}
+			else if (item->m_lock.IsSet())
+			{
+				// It is locked, fail
+				return RESULT_ALREADY_LOCKED;
+			}
+
+			item->m_meta.m_blobSeq = UINT32_MAX;
+			item->m_meta.m_blobNodeIds = UINT32_MAX;
+			item->m_meta.m_timeStamp = aRequest->m_timeStamp;
+			item->m_meta.m_seq++;
+
+			item->m_tombstone.Set(GetNextStoreId());
+
 			aRequest->m_hasPendingWrite = true;
 
 			WriteToWAL(item, &aRequest->m_completed, &aRequest->m_result);
@@ -306,6 +363,7 @@ namespace jelly
 
 		void
 		_PerformCompaction(
+			uint32_t									aOldestStoreId,
 			uint32_t									aStoreId1,
 			uint32_t									aStoreId2,
 			CompactionResult<_KeyType, _STLKeyHasher>*	aOut)
@@ -340,12 +398,16 @@ namespace jelly
 
 					if (hasItem1 && !hasItem2)
 					{
-						fOut->WriteItem(&item1, NULL);
+						if(!item1.m_tombstone.ShouldPrune(aOldestStoreId))
+							fOut->WriteItem(&item1, NULL);
+
 						hasItem1 = false;
 					}
 					else if (!hasItem1 && hasItem2)
 					{
-						fOut->WriteItem(&item2, NULL);
+						if (!item2.m_tombstone.ShouldPrune(aOldestStoreId))
+							fOut->WriteItem(&item2, NULL);
+
 						hasItem2 = false;
 					}
 					else
@@ -353,22 +415,32 @@ namespace jelly
 						JELLY_ASSERT(hasItem1 && hasItem2);
 
 						if (item1.m_key < item2.m_key)
-						{								
-							fOut->WriteItem(&item1, NULL);
+						{	
+							if (!item1.m_tombstone.ShouldPrune(aOldestStoreId))
+								fOut->WriteItem(&item1, NULL);
+
 							hasItem1 = false;
 						}
 						else if (item2.m_key < item1.m_key)
 						{
-							fOut->WriteItem(&item2, NULL);
+							if (!item2.m_tombstone.ShouldPrune(aOldestStoreId))
+								fOut->WriteItem(&item2, NULL);
+
 							hasItem2 = false;
 						}
 						else
 						{
 							// Items are the same - keep the one with the highest sequence number
 							if (item1.m_meta.m_seq > item2.m_meta.m_seq)
-								fOut->WriteItem(&item1, NULL);
+							{
+								if (!item1.m_tombstone.ShouldPrune(aOldestStoreId))
+									fOut->WriteItem(&item1, NULL);
+							}
 							else
-								fOut->WriteItem(&item2, NULL);
+							{
+								if (!item2.m_tombstone.ShouldPrune(aOldestStoreId))
+									fOut->WriteItem(&item2, NULL);
+							}
 
 							hasItem1 = false;
 							hasItem2 = false;

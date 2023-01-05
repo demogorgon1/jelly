@@ -53,6 +53,7 @@ namespace jelly
 			m_blob.Copy(aOther->m_blob);
 			m_meta.m_seq = aOther->m_meta.m_seq;
 			m_meta.m_timeStamp = aOther->m_meta.m_timeStamp;
+			m_tombstone = aOther->m_tombstone;
 			m_storeId = aOther->m_storeId;
 			m_storeOffset = aOther->m_storeOffset;
 		}
@@ -62,7 +63,7 @@ namespace jelly
 			const BlobNodeItem*								aOther) const
 		{	
 			// Note: no comparison of timestamp
-			return m_key == aOther->m_key && m_blob == aOther->m_blob && m_meta.m_seq == aOther->m_meta.m_seq;
+			return m_key == aOther->m_key && m_blob == aOther->m_blob && m_meta.m_seq == aOther->m_meta.m_seq && m_tombstone == aOther->m_tombstone;
 		}
 
 		// IItem implementation
@@ -75,6 +76,7 @@ namespace jelly
 			JELLY_CHECK(m_blob.Write(aWriter, aItemCompression), "Failed to write blob item blob.");
 			JELLY_CHECK(m_key.Write(aWriter), "Failed to write blob item key.");
 			JELLY_CHECK(aWriter->Write(&m_meta, sizeof(m_meta)) == sizeof(m_meta), "Failed to write blob item meta data.");
+			JELLY_CHECK(aWriter->Write(&m_tombstone, sizeof(m_tombstone)) == sizeof(m_tombstone), "Failed to write blob item tombstone data.");
 		}
 
 		bool
@@ -94,6 +96,8 @@ namespace jelly
 					return false;
 				if (aReader->Read(&m_meta, sizeof(m_meta)) != sizeof(m_meta))
 					return false;
+				if (aReader->Read(&m_tombstone, sizeof(m_tombstone)) != sizeof(m_tombstone))
+					return false;
 			}
 
 			return true;
@@ -109,6 +113,7 @@ namespace jelly
 		_KeyType							m_key;
 		_BlobType							m_blob;	
 		MetaData::Blob						m_meta;
+		MetaData::Tombstone					m_tombstone;
 	
 		// Remaining members are part of runtime state, not serialized
 		WAL*								m_pendingWAL;

@@ -18,6 +18,7 @@
 #include "Config.h"
 #include "NodeTest.h"
 #include "TestDefaultHost.h"
+#include "UInt32Blob.h"
 
 namespace jelly
 {
@@ -28,81 +29,15 @@ namespace jelly
 		namespace
 		{
 
-			struct UInt32Blob
-			{
-				UInt32Blob(uint32_t aValue = 0) : m_value(aValue), m_loaded(aValue != 0) {}
-
-				bool		
-				Write(
-					IWriter*						aWriter,
-					const Compression::IProvider*	/*aCompression*/) const
-				{ 
-					JELLY_ASSERT(m_loaded); 
-					
-					if(aWriter->Write(&m_value, sizeof(m_value)) != sizeof(m_value))
-						return false;
-
-					uint32_t fluff[10];
-					for (uint32_t i = 0; i < 10; i++)
-						fluff[i] = m_value * i;
-
-					if(aWriter->Write(fluff, sizeof(fluff)) != sizeof(fluff))
-						return false;
-
-					return true;
-				}
-				
-				bool		
-				Read(
-					IReader*						aReader,
-					const Compression::IProvider*	/*aCompression*/) 
-				{ 
-					m_loaded = true;
-
-					if(aReader->Read(&m_value, sizeof(m_value)) != sizeof(m_value))
-						return false;
-
-					uint32_t fluff[10];
-					if (aReader->Read(fluff, sizeof(fluff)) != sizeof(fluff))
-						return false;
-
-					for (uint32_t i = 0; i < 10; i++)
-						JELLY_ASSERT(fluff[i] == m_value * i);
-
-					return true;
-				}
-
-				bool		operator==(const UInt32Blob& aOther) const { JELLY_ASSERT(m_loaded && aOther.m_loaded); return m_value == aOther.m_value; }				
-				bool		IsSet() const { return m_loaded; }
-				void		Reset() { JELLY_ASSERT(m_loaded); m_value = 0; m_loaded = false; }
-				size_t		GetSize() const { return sizeof(uint32_t) + 10 * sizeof(uint32_t); }
-				size_t		GetStoredSize() const { return GetSize(); }
-				void		Move(UInt32Blob& aOther) { *this = aOther; }
-				void		Copy(const UInt32Blob& aOther) { *this = aOther; }
-
-				uint32_t	m_value;
-				bool		m_loaded;
-			};
-
-			struct UInt32KeyHasher
-			{
-				std::size_t 
-				operator()(
-					const UIntKey<uint32_t>& aKey) const 
-				{ 
-					return std::hash<uint32_t>{}(aKey.m_value);
-				}
-			};
-
 			typedef BlobNode<
 				UIntKey<uint32_t>,
 				UInt32Blob,
-				UInt32KeyHasher> BlobNodeType;
+				UIntKey<uint32_t>::Hasher> BlobNodeType;
 
 			typedef LockNode<
 				UIntKey<uint32_t>,
 				UIntLock<uint32_t>,
-				UInt32KeyHasher> LockNodeType;
+				UIntKey<uint32_t>::Hasher> LockNodeType;
 
 			template <typename _ItemType>
 			void
@@ -653,13 +588,13 @@ namespace jelly
 							if (seconds % 7 == 0)
 							{
 								printf("lock: perform compaction...\n");
-								lockNode.PerformCompaction();
+								lockNode.PerformCompaction(COMPACTION_STRATEGY_SMALLEST);
 								lockNode.ApplyCompactionResult();
 							}
 							if (seconds % 8 == 0)
 							{
 								printf("blob: perform compaction...\n");
-								blobNode.PerformCompaction();
+								blobNode.PerformCompaction(COMPACTION_STRATEGY_SMALLEST);
 								blobNode.ApplyCompactionResult();
 							}
 
@@ -851,7 +786,7 @@ namespace jelly
 
 					BlobNodeType blobNode(aHost, 0, config);
 					_VerifyResidentKeys(&blobNode, { });
-					blobNode.PerformCompaction();
+					blobNode.PerformCompaction(COMPACTION_STRATEGY_SMALLEST);
 					blobNode.ApplyCompactionResult();
 					_VerifyResidentKeys(&blobNode, { });
 
@@ -1126,6 +1061,233 @@ namespace jelly
 			}
 
 			void
+			_TestLockNodeDelete(
+				DefaultHost*		aHost)
+			{
+				aHost->DeleteAllFiles(UINT32_MAX);
+
+				{
+					LockNodeType lockNode(aHost, 0);
+
+					// Lock
+					{
+						LockNodeType::Request req;
+						req.m_key = 1;
+						req.m_lock = 100;
+						lockNode.Lock(&req);
+						JELLY_ASSERT(lockNode.ProcessRequests() == 1);
+						lockNode.FlushPendingWAL(0);
+						JELLY_ASSERT(req.m_completed.Poll());
+						JELLY_ASSERT(req.m_result == RESULT_OK);
+					}
+
+					// Try to delete locked key, should fail
+					{
+						LockNodeType::Request req;
+						req.m_key = 1;
+						lockNode.Delete(&req);
+						JELLY_ASSERT(lockNode.ProcessRequests() == 1);
+						lockNode.FlushPendingWAL(0);
+						JELLY_ASSERT(req.m_completed.Poll());
+						JELLY_ASSERT(req.m_result == RESULT_ALREADY_LOCKED);
+					}
+
+					// Unlock
+					{
+						LockNodeType::Request req;
+						req.m_key = 1;
+						req.m_lock = 100;
+						req.m_blobNodeIds = 0;
+						req.m_blobSeq = 1;
+						lockNode.Unlock(&req);
+						JELLY_ASSERT(lockNode.ProcessRequests() == 1);
+						lockNode.FlushPendingWAL(0);
+						JELLY_ASSERT(req.m_completed.Poll());
+						JELLY_ASSERT(req.m_result == RESULT_OK);
+					}
+
+					// Delete
+					{
+						LockNodeType::Request req;
+						req.m_key = 1;
+						lockNode.Delete(&req);
+						JELLY_ASSERT(lockNode.ProcessRequests() == 1);
+						lockNode.FlushPendingWAL(0);
+						JELLY_ASSERT(req.m_completed.Poll());
+						JELLY_ASSERT(req.m_result == RESULT_OK);
+					}
+				}
+
+				// Only thing on disk should be a WAL with 3 entries - lock, unlock, and finally delete (tombstone'd)
+				_VerifyWAL<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 0, 
+				{ 
+					{ 1, 1, 100, UINT32_MAX, UINT32_MAX, UINT32_MAX },
+					{ 1, 2, 0, 1, 0, UINT32_MAX },
+					{ 1, 3, 0, UINT32_MAX, UINT32_MAX, 0 } // Blod seq/node ids reset, tombstone store id set to 0
+				});
+
+				// Restart
+
+				{
+					LockNodeType lockNode(aHost, 0);
+
+					// Flush pending store and cleanup WALs - this should result in having 1 store with just a tombstone
+					lockNode.FlushPendingStore();
+
+					// Lock something else so we can create three other stores
+					for(uint32_t i = 0; i < 3; i++)
+					{
+						LockNodeType::Request req;
+						req.m_key = 2 + i;
+						req.m_lock = 100;
+						lockNode.Lock(&req);
+						JELLY_ASSERT(lockNode.ProcessRequests() == 1);
+						lockNode.FlushPendingWAL(0);
+						JELLY_ASSERT(req.m_completed.Poll());
+						JELLY_ASSERT(req.m_result == RESULT_OK);
+						lockNode.FlushPendingStore();
+					}
+				}
+
+				// Now we should have 4 stores - id 0 with a tombstone, id 1 with the other lock, id 2 with another lock, id 3 with last lock
+				_VerifyStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 0, { { 1, 3, 0, UINT32_MAX, UINT32_MAX, 0 } }); // key 1 tombstone
+				_VerifyStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 1, { { 2, 1, 100, UINT32_MAX, UINT32_MAX, UINT32_MAX } }); // key 2 lock
+				_VerifyStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 2, { { 3, 1, 100, UINT32_MAX, UINT32_MAX, UINT32_MAX } }); // key 3 lock
+				_VerifyStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 3, { { 4, 1, 100, UINT32_MAX, UINT32_MAX, UINT32_MAX } }); // key 4 lock
+
+				// Restart
+
+				{
+					LockNodeType lockNode(aHost, 0);
+
+					// Do a compaction
+					lockNode.PerformCompaction(COMPACTION_STRATEGY_SMALLEST);
+					lockNode.ApplyCompactionResult();
+				}
+
+				// Now we should have 1 store less
+				_VerifyStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 2, { { 3, 1, 100, UINT32_MAX, UINT32_MAX, UINT32_MAX } }); // key 3 lock
+				_VerifyStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 3, { { 4, 1, 100, UINT32_MAX, UINT32_MAX, UINT32_MAX } }); // key 4 lock
+				_VerifyStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 4,
+				{ 
+					{ 1, 3, 0, UINT32_MAX, UINT32_MAX, 0 }, // key 1 tombstone
+					{ 2, 1, 100, UINT32_MAX, UINT32_MAX, UINT32_MAX }, // key 2 lock
+				}); 
+
+				// Restart
+
+				{
+					LockNodeType lockNode(aHost, 0);
+
+					// Make another store, because we can't compact the latest store
+					{
+						LockNodeType::Request req;
+						req.m_key = 5;
+						req.m_lock = 100;
+						lockNode.Lock(&req);
+						JELLY_ASSERT(lockNode.ProcessRequests() == 1);
+						lockNode.FlushPendingWAL(0);
+						JELLY_ASSERT(req.m_completed.Poll());
+						JELLY_ASSERT(req.m_result == RESULT_OK);
+						lockNode.FlushPendingStore();
+					}
+
+					// Do a compaction - but this time use "newest" strategy, so we get the one that include a tombstone
+					lockNode.PerformCompaction(COMPACTION_STRATEGY_NEWEST);
+					lockNode.ApplyCompactionResult();
+				}
+
+				// Tombstone should be gone now
+				_VerifyStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 2, { { 3, 1, 100, UINT32_MAX, UINT32_MAX, UINT32_MAX } }); // key 3 lock
+				_VerifyStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 5, { { 5, 1, 100, UINT32_MAX, UINT32_MAX, UINT32_MAX } }); // key 5 lock
+				_VerifyStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 6,
+				{ 
+					{ 2, 1, 100, UINT32_MAX, UINT32_MAX, UINT32_MAX }, // key 2 lock
+					{ 4, 1, 100, UINT32_MAX, UINT32_MAX, UINT32_MAX } // key 4 lock
+				}); 
+			}
+
+			void
+			_TestBlobNodeDelete(
+				DefaultHost*		aHost)
+			{
+				aHost->DeleteAllFiles(UINT32_MAX);
+
+				// Not gonna test tombstone removal through compaction as it works exactly the same way as for lock nodes
+
+				{
+					BlobNodeType blobNode(aHost, 0);
+
+					// Set
+					{
+						BlobNodeType::Request req;
+						req.m_key = 1;
+						req.m_seq = 1;
+						req.m_blob = 123;
+						blobNode.Set(&req);
+						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
+						blobNode.FlushPendingWAL(0);
+						JELLY_ASSERT(req.m_completed.Poll());
+						JELLY_ASSERT(req.m_result == RESULT_OK);
+					}
+
+					_VerifyResidentKeys<BlobNodeType>(&blobNode, { 1 });
+
+					// Delete
+					{
+						BlobNodeType::Request req;
+						req.m_key = 1;
+						req.m_seq = 2;
+						blobNode.Delete(&req);
+						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
+						blobNode.FlushPendingWAL(0);
+						JELLY_ASSERT(req.m_completed.Poll());
+						JELLY_ASSERT(req.m_result == RESULT_OK);
+					}
+
+					_VerifyResidentKeys<BlobNodeType>(&blobNode, { 1 }); // Tombstones are counted as being resident, just 0 size
+
+					// Get - should fail
+					{
+						BlobNodeType::Request req;
+						req.m_key = 1;
+						blobNode.Get(&req);
+						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
+						blobNode.FlushPendingWAL(0);
+						JELLY_ASSERT(req.m_completed.Poll());
+						JELLY_ASSERT(req.m_result == RESULT_DOES_NOT_EXIST);
+					}
+
+					// Set again, should override the delete
+					{
+						BlobNodeType::Request req;
+						req.m_key = 1;
+						req.m_seq = 3;
+						req.m_blob = 1234;
+						blobNode.Set(&req);
+						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
+						blobNode.FlushPendingWAL(0);
+						JELLY_ASSERT(req.m_completed.Poll());
+						JELLY_ASSERT(req.m_result == RESULT_OK);
+					}
+
+					_VerifyResidentKeys<BlobNodeType>(&blobNode, { 1 });
+
+					// Get - now it should work
+					{
+						BlobNodeType::Request req;
+						req.m_key = 1;
+						blobNode.Get(&req);
+						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
+						blobNode.FlushPendingWAL(0);
+						JELLY_ASSERT(req.m_completed.Poll());
+						JELLY_ASSERT(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.m_blob == 1234);
+					}
+				}
+			}
+
+			void
 			_TestBlobNodeMemoryLimit(
 				DefaultHost*		aHost)
 			{
@@ -1354,6 +1516,12 @@ namespace jelly
 
 				// Test basic operation of LockNode
 				_TestLockNode(&host);
+
+				// Test delete operation of LockNode
+				_TestLockNodeDelete(&host);
+
+				// Test delete operation of BlobNode
+				_TestBlobNodeDelete(&host);
 
 				// Test canceling requests (exactly same code for lock and blob nodes)
 				_TestCancel(&host); 

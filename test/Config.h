@@ -16,6 +16,7 @@ namespace jelly
 			Config()
 				: m_hammerTest(false)
 				, m_stepTestSeed(0)
+				, m_stepTestRandom(false)
 			{
 
 			}
@@ -39,6 +40,10 @@ namespace jelly
 						m_stepTestSeed = (uint32_t)atoi(aArgs[i + 1]);
 						i++;
 					}
+					else if (strcmp(arg, "-steptestrandom") == 0)
+					{
+						m_stepTestRandom = true;
+					}
 					else
 					{
 						JELLY_FATAL_ERROR("Syntax error.");
@@ -51,6 +56,7 @@ namespace jelly
 
 			// StepTest
 			uint32_t	m_stepTestSeed;
+			bool		m_stepTestRandom;
 		};
 
 	}

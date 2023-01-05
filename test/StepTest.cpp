@@ -138,9 +138,11 @@ namespace jelly
 			Run(
 				const Config*		aConfig)
 			{	
-				uint32_t stepTestSeed = (uint32_t)time(NULL);
-
-				if(aConfig->m_stepTestSeed != 0)
+				uint32_t stepTestSeed = 123456; 
+				
+				if(aConfig->m_stepTestRandom)
+					stepTestSeed = (uint32_t)time(NULL);
+				else if(aConfig->m_stepTestSeed != 0)
 					stepTestSeed = aConfig->m_stepTestSeed;
 
 				std::mt19937 seedGenerator(stepTestSeed);

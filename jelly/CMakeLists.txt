@@ -12,7 +12,7 @@ add_library(jelly STATIC ${C_FILES} ${H_FILES})
 
 add_library(jelly::jelly ALIAS jelly)
 
-target_compile_features(jelly PRIVATE cxx_std_17)
+target_compile_features(jelly PRIVATE cxx_std_20)
 
 if(JELLY_ZSTD)
 	target_link_libraries(jelly PUBLIC ${ZSTD_LIBRARIES})

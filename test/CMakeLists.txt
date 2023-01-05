@@ -5,7 +5,7 @@ file(GLOB H_FILES "*.h")
 
 add_executable(jelly-test ${C_FILES} ${H_FILES})
 	
-target_compile_features(jelly-test PRIVATE cxx_std_17)
+target_compile_features(jelly-test PRIVATE cxx_std_20)
 target_link_libraries(jelly-test jelly::jelly)
 
 add_test(jelly-test jelly-test)

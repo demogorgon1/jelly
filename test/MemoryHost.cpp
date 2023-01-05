@@ -361,6 +361,8 @@ namespace jelly
 					const IItem*					aItem,
 					const Compression::IProvider*	aItemCompression)
 				{
+					JELLY_ASSERT(m_bufferList->m_writeGuard);
+
 					size_t offset = m_bufferList->m_totalBytes;
 
 					BufferListWriter writer(m_bufferList);

@@ -184,7 +184,7 @@ namespace jelly
 				JELLY_ASSERT(false);
 			}
 
-			m_internal->m_fd = open(aPath, flags, mode)
+			m_internal->m_fd = open(aPath, flags, mode);
 
 			if(m_internal->m_fd != -1 && m_mode != MODE_WRITE_STREAM)
 			{
@@ -248,7 +248,7 @@ namespace jelly
 			#elif defined(JELLY_POSIX_FILE_IO)	
 				JELLY_ASSERT(m_internal->m_fd != -1);
 
-				off_t result = lseek(m_internal->m_handle, (off_t)aOffset, SEEK_SET);
+				off_t result = lseek(m_internal->m_fd, (off_t)aOffset, SEEK_SET);
 				JELLY_CHECK(result == (off_t)aOffset, "lseek() failed (offset %llu, path %s)", aOffset, m_path.c_str());
 			#endif
 		}
@@ -324,7 +324,7 @@ namespace jelly
 			JELLY_ASSERT(m_internal->m_fd != -1);
 
 			{
-				off_t result = lseek(m_internal->m_handle, (off_t)aOffset, SEEK_SET);
+				off_t result = lseek(m_internal->m_fd, (off_t)aOffset, SEEK_SET);
 				JELLY_CHECK(result == (off_t)aOffset, "lseek() failed (offset %llu, path %s)", aOffset, m_path.c_str());
 			}
 

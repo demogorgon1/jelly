@@ -101,7 +101,7 @@ namespace jelly
 			JELLY_ASSERT(aRequest->m_result == RESULT_NONE);
 			JELLY_ASSERT(aRequest->m_blob.IsSet());
 
-			aRequest->m_callback = [=]()
+			aRequest->m_callback = [=, this]()
 			{
 				aRequest->m_result = _Update(aRequest, false); // Update: Set
 			};
@@ -124,7 +124,7 @@ namespace jelly
 		{
 			JELLY_ASSERT(aRequest->m_result == RESULT_NONE);
 
-			aRequest->m_callback = [=]()
+			aRequest->m_callback = [=, this]()
 			{
 				aRequest->m_result = _Get(aRequest);
 			};
@@ -146,7 +146,7 @@ namespace jelly
 		{
 			JELLY_ASSERT(aRequest->m_result == RESULT_NONE);
 
-			aRequest->m_callback = [=]()
+			aRequest->m_callback = [=, this]()
 			{
 				aRequest->m_result = _Update(aRequest, true); // Update: Delete
 			};

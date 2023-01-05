@@ -91,7 +91,7 @@ namespace jelly
 		{
 			JELLY_ASSERT(aRequest->m_result == RESULT_NONE);
 
-			aRequest->m_callback = [=]()
+			aRequest->m_callback = [=, this]()
 			{
 				aRequest->m_result = _Lock(aRequest);
 			};
@@ -112,7 +112,7 @@ namespace jelly
 		{
 			JELLY_ASSERT(aRequest->m_result == RESULT_NONE);
 
-			aRequest->m_callback = [=]()
+			aRequest->m_callback = [=, this]()
 			{
 				aRequest->m_result = _Unlock(aRequest);
 			};
@@ -130,7 +130,7 @@ namespace jelly
 		{
 			JELLY_ASSERT(aRequest->m_result == RESULT_NONE);
 
-			aRequest->m_callback = [=]()
+			aRequest->m_callback = [=, this]()
 			{
 				aRequest->m_result = _Delete(aRequest);
 			};

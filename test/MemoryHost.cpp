@@ -1,5 +1,3 @@
-#pragma once
-
 #include <jelly/CompletionEvent.h>
 #include <jelly/ErrorUtils.h>
 #include <jelly/IFileStreamReader.h>

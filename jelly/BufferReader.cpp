@@ -1,5 +1,7 @@
 #include <algorithm>
 
+#include <string.h>
+
 #include "BufferReader.h"
 
 namespace jelly

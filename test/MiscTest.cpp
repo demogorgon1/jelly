@@ -1,3 +1,4 @@
+#include <limits>
 #include <type_traits>
 
 #include <jelly/VarSizeUInt.h>
@@ -25,9 +26,6 @@ namespace jelly
 
 				const uint8_t* p = (const uint8_t*)encoder.GetBuffer();
 				size_t i = 0;
-
-				for(size_t j = 0; j < encoder.GetBufferSize(); j++)
-					printf("%02X ", p[j]);
 
 				_T decoded = VarSizeUInt::Decode<_T>([&]() -> uint8_t 
 				{ 

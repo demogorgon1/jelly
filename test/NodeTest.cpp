@@ -560,7 +560,7 @@ namespace jelly
 							totalGets += (uint32_t)gets;
 
 							if(validKeySet)
-								printf(", keys: %llu\n", validKeySet->GetCount());
+								printf(", keys: %u\n", (uint32_t)validKeySet->GetCount());
 							else
 								printf("\n");
 

@@ -29,15 +29,10 @@ namespace jelly
 		namespace
 		{
 
-			//typedef BlobNode<
-			//	UIntKey<uint32_t>,
-			//	UInt32Blob,
-			//	UIntKey<uint32_t>::Hasher> BlobNodeType;
-
-			using BlobNodeType = typename BlobNode<
+			typedef BlobNode<
 				UIntKey<uint32_t>,
 				UInt32Blob,
-				UIntKey<uint32_t>::Hasher>;
+				UIntKey<uint32_t>::Hasher> BlobNodeType;
 
 			typedef LockNode<
 				UIntKey<uint32_t>,

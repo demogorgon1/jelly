@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <string.h>
 
 #include <jelly/Compression.h>
 #include <jelly/ErrorUtils.h>

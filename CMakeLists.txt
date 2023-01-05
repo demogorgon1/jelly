@@ -39,7 +39,7 @@ if (MSVC)
 	add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
 else()
     # lots of warnings and all warnings as errors
-    add_compile_options(-Wall -Wextra -pedantic -Werror -Wno-unused-function)
+    add_compile_options(-Wall -Wextra -pedantic -Werror -Wno-unused-function -Wno-reorder)
 endif()
 
 add_subdirectory(jelly)

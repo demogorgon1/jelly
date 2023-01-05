@@ -39,7 +39,7 @@ namespace jelly
 			const _KeyType&			aKey,
 			Entry&					aOut) const
 		{
-			Map::const_iterator i = m_map.find(aKey);
+			typename Map::const_iterator i = m_map.find(aKey);
 			if(i == m_map.end())
 				return false;
 

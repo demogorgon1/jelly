@@ -290,7 +290,10 @@ namespace jelly
 						JELLY_ASSERT(req.m_result == RESULT_OK);
 						blobSeq = req.m_blobSeq;
 						if(req.m_blobNodeIds != UINT32_MAX)
+						{
 							blobNodeId = req.m_blobNodeIds & 0x000000FF;
+							JELLY_ASSERT(blobNodeId == 1);
+						}
 
 						(*aLockCounter)++;
 					}
@@ -319,7 +322,7 @@ namespace jelly
 						req.m_key = key;
 						req.m_lock = aLockId;
 						req.m_blobSeq = blobSeq;
-						req.m_blobNodeIds = { 1 };
+						req.m_blobNodeIds = 1;
 						aLockNode->Unlock(&req);
 						while (!req.m_completed.Poll())
 							std::this_thread::yield();
@@ -551,7 +554,7 @@ namespace jelly
 							int locks = lockCounter.exchange(0);
 							int sets = setCounter.exchange(0);
 							int gets = getCounter.exchange(0);
-							printf("%d locks, %d sets, %d gets, total resident blob size: %llu", locks, sets, gets, blobNode.GetTotalResidentBlobSize());
+							printf("%d locks, %d sets, %d gets, total resident blob size: %u", locks, sets, gets, (uint32_t)blobNode.GetTotalResidentBlobSize());
 
 							totalSets += (uint32_t)sets;
 							totalGets += (uint32_t)gets;

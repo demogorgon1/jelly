@@ -280,7 +280,6 @@ namespace jelly
 			{
 				// FIXME: slooow
 				JELLY_ASSERT(item->m_storeId != UINT32_MAX);
-				JELLY_ASSERT(item->m_storeOffset != -1);
 
 				uint32_t storeId = item->m_storeId;
 				size_t storeOffset = item->m_storeOffset;

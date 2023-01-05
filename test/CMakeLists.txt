@@ -10,7 +10,7 @@ target_compile_features(jelly-test PRIVATE cxx_std_20)
 target_link_libraries(jelly-test jelly::jelly)
 
 if(NOT MSVC)
-	target_link_libraries(jelly-test PUBLIC pthread)
+	target_link_libraries(jelly-test pthread)
 endif()
 
 add_test(jelly-test jelly-test)

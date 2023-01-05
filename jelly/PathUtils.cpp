@@ -37,7 +37,7 @@ namespace jelly
 				if (aPath.extension() != ".bin")
 					return false;
 
-				std::stringstream tokenizer(aPath.filename().replace_extension("").u8string());
+				std::stringstream tokenizer(aPath.filename().replace_extension("").string());
 
 				std::string token;
 				std::vector<std::string> tokens;

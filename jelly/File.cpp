@@ -1,5 +1,19 @@
-#if defined(_WIN32)
+#if defined(JELLY_FORCE_POSIX_FILE_IO)
+	#define JELLY_POSIX_FILE_IO
+#elif defined(JELLY_FORCE_WINDOWS_FILE_IO)
+	#define JELLY_WINDOWS_FILE_IO
+#elif defined(_WIN32)
+	#define JELLY_WINDOWS_FILE_IO
+#else
+	#define JELLY_POSIX_FILE_IO
+#endif
+
+#if defined(JELLY_WINDOWS_FILE_IO)
 	#include <windows.h>
+#elif defined(JELLY_POSIX_FILE_IO)
+	#include <sys/stat.h>
+	#include <fcntl.h>
+	#include <unistd.h>
 #endif
 
 #include <stdint.h>
@@ -16,15 +30,19 @@ namespace jelly
 		Internal()
 			: m_size(0)
 		{
-			#if defined(_WIN32)				
+			#if defined(JELLY_WINDOWS_FILE_IO)				
 				m_handle = INVALID_HANDLE_VALUE;
+			#elif defined(JELLY_POSIX_FILE_IO)
+				m_fd = -1;
 			#endif
 		}
 
 		size_t		m_size;
 
-		#if defined(_WIN32)				
+		#if defined(JELLY_WINDOWS_FILE_IO)				
 			HANDLE	m_handle;
+		#elif defined(JELLY_POSIX_FILE_IO)
+			int		m_fd;
 		#endif
 	};
 
@@ -35,13 +53,23 @@ namespace jelly
 		void*			aBuffer,
 		size_t			aBufferSize) 
 	{
-		JELLY_ASSERT(m_internal->m_handle != INVALID_HANDLE_VALUE);
+		#if defined(JELLY_WINDOWS_FILE_IO)		
+			JELLY_ASSERT(m_internal->m_handle != INVALID_HANDLE_VALUE);
 
-		DWORD bytes;
-		if (!ReadFile(m_internal->m_handle, aBuffer, (DWORD)aBufferSize, &bytes, NULL))
-			return 0;
+			DWORD bytes;
+			if (!ReadFile(m_internal->m_handle, aBuffer, (DWORD)aBufferSize, &bytes, NULL))
+				return 0;
 
-		return (size_t)bytes;
+			return (size_t)bytes;
+		#elif defined(JELLY_POSIX_FILE_IO)
+			JELLY_ASSERT(m_internal->m_fd != -1);
+
+			ssize_t bytes = read(m_internal->m_fd, aBuffer, aBufferSize);
+			if(bytes < 0)
+				return 0;
+
+			return (size_t)bytes;
+		#endif
 	}
 
 	//---------------------------------------------------------------------
@@ -51,15 +79,27 @@ namespace jelly
 		const void*		aBuffer,
 		size_t			aBufferSize) 
 	{
-		JELLY_ASSERT(m_internal->m_handle != INVALID_HANDLE_VALUE);
+		#if defined(JELLY_WINDOWS_FILE_IO)		
+			JELLY_ASSERT(m_internal->m_handle != INVALID_HANDLE_VALUE);
 
-		DWORD bytes;
-		if (!WriteFile(m_internal->m_handle, aBuffer, (DWORD)aBufferSize, &bytes, NULL))
-			return 0;
+			DWORD bytes;
+			if (!WriteFile(m_internal->m_handle, aBuffer, (DWORD)aBufferSize, &bytes, NULL))
+				return 0;
 
-		m_internal->m_size += (size_t)bytes;
+			m_internal->m_size += (size_t)bytes;
 
-		return (size_t)bytes;
+			return (size_t)bytes;
+		#elif defined(JELLY_POSIX_FILE_IO)
+			JELLY_ASSERT(m_internal->m_fd != -1);
+
+			ssize_t bytes = write(m_internal->m_fd, aBuffer, aBufferSize);
+			if(bytes < 0)
+				return 0;
+
+			m_internal->m_size += (size_t)bytes;
+
+			return (size_t)bytes;
+		#endif
 	}
 
 	//---------------------------------------------------------------------
@@ -72,7 +112,7 @@ namespace jelly
 	{
 		m_internal = new Internal();
 
-		#if defined(_WIN32)
+		#if defined(JELLY_WINDOWS_FILE_IO)		
 			
 			DWORD desiredAccess = 0; 
 			DWORD shareMode = 0;
@@ -119,14 +159,59 @@ namespace jelly
 					m_internal->m_size = (size_t)fileSize;
 				}
 			}
+
+		#elif defined(JELLY_POSIX_FILE_IO)
+
+			int flags = 0;
+			int mode = 0;
+
+			switch(m_mode)
+			{
+			case MODE_WRITE_STREAM:
+				flags = O_CREAT | O_WRONLY;
+				mode = S_IRUSR | S_IWUSR;
+				break;
+
+			case MODE_READ_STREAM:
+				flags = O_RDONLY;
+				break;
+
+			case MODE_READ_RANDOM:
+				flags = O_RDONLY;
+				break;
+
+			default:
+				JELLY_ASSERT(false);
+			}
+
+			m_internal->m_fd = open(aPath, flags, mode)
+
+			if(m_internal->m_fd != -1 && m_mode != MODE_WRITE_STREAM)
+			{
+				struct stat s;
+				int result = fstat(m_internal->m_fd, &s);
+				if(result == -1)
+				{
+					close(m_internal->m_fd);
+					m_internal->m_fd = -1;
+				}
+				else
+				{
+					m_internal->m_size = (size_t)s.st_size;
+				}
+			}
+
 		#endif
 	}
 		
 	File::~File()
 	{
-		#if defined(_WIN32)
+		#if defined(JELLY_WINDOWS_FILE_IO)	
 			if(m_internal->m_handle != INVALID_HANDLE_VALUE)
 				CloseHandle(m_internal->m_handle);
+		#elif defined(JELLY_POSIX_FILE_IO)
+			if(m_internal->m_fd != -1)
+				close(m_internal->m_fd);
 		#endif
 
 		delete m_internal;
@@ -135,8 +220,10 @@ namespace jelly
 	bool	
 	File::IsValid() const
 	{
-		#if defined(_WIN32)
+		#if defined(JELLY_WINDOWS_FILE_IO)	
 			return m_internal->m_handle != INVALID_HANDLE_VALUE;
+		#elif defined(JELLY_POSIX_FILE_IO)
+			return m_internal->m_fd != -1;
 		#endif
 	}
 
@@ -149,7 +236,7 @@ namespace jelly
 		{
 			JELLY_ASSERT(m_mode == MODE_READ_RANDOM);
 
-			#if defined(_WIN32)
+			#if defined(JELLY_WINDOWS_FILE_IO)	
 				JELLY_ASSERT(m_internal->m_handle != INVALID_HANDLE_VALUE);
 
 				LARGE_INTEGER distance;
@@ -158,6 +245,11 @@ namespace jelly
 
 				BOOL result = SetFilePointerEx(m_internal->m_handle, distance, NULL, FILE_BEGIN);
 				JELLY_CHECK(result != 0, "SetFilePointerEx() failed (offset %llu, path %s)", aOffset, m_path.c_str());
+			#elif defined(JELLY_POSIX_FILE_IO)	
+				JELLY_ASSERT(m_internal->m_fd != -1);
+
+				off_t result = lseek(m_internal->m_handle, (off_t)aOffset, SEEK_SET);
+				JELLY_CHECK(result == (off_t)aOffset, "lseek() failed (offset %llu, path %s)", aOffset, m_path.c_str());
 			#endif
 		}
 		else
@@ -186,8 +278,16 @@ namespace jelly
 	bool	
 	File::Flush()
 	{
-		#if defined(_WIN32)
+		#if defined(JELLY_WINDOWS_FILE_IO)	
+			JELLY_ASSERT(m_internal->m_handle != INVALID_HANDLE_VALUE);
+
 			if (!FlushFileBuffers(m_internal->m_handle))
+				return false;
+		#elif defined(JELLY_POSIX_FILE_IO)	
+			JELLY_ASSERT(m_internal->m_fd != -1);
+
+			int result = fsync(m_internal->m_fd);
+			if(result < 0)
 				return false;
 		#endif
 
@@ -202,7 +302,7 @@ namespace jelly
 	{
 		JELLY_ASSERT(m_mode == MODE_READ_RANDOM);
 
-		#if defined(_WIN32)
+		#if defined(JELLY_WINDOWS_FILE_IO)	
 			JELLY_ASSERT(m_internal->m_handle != INVALID_HANDLE_VALUE);
 
 			LARGE_INTEGER distance;
@@ -219,6 +319,18 @@ namespace jelly
 				BOOL result = ReadFile(m_internal->m_handle, aBuffer, (DWORD)aBufferSize, &bytesRead, NULL);
 				JELLY_CHECK(result != 0, "ReadFile() failed (offset %llu, buffer size %llu, path %s).", aOffset, aBufferSize, m_path.c_str());
 				JELLY_ASSERT(bytesRead == (DWORD)aBufferSize);
+			}
+		#elif defined(JELLY_POSIX_FILE_IO)	
+			JELLY_ASSERT(m_internal->m_fd != -1);
+
+			{
+				off_t result = lseek(m_internal->m_handle, (off_t)aOffset, SEEK_SET);
+				JELLY_CHECK(result == (off_t)aOffset, "lseek() failed (offset %llu, path %s)", aOffset, m_path.c_str());
+			}
+
+			{
+				ssize_t bytes = read(m_internal->m_fd, aBuffer, aBufferSize);
+				JELLY_CHECK((size_t)bytes == aBufferSize, "read() failed (offset %llu, buffer size %llu, path %s).", aOffset, aBufferSize, m_path.c_str());
 			}
 		#endif
 	}

@@ -2,7 +2,7 @@
 
 #include <string.h>
 
-#include "BufferReader.h"
+#include <jelly/BufferReader.h>
 
 namespace jelly
 {

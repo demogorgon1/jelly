@@ -219,7 +219,8 @@ namespace jelly
 		#if defined(JELLY_WINDOWS_FILE_IO)	
 			if(m_internal->m_handle != INVALID_HANDLE_VALUE)
 			{
-				Flush();
+				if(m_mode == MODE_WRITE_STREAM)
+					Flush();
 
 				if(!CloseHandle(m_internal->m_handle))
 					JELLY_FATAL_ERROR("CloseHandle() failed (path %s): %u", m_path.c_str(), GetLastError());
@@ -227,7 +228,8 @@ namespace jelly
 		#elif defined(JELLY_POSIX_FILE_IO)
 			if(m_internal->m_fd != -1)
 			{
-				Flush();
+				if (m_mode == MODE_WRITE_STREAM)
+					Flush();
 
 				int result = close(m_internal->m_fd);
 				JELLY_CHECK(result != -1, "close() failed (path %s): %u", m_path.c_str(), errno);
@@ -300,6 +302,7 @@ namespace jelly
 	{
 		#if defined(JELLY_WINDOWS_FILE_IO)	
 			JELLY_ASSERT(m_internal->m_handle != INVALID_HANDLE_VALUE);
+			JELLY_ASSERT(m_mode == MODE_WRITE_STREAM);
 
 			if (!FlushFileBuffers(m_internal->m_handle))
 				JELLY_FATAL_ERROR("FlushFileBuffers() failed (path %s): %u", m_path.c_str(), GetLastError());

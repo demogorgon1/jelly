@@ -1,6 +1,7 @@
 #pragma once
 
 #include "IItem.h"
+#include "IWriter.h"
 #include "MetaData.h"
 
 namespace jelly

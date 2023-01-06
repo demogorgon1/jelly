@@ -28,6 +28,12 @@ namespace jelly
 			return m_signal;
 		}
 
+		void
+		Reset()
+		{
+			m_signal = false;
+		}
+
 		// Public data
 		std::atomic_bool		m_signal;
 		std::function<void()>	m_callback;

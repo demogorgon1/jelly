@@ -1,4 +1,7 @@
+#include "Sim/SimTest.h"
+
 #include "CompressionTest.h"
+#include "Config.h"
 #include "MiscTest.h"
 #include "NodeTest.h"
 #include "StepTest.h"
@@ -21,6 +24,9 @@ namespace jelly
 				CompressionTest::Run();
 				NodeTest::Run(aWorkingDirectory, aConfig);
 				StepTest::Run(aConfig);
+
+				if(aConfig->m_simTest)
+					Sim::SimTest(aWorkingDirectory, aConfig);
 			}
 
 		}

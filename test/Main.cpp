@@ -11,6 +11,8 @@ main(
 	jelly::Test::Config config;
 	config.InitFromCommandLine(aNumArgs, aArgs);
 
+	config.m_simTest = true;
+
 	jelly::Test::AllTests::Run(".", &config);
 
 	return EXIT_SUCCESS;

@@ -50,7 +50,7 @@ namespace jelly
 		{
 			char buffer[2048];
 			JELLY_STRING_FORMAT_VARARGS(buffer, sizeof(buffer), aFormat);
-			Print(aLevel, aFormat);
+			Print(aLevel, buffer);
 		}
 
 	}

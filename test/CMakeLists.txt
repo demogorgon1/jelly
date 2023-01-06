@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 3.19)
 
-file(GLOB C_FILES "*.cpp")
-file(GLOB H_FILES "*.h")
+file(GLOB_RECURSE C_FILES "*.cpp")
+file(GLOB_RECURSE H_FILES "*.h")
 
 add_executable(jelly-test ${C_FILES} ${H_FILES})
 	

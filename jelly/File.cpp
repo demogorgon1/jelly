@@ -145,8 +145,6 @@ namespace jelly
 			}
 				
 			m_internal->m_handle = CreateFileA(aPath, desiredAccess, shareMode, NULL, creationDisposition, flags, NULL);
-			if(m_internal->m_handle == INVALID_HANDLE_VALUE)
-				Log::PrintF(Log::LEVEL_WARNING, "CreateFileA() failed (path %s): %u", m_path.c_str(), GetLastError());
 
 			if (m_internal->m_handle != INVALID_HANDLE_VALUE && m_mode != MODE_WRITE_STREAM)
 			{

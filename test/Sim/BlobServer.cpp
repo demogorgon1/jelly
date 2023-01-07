@@ -36,7 +36,7 @@ namespace jelly::Test::Sim
 			{
 				uint32_t numProcessedRequests = m_node->ProcessRequests();
 
-				numProcessedRequests;
+				((void)numProcessedRequests);
 			}
 			break;
 		}

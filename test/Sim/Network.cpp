@@ -26,6 +26,8 @@ namespace jelly::Test::Sim
 		for (uint32_t i = 0; i < aConfig->m_simNumLockServers; i++)
 			m_lockServers.push_back(new LockServer(this, nodeId++));
 
+		m_firstBlobNodeId = nodeId;
+
 		for (uint32_t i = 0; i < aConfig->m_simNumBlobServers; i++)
 			m_blobServers.push_back(new BlobServer(this, nodeId++));
 
@@ -58,6 +60,36 @@ namespace jelly::Test::Sim
 		}
 
 		return t;
+	}
+
+	LockServer* 
+	Network::GetMasterLockServer()
+	{
+		JELLY_ASSERT(m_lockServers.size() > 0);
+		return m_lockServers[0];
+	}
+
+	BlobServer* 
+	Network::GetBlobServer(
+		uint32_t		aBlobNodeId)
+	{
+		size_t i = (size_t)(aBlobNodeId + m_firstBlobNodeId);
+		JELLY_ASSERT(i < m_blobServers.size());
+		return m_blobServers[i];
+	}
+
+	uint32_t	
+	Network::PickRandomBlobNodeId()
+	{
+		uint32_t blobNodeId;
+		std::uniform_int_distribution<size_t> distribution(0, m_blobServers.size() - 1);
+		
+		{
+			std::lock_guard lock(m_randomLock);
+			blobNodeId = (uint32_t)distribution(m_random) + m_firstBlobNodeId;
+		}
+
+		return blobNodeId;
 	}
 
 }

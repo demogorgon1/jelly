@@ -10,6 +10,8 @@ namespace jelly::Test::Sim
 		: m_network(aNetwork)
 		, m_id(aId)
 		, m_state(STATE_INIT)
+		, m_accumRequestCount(0)
+		, m_hasNode(false)
 	{
 
 	}
@@ -29,14 +31,26 @@ namespace jelly::Test::Sim
 				BlobNodeType::Config config;
 
 				m_node = std::make_unique<BlobNodeType>(&m_network->m_host, m_id, config);
+				m_hasNode = true;
+
+				m_flushPendingWALsTimer.SetTimeout(1000);
+
+				m_state = STATE_RUNNING;
 			}
 			break;
 
 		case STATE_RUNNING:
 			{
 				uint32_t numProcessedRequests = m_node->ProcessRequests();
+				
+				m_accumRequestCount += numProcessedRequests;
 
-				numProcessedRequests;
+				if (m_accumRequestCount > 0 && m_flushPendingWALsTimer.HasExpired())
+				{
+					m_node->FlushPendingWAL(0);
+
+					m_accumRequestCount = 0;
+				}
 			}
 			break;
 		}

@@ -27,6 +27,10 @@ namespace jelly::Test
 						~Network();
 
 			GameServer*	PickRandomGameServer();
+			LockServer* GetMasterLockServer();
+			BlobServer*	GetBlobServer(
+							uint32_t		aBlobNodeId);
+			uint32_t	PickRandomBlobNodeId();
 
 			// Public data
 			const Config*				m_config;
@@ -37,6 +41,7 @@ namespace jelly::Test
 			std::vector<BlobServer*>	m_blobServers;
 
 			DefaultHost					m_host;
+			uint32_t					m_firstBlobNodeId;
 
 			std::mutex					m_randomLock;
 			std::mt19937				m_random;

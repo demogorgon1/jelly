@@ -89,6 +89,12 @@ namespace jelly
 						m_simNumBlobServerThreads = (uint32_t)atoi(aArgs[i + 1]);
 						i++;
 					}
+					else if (strcmp(arg, "-simsetintervalms") == 0)
+					{
+						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
+						m_simSetIntervalMS = (uint32_t)atoi(aArgs[i + 1]);
+						i++;
+					}
 					else
 					{
 						JELLY_FATAL_ERROR("Syntax error.");
@@ -105,14 +111,15 @@ namespace jelly
 
 			// Sim
 			bool		m_simTest = false;
-			uint32_t	m_simNumClients = 100;
-			uint32_t	m_simNumGameServers = 5;
+			uint32_t	m_simNumClients = 1;
+			uint32_t	m_simNumGameServers = 1;
 			uint32_t	m_simNumLockServers = 1;
-			uint32_t	m_simNumBlobServers = 2;
+			uint32_t	m_simNumBlobServers = 1;
 			uint32_t	m_simNumClientThreads = 1;
 			uint32_t	m_simNumGameServerThreads = 1;
 			uint32_t	m_simNumLockServerThreads = 1;
-			uint32_t	m_simNumBlobServerThreads = 1;			
+			uint32_t	m_simNumBlobServerThreads = 1;
+			uint32_t	m_simSetIntervalMS = 1000;
 		};
 
 	}

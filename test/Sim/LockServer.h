@@ -4,6 +4,8 @@
 #include <jelly/UIntKey.h>
 #include <jelly/UIntLock.h>
 
+#include "Timer.h"
+
 namespace jelly::Test::Sim
 {
 
@@ -14,19 +16,26 @@ namespace jelly::Test::Sim
 	public:
 		typedef LockNode<UIntKey<uint32_t>, UIntLock<uint32_t>, UIntKey<uint32_t>::Hasher> LockNodeType;
 
-				LockServer(
-					Network*			aNetwork,
-					uint32_t			aId);
-				~LockServer();
+						LockServer(
+							Network*			aNetwork,
+							uint32_t			aId);
+						~LockServer();
 
-		void	Update();
+		void			Update();
+
+		// Data access
+		LockNodeType*	GetNode() { return m_hasNode ? m_node.get() : NULL; }
 
 	private:
 
 		Network*						m_network;
 		uint32_t						m_id;
 
+		std::atomic_bool				m_hasNode;
 		std::unique_ptr<LockNodeType>	m_node;
+
+		uint32_t						m_accumRequestCount;
+		Timer							m_flushPendingWALsTimer;
 
 		enum State
 		{

@@ -16,6 +16,12 @@ namespace jelly::Test::Sim
 	public:
 		enum Stat : uint32_t
 		{
+			STAT_INIT_TIME,
+			STAT_WAITING_TO_CONNECT_TIME,
+			STAT_WAITING_FOR_CONNECTION_TIME,
+			STAT_CONNECTED_TIME,
+			STAT_DISCONNECTED_TIME,
+
 			NUM_STATS
 		};
 
@@ -28,14 +34,14 @@ namespace jelly::Test::Sim
 
 		static void
 		PrintStats(
-			const Stats&										/*aStats*/,
-			const std::vector<uint32_t>&						aStateCounters)
+			const Stats&										aStats,
+			const std::vector<Stats::Entry>&					aStateCounters)
 		{
-			Stats::PrintStateCounter("INIT", STATE_INIT, aStateCounters);
-			Stats::PrintStateCounter("WAITING_TO_CONNECT", STATE_WAITING_TO_CONNECT, aStateCounters);
-			Stats::PrintStateCounter("WAITING_FOR_CONNECTION", STATE_WAITING_FOR_CONNECTION, aStateCounters);
-			Stats::PrintStateCounter("CONNECTED", STATE_CONNECTED, aStateCounters);
-			Stats::PrintStateCounter("DISCONNECTED", STATE_DISCONNECTED, aStateCounters);
+			Stats::PrintStateCounter("INIT", STATE_INIT, aStateCounters, aStats, STAT_INIT_TIME);
+			Stats::PrintStateCounter("WAITING_TO_CONNECT", STATE_WAITING_TO_CONNECT, aStateCounters, aStats, STAT_WAITING_TO_CONNECT_TIME);
+			Stats::PrintStateCounter("WAITING_FOR_CONNECTION", STATE_WAITING_FOR_CONNECTION, aStateCounters, aStats, STAT_WAITING_FOR_CONNECTION_TIME);
+			Stats::PrintStateCounter("CONNECTED", STATE_CONNECTED, aStateCounters, aStats, STAT_CONNECTED_TIME);
+			Stats::PrintStateCounter("DISCONNECTED", STATE_DISCONNECTED, aStateCounters, aStats, STAT_DISCONNECTED_TIME);
 		}
 
 		static uint32_t
@@ -53,12 +59,13 @@ namespace jelly::Test::Sim
 						IHost*									aHost,
 						Stats&									aStats);
 		void		UpdateStateCounters(
-						std::vector<uint32_t>&					aOut);
+						Stats&									aStats,
+						std::vector<Stats::Entry>&				aOut);
 
 	private:
 
-		Network*									m_network;
-		uint32_t									m_id;
+		Network*											m_network;
+		uint32_t											m_id;
 
 		enum State : uint32_t
 		{
@@ -71,11 +78,16 @@ namespace jelly::Test::Sim
 			NUM_STATES
 		};
 
-		State										m_state;
+		State												m_state;
+		std::chrono::time_point<std::chrono::steady_clock>	m_stateTimeStamp;
+		Stats::Entry										m_stateTimes[NUM_STATES];
 
-		std::unique_ptr<GameServer::ConnectRequest>	m_gameServerConnectRequest;
+		std::unique_ptr<GameServer::ConnectRequest>			m_gameServerConnectRequest;
 
-		CompletionEvent								m_disconnectEvent;
+		CompletionEvent										m_disconnectEvent;
+
+		void		_SetState(
+						State									aState);
 	};
 	
 }

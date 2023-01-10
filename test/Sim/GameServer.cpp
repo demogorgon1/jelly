@@ -37,12 +37,22 @@ namespace jelly::Test::Sim
 
 	void	
 	GameServer::UpdateStateCounters(
-		std::vector<uint32_t>&	aOut)
+		Stats&						aStats,
+		std::vector<Stats::Entry>&	aOut)
 	{
+		aStats.AddAndResetEntry(STAT_INIT_TIME, m_clientStateTimes[Client::STATE_INIT]);
+		aStats.AddAndResetEntry(STAT_NEED_LOCK_TIME, m_clientStateTimes[Client::STATE_NEED_LOCK]);
+		aStats.AddAndResetEntry(STAT_WAITING_FOR_LOCK_TIME, m_clientStateTimes[Client::STATE_WAITING_FOR_LOCK]);
+		aStats.AddAndResetEntry(STAT_NEED_BLOB_TIME, m_clientStateTimes[Client::STATE_NEED_BLOB]);
+		aStats.AddAndResetEntry(STAT_WAITING_FOR_BLOB_GET_TIME, m_clientStateTimes[Client::STATE_WAITING_FOR_BLOB_GET]);
+		aStats.AddAndResetEntry(STAT_CONNECTED_TIME, m_clientStateTimes[Client::STATE_CONNECTED]);
+		aStats.AddAndResetEntry(STAT_WAITING_FOR_BLOB_SET_TIME, m_clientStateTimes[Client::STATE_WAITING_FOR_BLOB_SET]);
+
 		for (std::pair<uint32_t, Client*> i : m_clients)
 		{
 			JELLY_ASSERT((size_t)i.second->m_state < aOut.size());
-			aOut[i.second->m_state]++;
+
+			aOut[i.second->m_state].Sample((uint32_t)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - i.second->m_stateTimeStamp).count());
 		}
 	}
 
@@ -98,7 +108,7 @@ namespace jelly::Test::Sim
 		switch(aClient->m_state)
 		{
 		case Client::STATE_INIT:
-			aClient->m_state = Client::STATE_NEED_LOCK;
+			_SetClientState(aClient, Client::STATE_NEED_LOCK);
 			aClient->m_timer.SetTimeout(0);
 			break;
 
@@ -115,7 +125,7 @@ namespace jelly::Test::Sim
 
 					aStats.Sample(STAT_LOCK_REQUESTS, 1);
 					
-					aClient->m_state = Client::STATE_WAITING_FOR_LOCK;
+					_SetClientState(aClient, Client::STATE_WAITING_FOR_LOCK);
 				}
 			}
 			break;
@@ -136,13 +146,13 @@ namespace jelly::Test::Sim
 
 						aClient->m_blobSeq = aClient->m_lockRequest->m_blobSeq;
 						aClient->m_nextBlobNodeIdIndex = 0;
-						aClient->m_state = Client::STATE_NEED_BLOB;
+						_SetClientState(aClient, Client::STATE_NEED_BLOB);
 						aClient->m_timer.SetTimeout(0);
 					}
 					break;
 
 				case RESULT_ALREADY_LOCKED:
-					aClient->m_state = Client::STATE_NEED_LOCK;
+					_SetClientState(aClient, Client::STATE_NEED_LOCK);
 					aClient->m_timer.SetTimeout(1000);
 					break;
 
@@ -177,7 +187,7 @@ namespace jelly::Test::Sim
 
 						aStats.Sample(STAT_GET_REQUESTS, 1);
 
-						aClient->m_state = Client::STATE_WAITING_FOR_BLOB_GET;
+						_SetClientState(aClient, Client::STATE_WAITING_FOR_BLOB_GET);
 
 						aClient->m_nextBlobNodeIdIndex++;
 					}				
@@ -224,7 +234,7 @@ namespace jelly::Test::Sim
 
 					aClient->m_lastBlobNodeId = blobNodeId;
 
-					aClient->m_state = Client::STATE_WAITING_FOR_BLOB_SET;
+					_SetClientState(aClient, Client::STATE_WAITING_FOR_BLOB_SET);
 				}
 
 				aClient->m_setTimer.SetTimeout(m_network->m_config->m_simSetIntervalMS);
@@ -237,7 +247,7 @@ namespace jelly::Test::Sim
 				switch (aClient->m_setRequest->m_result)
 				{
 				case RESULT_OK:
-					aClient->m_state = Client::STATE_CONNECTED;
+					_SetClientState(aClient, Client::STATE_CONNECTED);
 					break;
 
 				default:
@@ -265,7 +275,7 @@ namespace jelly::Test::Sim
 		// Randomize first set to get better distribution
 		aClient->m_setTimer.SetTimeout(_GetRandomInInterval(0, m_network->m_config->m_simSetIntervalMS * 2));
 
-		aClient->m_state = Client::STATE_CONNECTED;
+		_SetClientState(aClient, Client::STATE_CONNECTED);
 	}
 
 	uint32_t	
@@ -275,6 +285,24 @@ namespace jelly::Test::Sim
 	{
 		std::uniform_int_distribution<uint32_t> distribution(aMin, aMax);
 		return distribution(m_random);
+	}
+
+	void		
+	GameServer::_SetClientState(
+		Client*			aClient,
+		Client::State	aState)
+	{
+		JELLY_ASSERT(aClient->m_state != aState);
+		JELLY_ASSERT(aClient->m_state < Client::NUM_STATES);
+
+		std::chrono::time_point<std::chrono::steady_clock> currentTime = std::chrono::steady_clock::now();
+
+		uint32_t millisecondsSpentInState = (uint32_t)std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - aClient->m_stateTimeStamp).count();
+
+		m_clientStateTimes[aClient->m_state].Sample(millisecondsSpentInState);
+
+		aClient->m_stateTimeStamp = currentTime;
+		aClient->m_state = aState;
 	}
 
 }

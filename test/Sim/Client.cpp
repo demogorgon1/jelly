@@ -12,7 +12,7 @@ namespace jelly::Test::Sim
 		, m_id(aId)
 		, m_state(STATE_INIT)
 	{
-
+		m_stateTimeStamp = std::chrono::steady_clock::now();
 	}
 
 	Client::~Client()
@@ -28,7 +28,7 @@ namespace jelly::Test::Sim
 		switch(m_state)
 		{
 		case STATE_INIT:
-			m_state = STATE_WAITING_TO_CONNECT;
+			_SetState(STATE_WAITING_TO_CONNECT);
 			break;
 
 		case STATE_WAITING_TO_CONNECT:
@@ -41,24 +41,24 @@ namespace jelly::Test::Sim
 
 				gameServer->Connect(m_gameServerConnectRequest.get());
 
-				m_state = STATE_WAITING_FOR_CONNECTION;
+				_SetState(STATE_WAITING_FOR_CONNECTION);
 			}
 			break;
 
 		case STATE_WAITING_FOR_CONNECTION:
 			if (m_disconnectEvent.Poll())
 			{
-				m_state = STATE_DISCONNECTED;
+				_SetState(STATE_DISCONNECTED);
 			}
 			else if(m_gameServerConnectRequest->m_completed.Poll())
 			{
-				m_state = STATE_CONNECTED;
+				_SetState(STATE_CONNECTED);
 			}
 			break;
 
 		case STATE_CONNECTED:
 			if(m_disconnectEvent.Poll())
-				m_state = STATE_DISCONNECTED;
+				_SetState(STATE_DISCONNECTED);
 			break;
 
 		case STATE_DISCONNECTED:
@@ -67,15 +67,41 @@ namespace jelly::Test::Sim
 		default:
 			JELLY_ASSERT(false);
 			break;
-		}
+		}		
 	}
 
 	void		
 	Client::UpdateStateCounters(
-		std::vector<uint32_t>& aOut)
+		Stats&									aStats,
+		std::vector<Stats::Entry>&				aOut)
 	{
+		aStats.AddAndResetEntry(STAT_INIT_TIME, m_stateTimes[STATE_INIT]);
+		aStats.AddAndResetEntry(STAT_WAITING_TO_CONNECT_TIME, m_stateTimes[STATE_WAITING_TO_CONNECT]);
+		aStats.AddAndResetEntry(STAT_WAITING_FOR_CONNECTION_TIME, m_stateTimes[STATE_WAITING_FOR_CONNECTION]);
+		aStats.AddAndResetEntry(STAT_CONNECTED_TIME, m_stateTimes[STATE_CONNECTED]);
+		aStats.AddAndResetEntry(STAT_DISCONNECTED_TIME, m_stateTimes[STATE_DISCONNECTED]);
+
 		JELLY_ASSERT((size_t)m_state < aOut.size());
-		aOut[m_state]++;
+		aOut[m_state].Sample((uint32_t)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - m_stateTimeStamp).count());
+	}
+
+	//-----------------------------------------------------------------------------------------
+
+	void		
+	Client::_SetState(
+		State									aState)
+	{	
+		JELLY_ASSERT(m_state != aState);
+		JELLY_ASSERT(m_state < NUM_STATES);
+
+		std::chrono::time_point<std::chrono::steady_clock> currentTime = std::chrono::steady_clock::now();
+
+		uint32_t millisecondsSpentInState = (uint32_t)std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - m_stateTimeStamp).count();
+
+		m_stateTimes[m_state].Sample(millisecondsSpentInState);
+
+		m_stateTimeStamp = currentTime;
+		m_state = aState;		
 	}
 
 }

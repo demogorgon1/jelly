@@ -25,6 +25,13 @@ namespace jelly::Test::Sim
 			STAT_GET_REQUESTS,
 			STAT_LOCK_REQUESTS,
 			STAT_UNLOCK_REQUESTS,
+			STAT_INIT_TIME,
+			STAT_NEED_LOCK_TIME,
+			STAT_WAITING_FOR_LOCK_TIME,
+			STAT_NEED_BLOB_TIME,
+			STAT_WAITING_FOR_BLOB_GET_TIME,
+			STAT_CONNECTED_TIME,
+			STAT_WAITING_FOR_BLOB_SET_TIME,
 
 			NUM_STATS
 		};
@@ -38,8 +45,8 @@ namespace jelly::Test::Sim
 
 		static void
 		PrintStats(
-			const Stats&					aStats,
-			const std::vector<uint32_t>&	aStateCounters)
+			const Stats&						aStats,
+			const std::vector<Stats::Entry>&	aStateCounters)
 		{
 			aStats.Print(Stats::TYPE_SAMPLE, STAT_NUM_CLIENTS, "NUM_CLIENTS");
 			aStats.Print(Stats::TYPE_COUNTER, STAT_SET_REQUESTS, "SET_REQUESTS");
@@ -47,13 +54,13 @@ namespace jelly::Test::Sim
 			aStats.Print(Stats::TYPE_COUNTER, STAT_LOCK_REQUESTS, "LOCK_REQUESTS");
 			aStats.Print(Stats::TYPE_COUNTER, STAT_UNLOCK_REQUESTS, "UNLOCK_REQUESTS");
 
-			Stats::PrintStateCounter("INIT", Client::STATE_INIT, aStateCounters);
-			Stats::PrintStateCounter("NEED_LOCK", Client::STATE_NEED_LOCK, aStateCounters);
-			Stats::PrintStateCounter("WAITING_FOR_LOCK", Client::STATE_WAITING_FOR_LOCK, aStateCounters);
-			Stats::PrintStateCounter("NEED_BLOB", Client::STATE_NEED_BLOB, aStateCounters);
-			Stats::PrintStateCounter("WAITING_FOR_BLOB_GET", Client::STATE_WAITING_FOR_BLOB_GET, aStateCounters);
-			Stats::PrintStateCounter("CONNECTED", Client::STATE_CONNECTED, aStateCounters);
-			Stats::PrintStateCounter("WAITING_FOR_BLOB_SET", Client::STATE_WAITING_FOR_BLOB_SET, aStateCounters);
+			Stats::PrintStateCounter("INIT", Client::STATE_INIT, aStateCounters, aStats, STAT_INIT_TIME);
+			Stats::PrintStateCounter("NEED_LOCK", Client::STATE_NEED_LOCK, aStateCounters, aStats, STAT_NEED_LOCK_TIME);
+			Stats::PrintStateCounter("WAITING_FOR_LOCK", Client::STATE_WAITING_FOR_LOCK, aStateCounters, aStats, STAT_WAITING_FOR_LOCK_TIME);
+			Stats::PrintStateCounter("NEED_BLOB", Client::STATE_NEED_BLOB, aStateCounters, aStats, STAT_NEED_BLOB_TIME);
+			Stats::PrintStateCounter("WAITING_FOR_BLOB_GET", Client::STATE_WAITING_FOR_BLOB_GET, aStateCounters, aStats, STAT_WAITING_FOR_BLOB_GET_TIME);
+			Stats::PrintStateCounter("CONNECTED", Client::STATE_CONNECTED, aStateCounters, aStats, STAT_CONNECTED_TIME);
+			Stats::PrintStateCounter("WAITING_FOR_BLOB_SET", Client::STATE_WAITING_FOR_BLOB_SET, aStateCounters, aStats, STAT_WAITING_FOR_BLOB_SET_TIME);
 		}
 
 		static uint32_t
@@ -79,17 +86,18 @@ namespace jelly::Test::Sim
 		};
 
 				GameServer(
-					Network*				aNetwork,
-					uint32_t				aId);
+					Network*					aNetwork,
+					uint32_t					aId);
 				~GameServer();
 
 		void	Update(
-					IHost*					aHost,
-					Stats&					aStats);
+					IHost*						aHost,
+					Stats&						aStats);
 		void	UpdateStateCounters(
-					std::vector<uint32_t>&	aOut);
+					Stats&						aStats,
+					std::vector<Stats::Entry>&	aOut);
 		void	Connect(
-					ConnectRequest*			aConnectRequest);
+					ConnectRequest*				aConnectRequest);
 
 	private:
 
@@ -108,7 +116,7 @@ namespace jelly::Test::Sim
 				, m_disconnectEvent(aDisconnectEvent)
 				, m_blobSeq(0)
 			{
-
+				m_stateTimeStamp = std::chrono::steady_clock::now();
 			}
 
 			// Public data
@@ -128,6 +136,8 @@ namespace jelly::Test::Sim
 			};
 
 			State													m_state;
+			std::chrono::time_point<std::chrono::steady_clock>		m_stateTimeStamp;
+
 			ConnectRequest*											m_pendingConnectRequest;
 			CompletionEvent*										m_disconnectEvent;
 			std::unique_ptr<LockServer::LockNodeType::Request>		m_lockRequest;
@@ -147,6 +157,8 @@ namespace jelly::Test::Sim
 
 		std::unordered_map<uint32_t, Client*>						m_clients;
 
+		Stats::Entry												m_clientStateTimes[Client::NUM_STATES];
+
 		std::mt19937												m_random;
 
 		std::mutex													m_connectRequestsLock;
@@ -163,6 +175,9 @@ namespace jelly::Test::Sim
 		uint32_t	_GetRandomInInterval(
 						uint32_t		aMin,
 						uint32_t		aMax);
+		void		_SetClientState(
+						Client*			aClient,
+						Client::State	aState);
 	};
 	
 }

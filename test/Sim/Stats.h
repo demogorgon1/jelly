@@ -13,17 +13,6 @@ namespace jelly::Test::Sim
 			TYPE_SAMPLE
 		};
 
-		static void
-		PrintStateCounter(
-			const char*						aName,
-			uint32_t						aState,
-			const std::vector<uint32_t>&	aStateCounters)
-		{
-			JELLY_ASSERT((size_t)aState < aStateCounters.size());
-			if(aStateCounters[aState] > 0)
-				printf("[STATE]%s : %u\n", aName, aStateCounters[aState]);
-		}
-
 		struct Entry
 		{
 			Entry()
@@ -78,6 +67,45 @@ namespace jelly::Test::Sim
 			uint32_t		m_max;
 		};
 
+		static void
+		PrintStateCounter(
+			const char*							aName,
+			uint32_t							aState,
+			const std::vector<Stats::Entry>&	aStateCounters,
+			const Stats&						aStats, 
+			uint32_t							aIndex)
+		{
+			JELLY_ASSERT((size_t)aState < aStateCounters.size());
+			const Entry& stateEntry = aStateCounters[aState];
+
+			if(stateEntry.m_count > 0)
+			{
+				const Entry& timeSampleEntry = aStats.GetEntry(aIndex);
+				
+				char timingInfoString[256];
+				if(timeSampleEntry.m_count > 0)
+				{
+					snprintf(timingInfoString, sizeof(timingInfoString), "(changes: avg:%ums, min:%ums, max:%ums, count:%u)",
+						timeSampleEntry.m_sum / timeSampleEntry.m_count, 
+						timeSampleEntry.m_min,
+						timeSampleEntry.m_max,
+						timeSampleEntry.m_count);
+				}
+				else
+				{
+					timingInfoString[0] = '\0';
+				}
+
+				printf("[STATE]%s : %u avg:%.1fs, min:%.1fs, max:%.1fs %s\n", 
+					aName, 
+					stateEntry.m_count, 
+					((float)stateEntry.m_sum / (float)stateEntry.m_count) / 1000.0f, 
+					(float)stateEntry.m_min / 1000.0f, 
+					(float)stateEntry.m_max / 1000.0f,
+					timingInfoString);
+			}
+		}
+
 		Stats()
 		{
 
@@ -118,6 +146,24 @@ namespace jelly::Test::Sim
 			JELLY_ASSERT(m_entries.size() == aOther.m_entries.size());
 			for(size_t i = 0; i < m_entries.size(); i++)
 				m_entries[i].Add(aOther.m_entries[i]);
+		}
+
+		void
+		AddAndResetEntry(
+			uint32_t		aIndex,
+			Entry&			aEntry)
+		{
+			JELLY_ASSERT((size_t)aIndex < m_entries.size());
+			m_entries[aIndex].Add(aEntry);
+			aEntry.Reset();
+		}
+
+		const Entry&
+		GetEntry(
+			uint32_t		aIndex) const
+		{
+			JELLY_ASSERT((size_t)aIndex < m_entries.size());
+			return m_entries[aIndex];
 		}
 
 		void

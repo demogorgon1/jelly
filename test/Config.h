@@ -111,7 +111,7 @@ namespace jelly
 
 			// Sim
 			bool		m_simTest = false;
-			uint32_t	m_simNumClients = 1;
+			uint32_t	m_simNumClients = 10000;
 			uint32_t	m_simNumGameServers = 1;
 			uint32_t	m_simNumLockServers = 1;
 			uint32_t	m_simNumBlobServers = 1;

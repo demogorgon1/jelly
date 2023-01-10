@@ -71,6 +71,7 @@ namespace jelly::Test::Sim
 
 		void			
 		Update(
+			IHost*			aHost,
 			Stats&			aStats)
 		{
 			switch(m_state)
@@ -79,7 +80,7 @@ namespace jelly::Test::Sim
 				{
 					typename _NodeType::Config config;
 
-					m_node = std::make_unique<_NodeType>(&m_network->m_host, m_id, config);
+					m_node = std::make_unique<_NodeType>(aHost, m_id, config);
 					m_hasNode = true;
 
 					m_flushPendingWALsTimer.SetTimeout(1000);

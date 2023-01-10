@@ -21,8 +21,10 @@ namespace jelly::Test::Sim
 		class Thread
 		{
 		public:
-			Thread()
+			Thread(
+				IHost*		aHost)
 				: m_stopEvent(false)
+				, m_host(aHost)
 			{				
 				_T::InitStats(m_readStats);
 				_T::InitStats(m_writeStats);
@@ -81,6 +83,7 @@ namespace jelly::Test::Sim
 
 		private:
 
+			IHost*									m_host;
 			std::unique_ptr<std::thread>			m_thread;
 			std::vector<_T*>						m_objects;
 			std::atomic_bool						m_stopEvent;
@@ -98,7 +101,7 @@ namespace jelly::Test::Sim
 				while(!aThread->m_stopEvent)
 				{
 					for(_T* t : aThread->m_objects)
-						t->Update(aThread->m_writeStats);
+						t->Update(aThread->m_host, aThread->m_writeStats);
 
 					if(aThread->m_updateTimer.HasExpired())
 					{
@@ -127,11 +130,12 @@ namespace jelly::Test::Sim
 		{
 		public:
 			ThreadCollection(
+				IHost*				aHost,
 				uint32_t			aNumThreads,
 				std::vector<_T*>&	aObjects)
 			{
 				for(uint32_t i = 0; i < aNumThreads; i++)
-					m_threads.push_back(new Thread<_T>());
+					m_threads.push_back(new Thread<_T>(aHost));
 
 				size_t threadIndex = 0;
 
@@ -194,10 +198,10 @@ namespace jelly::Test::Sim
 		network.m_host.DeleteAllFiles(UINT32_MAX);
 
 		{
-			ThreadCollection<Client> clients(aConfig->m_simNumClientThreads, network.m_clients);
-			ThreadCollection<GameServer> gameServers(aConfig->m_simNumGameServerThreads, network.m_gameServers);
-			ThreadCollection<BlobServer::BlobServerType> blobServers(aConfig->m_simNumBlobServerThreads, network.m_blobServers);
-			ThreadCollection<LockServer::LockServerType> lockServers(aConfig->m_simNumLockServerThreads, network.m_lockServers);
+			ThreadCollection<Client> clients(&network.m_host, aConfig->m_simNumClientThreads, network.m_clients);
+			ThreadCollection<GameServer> gameServers(&network.m_host, aConfig->m_simNumGameServerThreads, network.m_gameServers);
+			ThreadCollection<BlobServer::BlobServerType> blobServers(&network.m_host, aConfig->m_simNumBlobServerThreads, network.m_blobServers);
+			ThreadCollection<LockServer::LockServerType> lockServers(&network.m_host, aConfig->m_simNumLockServerThreads, network.m_lockServers);
 
 			for(;;)
 			{

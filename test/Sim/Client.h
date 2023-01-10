@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include <stdint.h>
 
 #include "GameServer.h"
@@ -48,6 +50,7 @@ namespace jelly::Test::Sim
 					~Client();
 
 		void		Update(
+						IHost*									aHost,
 						Stats&									aStats);
 		void		UpdateStateCounters(
 						std::vector<uint32_t>&					aOut);

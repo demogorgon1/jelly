@@ -22,6 +22,7 @@ namespace jelly::Test::Sim
 
 	void
 	Client::Update(
+		IHost*		/*aHost*/,
 		Stats&		/*aStats*/)
 	{
 		switch(m_state)

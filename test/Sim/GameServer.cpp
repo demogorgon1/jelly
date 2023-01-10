@@ -26,6 +26,7 @@ namespace jelly::Test::Sim
 
 	void
 	GameServer::Update(
+		IHost*					/*aHost*/,
 		Stats&					aStats)
 	{
 		_ProcessRequests();

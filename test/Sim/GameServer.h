@@ -84,6 +84,7 @@ namespace jelly::Test::Sim
 				~GameServer();
 
 		void	Update(
+					IHost*					aHost,
 					Stats&					aStats);
 		void	UpdateStateCounters(
 					std::vector<uint32_t>&	aOut);

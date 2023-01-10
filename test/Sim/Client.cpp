@@ -63,6 +63,10 @@ namespace jelly::Test::Sim
 
 		case STATE_DISCONNECTED:
 			break;
+
+		default:
+			JELLY_ASSERT(false);
+			break;
 		}
 	}
 

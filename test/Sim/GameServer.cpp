@@ -245,6 +245,10 @@ namespace jelly::Test::Sim
 				}
 			}
 			break;
+
+		default:
+			JELLY_ASSERT(false);
+			break;
 		}
 
 		return true;

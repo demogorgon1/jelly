@@ -1,3 +1,5 @@
+#include "../Config.h"
+
 #include "Client.h"
 #include "GameServer.h"
 #include "Network.h"
@@ -28,10 +30,22 @@ namespace jelly::Test::Sim
 		switch(m_state)
 		{
 		case STATE_INIT:
-			_SetState(STATE_WAITING_TO_CONNECT);
+			{
+				if (m_network->m_config->m_simClientStartIntervalMS > 0)
+				{
+					m_startTimeStamp = std::chrono::steady_clock::now() + std::chrono::milliseconds(m_network->m_config->m_simClientStartIntervalMS * m_id);
+				}
+				else
+				{	
+					m_startTimeStamp = std::chrono::steady_clock::now();
+				}
+
+				_SetState(STATE_WAITING_TO_CONNECT);
+			}
 			break;
 
 		case STATE_WAITING_TO_CONNECT:
+			if(std::chrono::steady_clock::now() > m_startTimeStamp)
 			{
 				GameServer* gameServer = m_network->PickRandomGameServer();
 

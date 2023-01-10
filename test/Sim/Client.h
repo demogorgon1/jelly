@@ -85,6 +85,7 @@ namespace jelly::Test::Sim
 		std::unique_ptr<GameServer::ConnectRequest>			m_gameServerConnectRequest;
 
 		CompletionEvent										m_disconnectEvent;
+		std::chrono::time_point<std::chrono::steady_clock>	m_startTimeStamp;
 
 		void		_SetState(
 						State									aState);

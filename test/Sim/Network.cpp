@@ -1,9 +1,7 @@
 #include "../Config.h"
 
-#include "BlobServer.h"
 #include "Client.h"
 #include "GameServer.h"
-#include "LockServer.h"
 #include "Network.h"
 
 namespace jelly::Test::Sim
@@ -24,12 +22,12 @@ namespace jelly::Test::Sim
 		uint32_t nodeId = 0;
 
 		for (uint32_t i = 0; i < aConfig->m_simNumLockServers; i++)
-			m_lockServers.push_back(new LockServer(this, nodeId++));
+			m_lockServers.push_back(new LockServer::LockServerType(this, nodeId++));
 
 		m_firstBlobNodeId = nodeId;
 
 		for (uint32_t i = 0; i < aConfig->m_simNumBlobServers; i++)
-			m_blobServers.push_back(new BlobServer(this, nodeId++));
+			m_blobServers.push_back(new BlobServer::BlobServerType(this, nodeId++));
 
 	}
 	
@@ -41,10 +39,10 @@ namespace jelly::Test::Sim
 		for (GameServer* t : m_gameServers)
 			delete t;
 
-		for (LockServer* t : m_lockServers)
+		for (LockServer::LockServerType* t : m_lockServers)
 			delete t;
 
-		for (BlobServer* t : m_blobServers)
+		for (BlobServer::BlobServerType* t : m_blobServers)
 			delete t;
 	}
 
@@ -62,18 +60,19 @@ namespace jelly::Test::Sim
 		return t;
 	}
 
-	LockServer* 
+	LockServer::LockServerType*
 	Network::GetMasterLockServer()
 	{
 		JELLY_ASSERT(m_lockServers.size() > 0);
 		return m_lockServers[0];
 	}
 
-	BlobServer* 
+	BlobServer::BlobServerType*
 	Network::GetBlobServer(
 		uint32_t		aBlobNodeId)
 	{
-		size_t i = (size_t)(aBlobNodeId + m_firstBlobNodeId);
+		JELLY_ASSERT(aBlobNodeId >= m_firstBlobNodeId);
+		size_t i = (size_t)(aBlobNodeId - m_firstBlobNodeId);
 		JELLY_ASSERT(i < m_blobServers.size());
 		return m_blobServers[i];
 	}

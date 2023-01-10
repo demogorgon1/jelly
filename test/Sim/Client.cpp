@@ -21,7 +21,8 @@ namespace jelly::Test::Sim
 	}
 
 	void
-	Client::Update()
+	Client::Update(
+		Stats&		/*aStats*/)
 	{
 		switch(m_state)
 		{
@@ -44,7 +45,11 @@ namespace jelly::Test::Sim
 			break;
 
 		case STATE_WAITING_FOR_CONNECTION:
-			if(m_gameServerConnectRequest->m_completed.Poll())
+			if (m_disconnectEvent.Poll())
+			{
+				m_state = STATE_DISCONNECTED;
+			}
+			else if(m_gameServerConnectRequest->m_completed.Poll())
 			{
 				m_state = STATE_CONNECTED;
 			}
@@ -54,7 +59,18 @@ namespace jelly::Test::Sim
 			if(m_disconnectEvent.Poll())
 				m_state = STATE_DISCONNECTED;
 			break;
+
+		case STATE_DISCONNECTED:
+			break;
 		}
+	}
+
+	void		
+	Client::UpdateStateCounters(
+		std::vector<uint32_t>& aOut)
+	{
+		JELLY_ASSERT((size_t)m_state < aOut.size());
+		aOut[m_state]++;
 	}
 
 }

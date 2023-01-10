@@ -9,8 +9,8 @@ namespace jelly::Test::Sim
 {
 
 	GameServer::GameServer(
-		Network*		aNetwork,
-		uint32_t		aId)
+		Network*				aNetwork,
+		uint32_t				aId)
 		: m_network(aNetwork)
 		, m_id(aId)
 		, m_random(aId)
@@ -25,15 +25,29 @@ namespace jelly::Test::Sim
 	}
 
 	void
-	GameServer::Update()
+	GameServer::Update(
+		Stats&					aStats)
 	{
 		_ProcessRequests();
-		_UpdateClients();
+		_UpdateClients(aStats);
+
+		aStats.Sample(STAT_NUM_CLIENTS, (uint32_t)m_clients.size());
+	}
+
+	void	
+	GameServer::UpdateStateCounters(
+		std::vector<uint32_t>&	aOut)
+	{
+		for (std::pair<uint32_t, Client*> i : m_clients)
+		{
+			JELLY_ASSERT((size_t)i.second->m_state < aOut.size());
+			aOut[i.second->m_state]++;
+		}
 	}
 
 	void	
 	GameServer::Connect(
-		ConnectRequest*		aConnectRequest)
+		ConnectRequest*			aConnectRequest)
 	{
 		std::lock_guard lock(m_connectRequestsLock);
 		m_connectRequests.push_back(aConnectRequest);
@@ -61,11 +75,12 @@ namespace jelly::Test::Sim
 	}
 	
 	void	
-	GameServer::_UpdateClients()
+	GameServer::_UpdateClients(
+		Stats&			aStats)
 	{
 		for (std::pair<uint32_t, Client*> i : m_clients)
 		{
-			if (!_UpdateClient(i.second))
+			if (!_UpdateClient(aStats, i.second))
 			{
 				i.second->m_disconnectEvent->Signal();
 				delete i.second;
@@ -76,16 +91,12 @@ namespace jelly::Test::Sim
 
 	bool	
 	GameServer::_UpdateClient(
+		Stats&			aStats,
 		Client*			aClient)
 	{
 		switch(aClient->m_state)
 		{
 		case Client::STATE_INIT:
-			//JELLY_ASSERT(aClient->m_pendingConnectRequest != NULL);
-
-			//aClient->m_pendingConnectRequest->m_completed.Signal();
-			//aClient->m_pendingConnectRequest = NULL;
-
 			aClient->m_state = Client::STATE_NEED_LOCK;
 			aClient->m_timer.SetTimeout(0);
 			break;
@@ -100,6 +111,8 @@ namespace jelly::Test::Sim
 					aClient->m_lockRequest->m_key = aClient->m_id;
 					aClient->m_lockRequest->m_lock = m_id;
 					lockNode->Lock(aClient->m_lockRequest.get());
+
+					aStats.Sample(STAT_LOCK_REQUESTS, 1);
 					
 					aClient->m_state = Client::STATE_WAITING_FOR_LOCK;
 				}
@@ -161,6 +174,8 @@ namespace jelly::Test::Sim
 						aClient->m_getRequest->m_seq = aClient->m_blobSeq;
 						blobNode->Get(aClient->m_getRequest.get());
 
+						aStats.Sample(STAT_GET_REQUESTS, 1);
+
 						aClient->m_state = Client::STATE_WAITING_FOR_BLOB_GET;
 
 						aClient->m_nextBlobNodeIdIndex++;
@@ -203,6 +218,8 @@ namespace jelly::Test::Sim
 				if(blobNode != NULL)
 				{
 					blobNode->Set(aClient->m_setRequest.get());
+
+					aStats.Sample(STAT_SET_REQUESTS, 1);
 
 					aClient->m_lastBlobNodeId = blobNodeId;
 

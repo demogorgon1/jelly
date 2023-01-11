@@ -32,6 +32,17 @@ namespace jelly::Test::Sim
 		};
 
 		static void
+		InitCSV(
+			const char*							aColumnPrefix,
+			CSVOutput*							aCSV)
+		{
+			Stats::InitCSVColumn(aColumnPrefix, "PROCESS_REQUESTS", aCSV);
+
+			Stats::InitStateInfoCSV(aColumnPrefix, "INIT", aCSV);
+			Stats::InitStateInfoCSV(aColumnPrefix, "RUNNING", aCSV);
+		}
+
+		static void
 		InitStats(
 			Stats&								aStats)
 		{
@@ -41,12 +52,14 @@ namespace jelly::Test::Sim
 		static void
 		PrintStats(
 			const Stats&						aStats,
-			const std::vector<Stats::Entry>&	aStateInfo)
+			const std::vector<Stats::Entry>&	aStateInfo,
+			CSVOutput*							aCSV,
+			const char*							aCSVColumnPrefix)
 		{
-			aStats.Print(Stats::TYPE_SAMPLE, STAT_PROCESSED_REQUESTS, "PROCESSED_REQUESTS");
+			aStats.Print(Stats::TYPE_SAMPLE, STAT_PROCESSED_REQUESTS, "PROCESSED_REQUESTS", aCSVColumnPrefix, aCSV);
 
-			Stats::PrintStateInfo("INIT", STATE_INIT, aStateInfo, aStats, STAT_INIT_TIME);
-			Stats::PrintStateInfo("RUNNING", STATE_RUNNING, aStateInfo, aStats, STAT_RUNNING_TIME);
+			Stats::PrintStateInfo("INIT", STATE_INIT, aStateInfo, aStats, STAT_INIT_TIME, aCSVColumnPrefix, aCSV);
+			Stats::PrintStateInfo("RUNNING", STATE_RUNNING, aStateInfo, aStats, STAT_RUNNING_TIME, aCSVColumnPrefix, aCSV);
 		}
 
 		static uint32_t

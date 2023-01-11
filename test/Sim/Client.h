@@ -4,6 +4,7 @@
 
 #include <stdint.h>
 
+#include "CSVOutput.h"
 #include "GameServer.h"
 
 namespace jelly::Test::Sim
@@ -26,6 +27,18 @@ namespace jelly::Test::Sim
 		};
 
 		static void
+		InitCSV(
+			const char*											aColumnPrefix,
+			CSVOutput*											aCSV)
+		{
+			Stats::InitStateInfoCSV(aColumnPrefix, "INIT", aCSV);
+			Stats::InitStateInfoCSV(aColumnPrefix, "WAITING_TO_CONNECT", aCSV);
+			Stats::InitStateInfoCSV(aColumnPrefix, "WAITING_FOR_CONNECTION", aCSV);
+			Stats::InitStateInfoCSV(aColumnPrefix, "CONNECTED", aCSV);
+			Stats::InitStateInfoCSV(aColumnPrefix, "DISCONNECTED", aCSV);
+		}
+
+		static void
 		InitStats(
 			Stats&												aStats)
 		{
@@ -35,13 +48,15 @@ namespace jelly::Test::Sim
 		static void
 		PrintStats(
 			const Stats&										aStats,
-			const std::vector<Stats::Entry>&					aStateInfo)
+			const std::vector<Stats::Entry>&					aStateInfo,
+			CSVOutput*											aCSV,
+			const char*											aCSVColumnPrefix)
 		{
-			Stats::PrintStateInfo("INIT", STATE_INIT, aStateInfo, aStats, STAT_INIT_TIME);
-			Stats::PrintStateInfo("WAITING_TO_CONNECT", STATE_WAITING_TO_CONNECT, aStateInfo, aStats, STAT_WAITING_TO_CONNECT_TIME);
-			Stats::PrintStateInfo("WAITING_FOR_CONNECTION", STATE_WAITING_FOR_CONNECTION, aStateInfo, aStats, STAT_WAITING_FOR_CONNECTION_TIME);
-			Stats::PrintStateInfo("CONNECTED", STATE_CONNECTED, aStateInfo, aStats, STAT_CONNECTED_TIME);
-			Stats::PrintStateInfo("DISCONNECTED", STATE_DISCONNECTED, aStateInfo, aStats, STAT_DISCONNECTED_TIME);
+			Stats::PrintStateInfo("INIT", STATE_INIT, aStateInfo, aStats, STAT_INIT_TIME, aCSVColumnPrefix, aCSV);
+			Stats::PrintStateInfo("WAITING_TO_CONNECT", STATE_WAITING_TO_CONNECT, aStateInfo, aStats, STAT_WAITING_TO_CONNECT_TIME, aCSVColumnPrefix, aCSV);
+			Stats::PrintStateInfo("WAITING_FOR_CONNECTION", STATE_WAITING_FOR_CONNECTION, aStateInfo, aStats, STAT_WAITING_FOR_CONNECTION_TIME, aCSVColumnPrefix, aCSV);
+			Stats::PrintStateInfo("CONNECTED", STATE_CONNECTED, aStateInfo, aStats, STAT_CONNECTED_TIME, aCSVColumnPrefix, aCSV);
+			Stats::PrintStateInfo("DISCONNECTED", STATE_DISCONNECTED, aStateInfo, aStats, STAT_DISCONNECTED_TIME, aCSVColumnPrefix, aCSV);
 		}
 
 		static uint32_t

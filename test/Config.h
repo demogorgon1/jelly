@@ -1,5 +1,9 @@
 #pragma once
 
+#include <sstream>
+#include <string>
+#include <vector>
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -101,6 +105,21 @@ namespace jelly
 						m_simSetIntervalMS = (uint32_t)atoi(aArgs[i + 1]);
 						i++;
 					}
+					else if (strcmp(arg, "-simcsvoutput") == 0)
+					{
+						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
+						m_simCSVOutput = aArgs[i + 1];
+						i++;
+					}
+					else if (strcmp(arg, "-simcsvoutputcolumns") == 0)
+					{
+						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
+						std::stringstream tokenizer(aArgs[i + 1]);
+						std::string token;
+						while (std::getline(tokenizer, token, ','))
+							m_simCSVOutputColumns.push_back(token);
+						i++;
+					}
 					else
 					{
 						JELLY_FATAL_ERROR("Syntax error.");
@@ -109,24 +128,26 @@ namespace jelly
 			}
 
 			// NodeTest
-			bool		m_hammerTest = false;
+			bool						m_hammerTest = false;
 
 			// StepTest
-			uint32_t	m_stepTestSeed = 0;
-			bool		m_stepTestRandom = false;
+			uint32_t					m_stepTestSeed = 0;
+			bool						m_stepTestRandom = false;
 
 			// Sim
-			bool		m_simTest = false;
-			uint32_t	m_simNumClients = 1000;
-			uint32_t	m_simClientStartIntervalMS = 10;
-			uint32_t	m_simNumGameServers = 1;
-			uint32_t	m_simNumLockServers = 1;
-			uint32_t	m_simNumBlobServers = 1;
-			uint32_t	m_simNumClientThreads = 1;
-			uint32_t	m_simNumGameServerThreads = 1;
-			uint32_t	m_simNumLockServerThreads = 1;
-			uint32_t	m_simNumBlobServerThreads = 1;
-			uint32_t	m_simSetIntervalMS = 1000;
+			bool						m_simTest = false;
+			uint32_t					m_simNumClients = 1;
+			uint32_t					m_simClientStartIntervalMS = 10;
+			uint32_t					m_simNumGameServers = 1;
+			uint32_t					m_simNumLockServers = 1;
+			uint32_t					m_simNumBlobServers = 1;
+			uint32_t					m_simNumClientThreads = 1;
+			uint32_t					m_simNumGameServerThreads = 1;
+			uint32_t					m_simNumLockServerThreads = 1;
+			uint32_t					m_simNumBlobServerThreads = 1;
+			uint32_t					m_simSetIntervalMS = 1000;
+			std::string					m_simCSVOutput;
+			std::vector<std::string>	m_simCSVOutputColumns;
 		};
 
 	}

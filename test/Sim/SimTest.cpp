@@ -3,8 +3,9 @@
 
 #include "../Config.h"
 
-#include "Client.h"
 #include "BlobServer.h"
+#include "Client.h"
+#include "CSVOutput.h"
 #include "GameServer.h"
 #include "LockServer.h"
 #include "Network.h"
@@ -157,8 +158,20 @@ namespace jelly::Test::Sim
 			}
 
 			void
+			InitCSV(
+				const char*	aColumnPrefix,
+				CSVOutput*	aCSV)
+			{
+				JELLY_ASSERT(m_csvColumnPrefix.empty());
+				m_csvColumnPrefix = aColumnPrefix;
+
+				_T::InitCSV(aColumnPrefix, aCSV);
+			}
+
+			void
 			PrintStats(
-				const char*	aHeader)
+				const char*	aHeader,
+				CSVOutput*	aCSV)
 			{
 				printf("\n--- %s ---\n", aHeader);
 
@@ -178,12 +191,13 @@ namespace jelly::Test::Sim
 					combinedStats.Add(threadStats);
 				}
 
-				_T::PrintStats(combinedStats, stateCounters);
+				_T::PrintStats(combinedStats, stateCounters, aCSV, m_csvColumnPrefix.c_str());
 			}
 
 		private:
 
 			std::vector<Thread<_T>*>	m_threads;
+			std::string					m_csvColumnPrefix;
 		};
 
 	}
@@ -197,22 +211,51 @@ namespace jelly::Test::Sim
 
 		network.m_host.DeleteAllFiles(UINT32_MAX);
 
+		std::unique_ptr<CSVOutput> csv;
+
+		if(!aConfig->m_simCSVOutput.empty() && aConfig->m_simCSVOutputColumns.size() > 0)
+		{
+			csv = std::make_unique<CSVOutput>(aConfig->m_simCSVOutput.c_str());
+
+			for(const std::string& column : aConfig->m_simCSVOutputColumns)
+				csv->ShowColumn(column.c_str());
+		}
+
 		{
 			ThreadCollection<Client> clients(&network.m_host, aConfig->m_simNumClientThreads, network.m_clients);
 			ThreadCollection<GameServer> gameServers(&network.m_host, aConfig->m_simNumGameServerThreads, network.m_gameServers);
 			ThreadCollection<BlobServer::BlobServerType> blobServers(&network.m_host, aConfig->m_simNumBlobServerThreads, network.m_blobServers);
 			ThreadCollection<LockServer::LockServerType> lockServers(&network.m_host, aConfig->m_simNumLockServerThreads, network.m_lockServers);
 
+			if(csv)
+			{
+				clients.InitCSV("C", csv.get());
+				gameServers.InitCSV("G", csv.get());
+				blobServers.InitCSV("B", csv.get());
+				lockServers.InitCSV("L", csv.get());
+			}			
+
+			Timer infoTimer(1000);
+
 			for(;;)
 			{
-				system("clear");
+				if(infoTimer.HasExpired())
+				{
+					if(csv)
+						csv->StartNewRow();
+			
+					system("clear");
 
-				clients.PrintStats("CLIENTS");
-				gameServers.PrintStats("GAME_SERVERS");
-				blobServers.PrintStats("BLOB_SERVERS");
-				lockServers.PrintStats("LOCK_SERVERS");
+					clients.PrintStats("CLIENTS", csv.get());
+					gameServers.PrintStats("GAME_SERVERS", csv.get());
+					blobServers.PrintStats("BLOB_SERVERS", csv.get());
+					lockServers.PrintStats("LOCK_SERVERS", csv.get());
 
-				std::this_thread::sleep_for(std::chrono::seconds(1));
+					if(csv)
+						csv->Flush();
+				}
+
+				std::this_thread::sleep_for(std::chrono::milliseconds(50)); // It's not going to be exactly every 1 second, but close enough (tm)
 			}
 		}
 	}

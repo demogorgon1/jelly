@@ -46,7 +46,7 @@ namespace jelly::Test::Sim
 		static void
 		PrintStats(
 			const Stats&						aStats,
-			const std::vector<Stats::Entry>&	aStateCounters)
+			const std::vector<Stats::Entry>&	aStateInfo)
 		{
 			aStats.Print(Stats::TYPE_SAMPLE, STAT_NUM_CLIENTS, "NUM_CLIENTS");
 			aStats.Print(Stats::TYPE_COUNTER, STAT_SET_REQUESTS, "SET_REQUESTS");
@@ -54,13 +54,13 @@ namespace jelly::Test::Sim
 			aStats.Print(Stats::TYPE_COUNTER, STAT_LOCK_REQUESTS, "LOCK_REQUESTS");
 			aStats.Print(Stats::TYPE_COUNTER, STAT_UNLOCK_REQUESTS, "UNLOCK_REQUESTS");
 
-			Stats::PrintStateCounter("INIT", Client::STATE_INIT, aStateCounters, aStats, STAT_INIT_TIME);
-			Stats::PrintStateCounter("NEED_LOCK", Client::STATE_NEED_LOCK, aStateCounters, aStats, STAT_NEED_LOCK_TIME);
-			Stats::PrintStateCounter("WAITING_FOR_LOCK", Client::STATE_WAITING_FOR_LOCK, aStateCounters, aStats, STAT_WAITING_FOR_LOCK_TIME);
-			Stats::PrintStateCounter("NEED_BLOB", Client::STATE_NEED_BLOB, aStateCounters, aStats, STAT_NEED_BLOB_TIME);
-			Stats::PrintStateCounter("WAITING_FOR_BLOB_GET", Client::STATE_WAITING_FOR_BLOB_GET, aStateCounters, aStats, STAT_WAITING_FOR_BLOB_GET_TIME);
-			Stats::PrintStateCounter("CONNECTED", Client::STATE_CONNECTED, aStateCounters, aStats, STAT_CONNECTED_TIME);
-			Stats::PrintStateCounter("WAITING_FOR_BLOB_SET", Client::STATE_WAITING_FOR_BLOB_SET, aStateCounters, aStats, STAT_WAITING_FOR_BLOB_SET_TIME);
+			Stats::PrintStateInfo("INIT", Client::STATE_INIT, aStateInfo, aStats, STAT_INIT_TIME);
+			Stats::PrintStateInfo("NEED_LOCK", Client::STATE_NEED_LOCK, aStateInfo, aStats, STAT_NEED_LOCK_TIME);
+			Stats::PrintStateInfo("WAITING_FOR_LOCK", Client::STATE_WAITING_FOR_LOCK, aStateInfo, aStats, STAT_WAITING_FOR_LOCK_TIME);
+			Stats::PrintStateInfo("NEED_BLOB", Client::STATE_NEED_BLOB, aStateInfo, aStats, STAT_NEED_BLOB_TIME);
+			Stats::PrintStateInfo("WAITING_FOR_BLOB_GET", Client::STATE_WAITING_FOR_BLOB_GET, aStateInfo, aStats, STAT_WAITING_FOR_BLOB_GET_TIME);
+			Stats::PrintStateInfo("CONNECTED", Client::STATE_CONNECTED, aStateInfo, aStats, STAT_CONNECTED_TIME);
+			Stats::PrintStateInfo("WAITING_FOR_BLOB_SET", Client::STATE_WAITING_FOR_BLOB_SET, aStateInfo, aStats, STAT_WAITING_FOR_BLOB_SET_TIME);
 		}
 
 		static uint32_t
@@ -93,7 +93,7 @@ namespace jelly::Test::Sim
 		void	Update(
 					IHost*						aHost,
 					Stats&						aStats);
-		void	UpdateStateCounters(
+		void	UpdateStateInfo(
 					Stats&						aStats,
 					std::vector<Stats::Entry>&	aOut);
 		void	Connect(

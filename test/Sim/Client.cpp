@@ -85,7 +85,7 @@ namespace jelly::Test::Sim
 	}
 
 	void		
-	Client::UpdateStateCounters(
+	Client::UpdateStateInfo(
 		Stats&									aStats,
 		std::vector<Stats::Entry>&				aOut)
 	{

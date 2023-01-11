@@ -36,7 +36,7 @@ namespace jelly::Test::Sim
 	}
 
 	void	
-	GameServer::UpdateStateCounters(
+	GameServer::UpdateStateInfo(
 		Stats&						aStats,
 		std::vector<Stats::Entry>&	aOut)
 	{

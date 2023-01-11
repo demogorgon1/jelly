@@ -29,7 +29,7 @@ namespace jelly::Test::Sim
 				_T::InitStats(m_readStats);
 				_T::InitStats(m_writeStats);
 
-				m_stateCounters.resize(_T::GetNumStates());
+				m_stateInfo.resize(_T::GetNumStates());
 
 				m_updateTimer.SetTimeout(1000);
 			}
@@ -69,16 +69,16 @@ namespace jelly::Test::Sim
 			void
 			GetStats(
 				Stats&						aOutStats,
-				std::vector<Stats::Entry>&	aOutStateCounters)
+				std::vector<Stats::Entry>&	aOutStateInfo)
 			{
 				std::lock_guard lock(m_readStatsLock);
 
 				aOutStats = m_readStats;
 				m_readStats.Reset();
 
-				JELLY_ASSERT(m_stateCounters.size() == aOutStateCounters.size());
-				for(size_t i = 0; i < m_stateCounters.size(); i++)
-					aOutStateCounters[i].Add(m_stateCounters[i]);
+				JELLY_ASSERT(m_stateInfo.size() == aOutStateInfo.size());
+				for(size_t i = 0; i < m_stateInfo.size(); i++)
+					aOutStateInfo[i].Add(m_stateInfo[i]);
 			}
 
 		private:
@@ -91,7 +91,7 @@ namespace jelly::Test::Sim
 			Stats									m_writeStats;
 			Stats									m_readStats;
 			std::mutex								m_readStatsLock;
-			std::vector<Stats::Entry>				m_stateCounters;
+			std::vector<Stats::Entry>				m_stateInfo;
 			Timer									m_updateTimer;
 
 			static void
@@ -105,14 +105,14 @@ namespace jelly::Test::Sim
 
 					if(aThread->m_updateTimer.HasExpired())
 					{
-						for(Stats::Entry& stateCounter : aThread->m_stateCounters)
+						for(Stats::Entry& stateCounter : aThread->m_stateInfo)
 							stateCounter.Reset();
 
 						{
 							std::lock_guard lock(aThread->m_readStatsLock);
 							
 							for (_T* t : aThread->m_objects)
-								t->UpdateStateCounters(aThread->m_writeStats, aThread->m_stateCounters);
+								t->UpdateStateInfo(aThread->m_writeStats, aThread->m_stateInfo);
 
 							aThread->m_readStats.Add(aThread->m_writeStats);
 						}

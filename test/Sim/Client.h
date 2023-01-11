@@ -35,13 +35,13 @@ namespace jelly::Test::Sim
 		static void
 		PrintStats(
 			const Stats&										aStats,
-			const std::vector<Stats::Entry>&					aStateCounters)
+			const std::vector<Stats::Entry>&					aStateInfo)
 		{
-			Stats::PrintStateCounter("INIT", STATE_INIT, aStateCounters, aStats, STAT_INIT_TIME);
-			Stats::PrintStateCounter("WAITING_TO_CONNECT", STATE_WAITING_TO_CONNECT, aStateCounters, aStats, STAT_WAITING_TO_CONNECT_TIME);
-			Stats::PrintStateCounter("WAITING_FOR_CONNECTION", STATE_WAITING_FOR_CONNECTION, aStateCounters, aStats, STAT_WAITING_FOR_CONNECTION_TIME);
-			Stats::PrintStateCounter("CONNECTED", STATE_CONNECTED, aStateCounters, aStats, STAT_CONNECTED_TIME);
-			Stats::PrintStateCounter("DISCONNECTED", STATE_DISCONNECTED, aStateCounters, aStats, STAT_DISCONNECTED_TIME);
+			Stats::PrintStateInfo("INIT", STATE_INIT, aStateInfo, aStats, STAT_INIT_TIME);
+			Stats::PrintStateInfo("WAITING_TO_CONNECT", STATE_WAITING_TO_CONNECT, aStateInfo, aStats, STAT_WAITING_TO_CONNECT_TIME);
+			Stats::PrintStateInfo("WAITING_FOR_CONNECTION", STATE_WAITING_FOR_CONNECTION, aStateInfo, aStats, STAT_WAITING_FOR_CONNECTION_TIME);
+			Stats::PrintStateInfo("CONNECTED", STATE_CONNECTED, aStateInfo, aStats, STAT_CONNECTED_TIME);
+			Stats::PrintStateInfo("DISCONNECTED", STATE_DISCONNECTED, aStateInfo, aStats, STAT_DISCONNECTED_TIME);
 		}
 
 		static uint32_t
@@ -58,7 +58,7 @@ namespace jelly::Test::Sim
 		void		Update(
 						IHost*									aHost,
 						Stats&									aStats);
-		void		UpdateStateCounters(
+		void		UpdateStateInfo(
 						Stats&									aStats,
 						std::vector<Stats::Entry>&				aOut);
 

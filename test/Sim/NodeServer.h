@@ -41,12 +41,12 @@ namespace jelly::Test::Sim
 		static void
 		PrintStats(
 			const Stats&						aStats,
-			const std::vector<Stats::Entry>&	aStateCounters)
+			const std::vector<Stats::Entry>&	aStateInfo)
 		{
 			aStats.Print(Stats::TYPE_SAMPLE, STAT_PROCESSED_REQUESTS, "PROCESSED_REQUESTS");
 
-			Stats::PrintStateCounter("INIT", STATE_INIT, aStateCounters, aStats, STAT_INIT_TIME);
-			Stats::PrintStateCounter("RUNNING", STATE_RUNNING, aStateCounters, aStats, STAT_RUNNING_TIME);
+			Stats::PrintStateInfo("INIT", STATE_INIT, aStateInfo, aStats, STAT_INIT_TIME);
+			Stats::PrintStateInfo("RUNNING", STATE_RUNNING, aStateInfo, aStats, STAT_RUNNING_TIME);
 		}
 
 		static uint32_t
@@ -122,7 +122,7 @@ namespace jelly::Test::Sim
 		}
 
 		void		
-		UpdateStateCounters(
+		UpdateStateInfo(
 			Stats&						aStats,
 			std::vector<Stats::Entry>&	aOut)
 		{

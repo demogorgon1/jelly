@@ -68,15 +68,15 @@ namespace jelly::Test::Sim
 		};
 
 		static void
-		PrintStateCounter(
+		PrintStateInfo(
 			const char*							aName,
 			uint32_t							aState,
-			const std::vector<Stats::Entry>&	aStateCounters,
+			const std::vector<Stats::Entry>&	aStateInfo,
 			const Stats&						aStats, 
 			uint32_t							aIndex)
 		{
-			JELLY_ASSERT((size_t)aState < aStateCounters.size());
-			const Entry& stateEntry = aStateCounters[aState];
+			JELLY_ASSERT((size_t)aState < aStateInfo.size());
+			const Entry& stateEntry = aStateInfo[aState];
 
 			if(stateEntry.m_count > 0)
 			{

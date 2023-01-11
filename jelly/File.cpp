@@ -1,11 +1,13 @@
+#include <jelly/Base.h>
+
 #if defined(JELLY_FORCE_POSIX_FILE_IO)
-	#define JELLY_POSIX_FILE_IO
+#define JELLY_POSIX_FILE_IO
 #elif defined(JELLY_FORCE_WINDOWS_FILE_IO)
-	#define JELLY_WINDOWS_FILE_IO
+#define JELLY_WINDOWS_FILE_IO
 #elif defined(_WIN32)
-	#define JELLY_WINDOWS_FILE_IO
+#define JELLY_WINDOWS_FILE_IO
 #else
-	#define JELLY_POSIX_FILE_IO
+#define JELLY_POSIX_FILE_IO
 #endif
 
 #if defined(JELLY_WINDOWS_FILE_IO)
@@ -15,8 +17,6 @@
 	#include <fcntl.h>
 	#include <unistd.h>
 #endif
-
-#include <stdint.h>
 
 #include <jelly/ErrorUtils.h>
 #include <jelly/Log.h>

@@ -1,16 +1,9 @@
 #pragma once
 
-#include <mutex>
 #include <random>
-#include <unordered_map>
-
-#include <stdint.h>
-
-#include <jelly/CompletionEvent.h>
 
 #include "Network.h"
 #include "PlayerBlob.h"
-#include "Timer.h"
 
 namespace jelly::Test::Sim
 {

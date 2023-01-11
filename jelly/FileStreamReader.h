@@ -1,7 +1,5 @@
 #pragma once
 
-#include <memory>
-
 #include <jelly/IFileStreamReader.h>
 
 #include "File.h"

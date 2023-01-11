@@ -1,3 +1,5 @@
+#include <jelly/Base.h>
+
 #include <jelly/CompletionEvent.h>
 #include <jelly/Compression.h>
 #include <jelly/ErrorUtils.h>

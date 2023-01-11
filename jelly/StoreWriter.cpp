@@ -1,3 +1,5 @@
+#include <jelly/Base.h>
+
 #include <jelly/ErrorUtils.h>
 #include <jelly/IItem.h>
 

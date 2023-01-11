@@ -1,9 +1,6 @@
 #pragma once
 
-#include <stddef.h>
-#include <stdint.h>
-
-#include <jelly/IWriter.h>
+#include "IWriter.h"
 
 namespace jelly
 {

@@ -1,7 +1,5 @@
 #pragma once
 
-#include <string.h>
-
 #include "BufferWriter.h"
 #include "Compression.h"
 #include "ErrorUtils.h"

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.19)
 
 include_directories(
 	include
@@ -13,6 +13,10 @@ add_library(jelly STATIC ${C_FILES} ${H_FILES})
 add_library(jelly::jelly ALIAS jelly)
 
 target_compile_features(jelly PRIVATE cxx_std_20)
+
+if(JELLY_PRECOMPILED_HEADERS)
+	target_precompile_headers(jelly PRIVATE <jelly/Base.h>)
+endif()
 
 if(JELLY_ZSTD)
 	target_link_libraries(jelly PUBLIC ${ZSTD_LIBRARIES})

@@ -1,6 +1,6 @@
-#if defined(JELLY_ZSTD)
+#include <jelly/Base.h>
 
-#include <stdio.h>
+#if defined(JELLY_ZSTD)
 
 #include <zstd.h>
 

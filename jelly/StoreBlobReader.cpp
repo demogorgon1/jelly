@@ -1,7 +1,4 @@
-#include <stddef.h>
-#include <stdint.h>
-
-#include <memory>
+#include <jelly/Base.h>
 
 #include <jelly/BufferReader.h>
 #include <jelly/ErrorUtils.h>

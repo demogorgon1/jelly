@@ -1,4 +1,4 @@
-#include <stdlib.h>
+#include <jelly/API.h>
 
 #include "AllTests.h"
 #include "Config.h"

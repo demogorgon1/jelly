@@ -1,3 +1,5 @@
+#include <jelly/Base.h>
+
 #include <jelly/ErrorUtils.h>
 #include <jelly/Log.h>
 #include <jelly/StringUtils.h>

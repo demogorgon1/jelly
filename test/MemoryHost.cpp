@@ -1,13 +1,4 @@
-#include <string.h>
-
-#include <jelly/CompletionEvent.h>
-#include <jelly/ErrorUtils.h>
-#include <jelly/IFileStreamReader.h>
-#include <jelly/IItem.h>
-#include <jelly/IStoreBlobReader.h>
-#include <jelly/IStoreWriter.h>
-#include <jelly/IWALWriter.h>
-#include <jelly/IWriter.h>
+#include <jelly/API.h>
 
 #include "MemoryHost.h"
 
@@ -143,7 +134,7 @@ namespace jelly
 						spaceLeft = Buffer::MAX_SIZE;
 					}
 
-					size_t toCopy = std::min(spaceLeft, remaining);
+					size_t toCopy = std::min<size_t>(spaceLeft, remaining);
 					memcpy(m_bufferList->m_tail->m_data + m_bufferList->m_tail->m_size, p, toCopy);
 					m_bufferList->m_tail->m_size += toCopy;
 					p += toCopy;
@@ -190,7 +181,7 @@ namespace jelly
 				while(remaining > 0 && m_currentBuffer != NULL)
 				{
 					JELLY_ASSERT(m_currentBufferOffset <= m_currentBuffer->m_size);
-					size_t toCopy = std::min(m_currentBuffer->m_size - m_currentBufferOffset, remaining);
+					size_t toCopy = std::min<size_t>(m_currentBuffer->m_size - m_currentBufferOffset, remaining);
 
 					if(toCopy > 0)
 					{

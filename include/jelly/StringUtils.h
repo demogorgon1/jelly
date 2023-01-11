@@ -1,8 +1,5 @@
 #pragma once
 
-#include <stdarg.h>
-#include <stdio.h>
-
 #if defined(_WIN32)
 
 	#define JELLY_STRING_FORMAT_VARARGS(Buffer, BufferSize, Format)						\

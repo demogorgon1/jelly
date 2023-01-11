@@ -1,3 +1,5 @@
+#include <jelly/Base.h>
+
 #include <jelly/StoreManager.h>
 
 #include "PathUtils.h"

@@ -1,9 +1,5 @@
 #pragma once
 
-#include <atomic>
-
-#include <jelly/DefaultHost.h>
-
 namespace jelly
 {
 	

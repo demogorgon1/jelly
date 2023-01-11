@@ -1,3 +1,5 @@
+#include <jelly/API.h>
+
 #include "../Config.h"
 
 #include "Client.h"

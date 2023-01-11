@@ -1,5 +1,4 @@
-#include <stdint.h>
-#include <string.h>
+#include <jelly/Base.h>
 
 #include <jelly/Compression.h>
 #include <jelly/ErrorUtils.h>
@@ -50,7 +49,7 @@ namespace jelly
 				if(m_tail != NULL && m_tail->m_numBytes < Buffer::SIZE)
 				{
 					// We can copy at least some of the new data into the tail buffer, maybe we can avoid an allocation
-					size_t toCopy = std::min(Buffer::SIZE - m_tail->m_numBytes, remaining);
+					size_t toCopy = std::min<size_t>(Buffer::SIZE - m_tail->m_numBytes, remaining);
 					memcpy(m_tail->m_data + m_tail->m_numBytes, p, toCopy);
 					remaining -= toCopy;
 					p += toCopy;
@@ -60,7 +59,7 @@ namespace jelly
 				while(remaining > 0)
 				{
 					std::unique_ptr<Buffer> buffer(new Buffer());
-					buffer->m_numBytes = std::min(Buffer::SIZE, remaining);
+					buffer->m_numBytes = std::min<size_t>(Buffer::SIZE, remaining);
 					memcpy(buffer->m_data, p, buffer->m_numBytes);
 					p += buffer->m_numBytes;
 					remaining -= buffer->m_numBytes;
@@ -152,7 +151,7 @@ namespace jelly
 
 				JELLY_ASSERT(m_head->m_numBytes > m_head->m_readOffset);
 
-				size_t toCopy = std::min(m_head->m_numBytes - m_head->m_readOffset, remaining);
+				size_t toCopy = std::min<size_t>(m_head->m_numBytes - m_head->m_readOffset, remaining);
 				memcpy(p, &m_head->m_data[m_head->m_readOffset], toCopy);
 				m_head->m_readOffset += toCopy;
 				p += toCopy;

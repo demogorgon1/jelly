@@ -2,9 +2,7 @@
 
 #if defined(JELLY_ZSTD)
 
-#include <functional>
-
-#include <jelly/Compression.h>
+#include "Compression.h"
 
 namespace jelly
 {

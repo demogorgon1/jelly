@@ -1,10 +1,6 @@
 #include <limits>
-#include <type_traits>
 
-#include <jelly/Blob.h>
-#include <jelly/BufferReader.h>
-#include <jelly/VarSizeUInt.h>
-#include <jelly/ZstdCompression.h>
+#include <jelly/API.h>
 
 namespace jelly
 {

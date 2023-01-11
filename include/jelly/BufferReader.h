@@ -1,8 +1,5 @@
 #pragma once
 
-#include <stddef.h>
-#include <stdint.h>
-
 #include <jelly/IReader.h>
 
 namespace jelly

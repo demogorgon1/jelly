@@ -15,6 +15,7 @@ macro(jelly_option OPTION_NAME OPTION_TEXT OPTION_DEFAULT)
 endmacro()
 
 jelly_option(JELLY_ZSTD "Use ZSTD." OFF)
+jelly_option(JELLY_PRECOMPILED_HEADERS "Enable precompiled headers." ON)
 
 enable_testing()
 

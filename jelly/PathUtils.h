@@ -1,10 +1,5 @@
 #pragma once
 
-#include <stdint.h>
-
-#include <filesystem>
-#include <string>
-
 namespace jelly
 {
 

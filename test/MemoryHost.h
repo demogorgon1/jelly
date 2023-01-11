@@ -1,11 +1,5 @@
 #pragma once
 
-#include <atomic>
-#include <map>
-#include <memory>
-
-#include <jelly/IHost.h>
-
 namespace jelly
 {
 

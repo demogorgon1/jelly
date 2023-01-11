@@ -1,6 +1,4 @@
-#include <algorithm>
-
-#include <string.h>
+#include <jelly/Base.h>
 
 #include <jelly/BufferReader.h>
 
@@ -28,7 +26,7 @@ namespace jelly
 		void*			aBuffer,
 		size_t			aBufferSize) 
 	{
-		size_t toCopy = std::min(aBufferSize, m_remaining);
+		size_t toCopy = std::min<size_t>(aBufferSize, m_remaining);
 			
 		if(toCopy > 0)
 		{

@@ -1,15 +1,5 @@
 #pragma once
 
-#include <sstream>
-#include <string>
-#include <vector>
-
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <jelly/ErrorUtils.h>
-
 namespace jelly
 {
 

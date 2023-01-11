@@ -1,9 +1,5 @@
 #pragma once
 
-#include <stddef.h>
-
-#include <string>
-
 #include <jelly/IReader.h>
 #include <jelly/IWriter.h>
 

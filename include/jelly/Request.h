@@ -1,8 +1,5 @@
 #pragma once
 
-#include <atomic>
-#include <functional>
-
 #include "CompletionEvent.h"
 #include "Result.h"
 

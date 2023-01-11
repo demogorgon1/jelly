@@ -1,3 +1,5 @@
+#include <jelly/API.h>
+
 #include "Sim/SimTest.h"
 
 #include "CompressionTest.h"

@@ -1,9 +1,6 @@
 #pragma once
 
 #include <random>
-#include <vector>
-
-#include <jelly/DefaultHost.h>
 
 #include "BlobServer.h"
 #include "LockServer.h"

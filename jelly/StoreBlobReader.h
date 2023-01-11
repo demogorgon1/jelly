@@ -1,8 +1,5 @@
 #pragma once
 
-#include <memory>
-#include <vector>
-
 #include <jelly/IItem.h>
 #include <jelly/IStoreBlobReader.h>
 

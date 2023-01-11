@@ -1,13 +1,6 @@
 // Test compression implementations
 
-#include <string.h>
-
-#include <memory>
-#include <sstream>
-
-#include <jelly/Compression.h>
-#include <jelly/ErrorUtils.h>
-#include <jelly/ZstdCompression.h>
+#include <jelly/API.h>
 
 namespace jelly
 {

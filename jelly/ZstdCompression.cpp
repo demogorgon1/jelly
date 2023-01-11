@@ -1,3 +1,5 @@
+#include <jelly/Base.h>
+
 #if defined(JELLY_ZSTD)
 
 #include <jelly/ErrorUtils.h>

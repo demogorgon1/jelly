@@ -1,8 +1,5 @@
 #pragma once
 
-#include <memory>
-#include <vector>
-
 #include <jelly/IWALWriter.h>
 
 #include "File.h"

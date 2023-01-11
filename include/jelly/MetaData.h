@@ -1,7 +1,5 @@
 #pragma once
 
-#include <stdint.h>
-
 #include "ErrorUtils.h"
 
 namespace jelly

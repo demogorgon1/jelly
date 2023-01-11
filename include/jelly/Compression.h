@@ -1,7 +1,5 @@
 #pragma once
 
-#include <functional>
-
 #include "IWriter.h"
 
 namespace jelly

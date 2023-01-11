@@ -1,5 +1,6 @@
-#include <memory>
 #include <thread>
+
+#include <jelly/API.h>
 
 #include "../Config.h"
 
@@ -10,7 +11,6 @@
 #include "LockServer.h"
 #include "Network.h"
 #include "Stats.h"
-#include "Timer.h"
 
 namespace jelly::Test::Sim
 {

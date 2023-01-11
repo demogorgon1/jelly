@@ -1,4 +1,5 @@
 #include <locale.h>
+#include <stdint.h>
 #include <string.h>
 
 #include <jelly/ErrorUtils.h>

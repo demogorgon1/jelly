@@ -174,11 +174,11 @@ namespace jelly::Test::Sim
 				char timingInfoString[256];
 				if(timeSampleEntry.m_count > 0)
 				{
-					snprintf(timingInfoString, sizeof(timingInfoString), "(changes: avg:%llums, min:%llums, max:%llums, count:%llu)",
-						timeSampleEntry.m_sum / timeSampleEntry.m_count, 
-						timeSampleEntry.m_min,
-						timeSampleEntry.m_max,
-						timeSampleEntry.m_count);
+					snprintf(timingInfoString, sizeof(timingInfoString), "(changes: avg:%ums, min:%ums, max:%ums, count:%u)",
+						(uint32_t)(timeSampleEntry.m_sum / timeSampleEntry.m_count), 
+						(uint32_t)timeSampleEntry.m_min,
+						(uint32_t)timeSampleEntry.m_max,
+						(uint32_t)timeSampleEntry.m_count);
 
 					if(aCSV != NULL)
 					{
@@ -212,9 +212,9 @@ namespace jelly::Test::Sim
 					timingInfoString[0] = '\0';
 				}
 
-				printf("[STATE]%s : %llu avg:%.1fs, min:%.1fs, max:%.1fs %s\n", 
+				printf("[STATE]%s : %u avg:%.1fs, min:%.1fs, max:%.1fs %s\n", 
 					aName, 
-					stateEntry.m_count, 
+					(uint32_t)stateEntry.m_count, 
 					((float)stateEntry.m_sum / (float)stateEntry.m_count) / 1000.0f, 
 					(float)stateEntry.m_min / 1000.0f, 
 					(float)stateEntry.m_max / 1000.0f,
@@ -322,7 +322,7 @@ namespace jelly::Test::Sim
 
 			if(aType == TYPE_COUNTER)
 			{
-				printf("%-32s : %llu\n", aName, t.m_count);
+				printf("%-32s : %u\n", aName, (uint32_t)t.m_count);
 
 				if(aCSV != NULL)
 				{
@@ -339,7 +339,7 @@ namespace jelly::Test::Sim
 				}
 				else
 				{
-					printf("%-32s : [avg:%8llu][min:%8llu][max:%8llu]\n", aName, t.m_sum / t.m_count, t.m_min, t.m_max);
+					printf("%-32s : [avg:%8u][min:%8u][max:%8u]\n", aName, (uint32_t)(t.m_sum / t.m_count), (uint32_t)t.m_min, (uint32_t)t.m_max);
 
 					if (aCSV != NULL)
 					{

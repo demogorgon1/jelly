@@ -25,6 +25,8 @@ namespace jelly
 	class Node
 	{
 	public:		
+		typedef CompactionResult<_KeyType, _STLKeyHasher> CompactionResultType;
+
 		Node(
 			IHost*				aHost,
 			uint32_t			aNodeId,
@@ -36,7 +38,6 @@ namespace jelly
 			, m_nodeId(aNodeId)
 			, m_config(aConfig)
 			, m_stopped(false)
-			, m_hasPendingCompaction(false)
 			, m_pendingStoreWALItemCount(0)
 		{
 			for(uint32_t i = 0; i < m_config.m_walConcurrency; i++)
@@ -238,50 +239,47 @@ namespace jelly
 		}
 
 		// Perform (minor) compaction on the specified store ids. Any tombstones found from before
-		// "min store id" will be evicted. This can be called from any thread, but only when compaction 
-		// operation can be happening at the same time.
-		void
+		// "min store id" will be evicted. This can be called from any thread. Apply the result of the 
+		// compaction using ApplyCompactionResult() from the main thread.
+		CompactionResultType*
 		PerformCompaction(
-			const CompactionJob&	aCompactionJob)
+			const CompactionJob&						aCompactionJob)
 		{
 			JELLY_ASSERT(aCompactionJob.m_oldestStoreId != UINT32_MAX);
 			JELLY_ASSERT(aCompactionJob.m_storeId1 != UINT32_MAX);
 			JELLY_ASSERT(aCompactionJob.m_storeId2 != UINT32_MAX);
 			JELLY_ASSERT(aCompactionJob.m_storeId1 != aCompactionJob.m_storeId2);
 			JELLY_ASSERT(m_compactionCallback);
-			JELLY_ASSERT(!m_hasPendingCompaction);
-			JELLY_ASSERT(!m_pendingCompactionResult);
 
-			m_hasPendingCompaction = true;
-			m_pendingCompactionResult = std::make_unique<CompactionResult<_KeyType, _STLKeyHasher>>();
+			std::unique_ptr<CompactionResultType> result(new CompactionResultType());
 
 			{
 				std::lock_guard lock(m_currentCompactionStoreIdsLock);
 
 				if (m_currentCompactionStoreIds.find(aCompactionJob.m_storeId1) != m_currentCompactionStoreIds.end())
-					return;
+					return result.release();
 
 				if (m_currentCompactionStoreIds.find(aCompactionJob.m_storeId2) != m_currentCompactionStoreIds.end())
-					return;
+					return result.release();
 
 				m_currentCompactionStoreIds.insert(aCompactionJob.m_storeId1);
 				m_currentCompactionStoreIds.insert(aCompactionJob.m_storeId2);
 			}
 
-			m_compactionCallback(aCompactionJob, m_pendingCompactionResult.get());
+			m_compactionCallback(aCompactionJob, result.get());
+
+			return result.release();
 		}
 
 		// When PerformCompaction() has completed (on any thread) this method should be called on the main thread
 		// to apply the result of the compaction.
 		void
-		ApplyCompactionResult()
+		ApplyCompactionResult(
+			CompactionResultType*						aCompactionResult)
 		{
-			JELLY_ASSERT(m_hasPendingCompaction);
-			JELLY_ASSERT(m_pendingCompactionResult);
-
 			std::vector<uint32_t> deletedStoreIds;
 
-			for(typename CompactionResult<_KeyType, _STLKeyHasher>::CompactedStore* compactedStore : m_pendingCompactionResult->GetCompactedStores())
+			for(typename CompactionResultType::CompactedStore* compactedStore : aCompactionResult->GetCompactedStores())
 			{
 				if(compactedStore->m_redirect)
 				{	
@@ -294,9 +292,6 @@ namespace jelly
 
 				deletedStoreIds.push_back(compactedStore->m_storeId);
 			}
-
-			m_pendingCompactionResult = NULL;
-			m_hasPendingCompaction = false;
 
 			{
 				std::lock_guard lock(m_currentCompactionStoreIdsLock);
@@ -465,8 +460,8 @@ namespace jelly
 		std::vector<WAL*>											m_pendingWALs;
 		std::vector<WAL*>											m_wals;
 
-		std::atomic_bool											m_hasPendingCompaction;
-		std::unique_ptr<CompactionResult<_KeyType, _STLKeyHasher>>	m_pendingCompactionResult;
+		//std::atomic_bool											m_hasPendingCompaction;
+		//std::unique_ptr<CompactionResult<_KeyType, _STLKeyHasher>>	m_pendingCompactionResult;
 
 		std::mutex													m_currentCompactionStoreIdsLock;
 		std::unordered_set<uint32_t>								m_currentCompactionStoreIds;

@@ -22,15 +22,10 @@ namespace jelly
 		namespace
 		{
 
-			typedef BlobNode<
-				UIntKey<uint32_t>,
-				UInt32Blob,
-				UIntKey<uint32_t>::Hasher> BlobNodeType;
+			typedef BlobNode<UIntKey<uint32_t>, UInt32Blob, UIntKey<uint32_t>::Hasher> BlobNodeType;
+			typedef LockNode<UIntKey<uint32_t>, UIntLock<uint32_t>, UIntKey<uint32_t>::Hasher> LockNodeType;
 
-			typedef LockNode<
-				UIntKey<uint32_t>,
-				UIntLock<uint32_t>,
-				UIntKey<uint32_t>::Hasher> LockNodeType;
+			typedef CompactionResult<UIntKey<uint32_t>, UIntKey<uint32_t>::Hasher> CompactionResultType;
 
 			template <typename _NodeType>
 			void
@@ -43,9 +38,9 @@ namespace jelly
 
 				CompactionJob compactionJob = compactionAdvisor.GetNextSuggestion();
 				if(compactionJob.IsSet())
-				{
-					aNode->PerformCompaction(compactionJob);
-					aNode->ApplyCompactionResult();
+				{					
+					std::unique_ptr<CompactionResultType> compactionResult(aNode->PerformCompaction(compactionJob));
+					aNode->ApplyCompactionResult(compactionResult.get());
 				}
 			}
 
@@ -799,8 +794,12 @@ namespace jelly
 
 					BlobNodeType blobNode(aHost, 0, config);
 					_VerifyResidentKeys(&blobNode, { });
-					blobNode.PerformCompaction(CompactionJob(0, 0, 1));
-					blobNode.ApplyCompactionResult();
+
+					{
+						std::unique_ptr<CompactionResultType> compactionResult(blobNode.PerformCompaction(CompactionJob(0, 0, 1)));
+						blobNode.ApplyCompactionResult(compactionResult.get());
+					}
+
 					_VerifyResidentKeys(&blobNode, { });
 
 					// Do a get
@@ -1174,8 +1173,10 @@ namespace jelly
 					LockNodeType lockNode(aHost, 0);
 
 					// Do a compaction
-					lockNode.PerformCompaction(CompactionJob(0, 0, 1));
-					lockNode.ApplyCompactionResult();
+					{
+						std::unique_ptr<CompactionResultType> compactionResult(lockNode.PerformCompaction(CompactionJob(0, 0, 1)));
+						lockNode.ApplyCompactionResult(compactionResult.get());
+					}
 				}
 
 				// Now we should have 1 store less
@@ -1205,9 +1206,9 @@ namespace jelly
 						lockNode.FlushPendingStore();
 					}
 
-					// Do a compaction - but this time use "newest" strategy, so we get the one that include a tombstone
-					lockNode.PerformCompaction(CompactionJob(2, 3, 4));
-					lockNode.ApplyCompactionResult();
+					// Do a compaction 
+					std::unique_ptr<CompactionResultType> compactionResult(lockNode.PerformCompaction(CompactionJob(2, 3, 4)));
+					lockNode.ApplyCompactionResult(compactionResult.get());
 				}
 
 				// Tombstone should be gone now

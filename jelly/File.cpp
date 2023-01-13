@@ -26,6 +26,117 @@
 namespace jelly
 {
 
+	namespace
+	{
+		struct WriteBuffer
+		{
+			WriteBuffer()
+				: m_p(m_data)
+				, m_spaceLeft(File::WRITE_BUFFER_SIZE)
+				, m_bytes(0)
+				, m_next(NULL)
+			{
+
+			}
+
+			uint8_t			m_data[File::WRITE_BUFFER_SIZE];
+			uint8_t*		m_p;
+			size_t			m_spaceLeft;
+			size_t			m_bytes;
+			WriteBuffer*	m_next;
+		};
+
+		struct WriteBufferList
+		{
+			WriteBufferList()
+				: m_head(NULL)
+				, m_tail(NULL)
+				, m_count(0)
+			{
+
+			}
+
+			~WriteBufferList()
+			{
+				while(m_head != NULL)
+				{
+					JELLY_ASSERT(m_count > 0);
+					WriteBuffer* next = m_head->m_next;
+					delete m_head;
+					m_head = next;
+					m_count--;
+				}
+				JELLY_ASSERT(m_count == 0);
+			}
+
+			void
+			Write(
+				const void*		aBuffer,
+				size_t			aBufferSize)
+			{
+				size_t remaining = aBufferSize;
+				const uint8_t* p = (const uint8_t*)aBuffer;
+
+				while(remaining > 0)
+				{
+					if(m_tail == NULL || m_tail->m_spaceLeft == 0)
+					{
+						WriteBuffer* newWriteBuffer = new WriteBuffer();
+						if(m_tail != NULL)
+							m_tail->m_next = newWriteBuffer;
+						else
+							m_head = newWriteBuffer;
+
+						m_tail = newWriteBuffer;							
+
+						m_count++;
+					}
+
+					JELLY_ASSERT(m_tail->m_spaceLeft > 0);
+					size_t toCopy = std::min<size_t>(m_tail->m_spaceLeft, remaining);
+					memcpy(m_tail->m_p, p, toCopy);
+					m_tail->m_p += toCopy;
+					m_tail->m_bytes += toCopy;
+					m_tail->m_spaceLeft -= toCopy;
+					p += toCopy;
+					remaining -= toCopy;
+				}
+			}
+
+			size_t
+			GetCount() const
+			{
+				return m_head != NULL;
+			}
+
+			WriteBuffer*
+			DetachNextWriteBuffer()
+			{
+				if(m_head == NULL)
+					return NULL;
+
+				WriteBuffer* nextWriteBuffer = m_head;
+
+				m_head = m_head->m_next;
+				
+				if(m_head == NULL)
+					m_tail = NULL;
+
+				JELLY_ASSERT(m_count > 0);
+				m_count--;
+
+				return nextWriteBuffer;
+			}
+
+			// Public data
+			WriteBuffer*	m_head;
+			WriteBuffer*	m_tail;
+			size_t			m_count;
+		};
+	}
+
+	//---------------------------------------------------------------------
+
 	struct File::Internal
 	{
 		Internal()
@@ -38,12 +149,63 @@ namespace jelly
 			#endif
 		}
 
-		size_t		m_size;
+		size_t
+		Write(
+			const void*		aBuffer,
+			size_t			aBufferSize)
+		{
+			#if defined(JELLY_WINDOWS_FILE_IO)		
+				JELLY_ASSERT(m_handle != INVALID_HANDLE_VALUE);
+
+				DWORD bytes;
+				if (!WriteFile(m_handle, aBuffer, (DWORD)aBufferSize, &bytes, NULL))
+					return 0;
+
+				return (size_t)bytes;
+			#elif defined(JELLY_POSIX_FILE_IO)
+				JELLY_ASSERT(m_fd != -1);
+
+				ssize_t bytes = write(m_fd, aBuffer, aBufferSize);
+				if(bytes < 0)
+					return 0;
+
+				return (size_t) bytes;
+			#endif
+		}
+
+
+		size_t	
+		Read(
+			void*			aBuffer,
+			size_t			aBufferSize) 
+		{
+			#if defined(JELLY_WINDOWS_FILE_IO)		
+				JELLY_ASSERT(m_handle != INVALID_HANDLE_VALUE);
+
+				DWORD bytes;
+				if (!ReadFile(m_handle, aBuffer, (DWORD)aBufferSize, &bytes, NULL))
+					return 0;
+
+				return (size_t)bytes;
+			#elif defined(JELLY_POSIX_FILE_IO)
+				JELLY_ASSERT(m_fd != -1);
+
+				ssize_t bytes = read(m_fd, aBuffer, aBufferSize);
+				if(bytes < 0)
+					return 0;
+
+				return (size_t)bytes;
+			#endif
+		}
+
+		// Public data
+		size_t			m_size;
+		WriteBufferList	m_writeBufferList;
 
 		#if defined(JELLY_WINDOWS_FILE_IO)				
-			HANDLE	m_handle;
+			HANDLE		m_handle;
 		#elif defined(JELLY_POSIX_FILE_IO)
-			int		m_fd;
+			int			m_fd;
 		#endif
 	};
 
@@ -54,23 +216,7 @@ namespace jelly
 		void*			aBuffer,
 		size_t			aBufferSize) 
 	{
-		#if defined(JELLY_WINDOWS_FILE_IO)		
-			JELLY_ASSERT(m_internal->m_handle != INVALID_HANDLE_VALUE);
-
-			DWORD bytes;
-			if (!ReadFile(m_internal->m_handle, aBuffer, (DWORD)aBufferSize, &bytes, NULL))
-				return 0;
-
-			return (size_t)bytes;
-		#elif defined(JELLY_POSIX_FILE_IO)
-			JELLY_ASSERT(m_internal->m_fd != -1);
-
-			ssize_t bytes = read(m_internal->m_fd, aBuffer, aBufferSize);
-			if(bytes < 0)
-				return 0;
-
-			return (size_t)bytes;
-		#endif
+		return m_internal->Read(aBuffer, aBufferSize);
 	}
 
 	//---------------------------------------------------------------------
@@ -80,27 +226,21 @@ namespace jelly
 		const void*		aBuffer,
 		size_t			aBufferSize) 
 	{
-		#if defined(JELLY_WINDOWS_FILE_IO)		
-			JELLY_ASSERT(m_internal->m_handle != INVALID_HANDLE_VALUE);
+		m_internal->m_writeBufferList.Write(aBuffer, aBufferSize);
 
-			DWORD bytes;
-			if (!WriteFile(m_internal->m_handle, aBuffer, (DWORD)aBufferSize, &bytes, NULL))
-				return 0;
+		m_internal->m_size += aBufferSize;
 
-			m_internal->m_size += (size_t)bytes;
+		if(m_internal->m_writeBufferList.GetCount() > 1)
+		{
+			std::unique_ptr<WriteBuffer> writeBuffer(m_internal->m_writeBufferList.DetachNextWriteBuffer());
+			JELLY_ASSERT(writeBuffer);
 
-			return (size_t)bytes;
-		#elif defined(JELLY_POSIX_FILE_IO)
-			JELLY_ASSERT(m_internal->m_fd != -1);
+			// FIXME: this could be done asynchronously 
+			size_t bytes = m_internal->Write(writeBuffer->m_data, writeBuffer->m_bytes);
+			JELLY_CHECK(bytes == writeBuffer->m_bytes, "Unable to write to file.");
+		}
 
-			ssize_t bytes = write(m_internal->m_fd, aBuffer, aBufferSize);
-			if(bytes < 0)
-				return 0;
-
-			m_internal->m_size += (size_t)bytes;
-
-			return (size_t)bytes;
-		#endif
+		return aBufferSize;
 	}
 
 	//---------------------------------------------------------------------
@@ -298,9 +438,25 @@ namespace jelly
 	void
 	File::Flush()
 	{
+		JELLY_ASSERT(m_mode == MODE_WRITE_STREAM);
+
+		if(m_internal->m_writeBufferList.GetCount() > 0)
+		{
+			for(;;)
+			{
+				std::unique_ptr<WriteBuffer> writeBuffer(m_internal->m_writeBufferList.DetachNextWriteBuffer());
+				if(!writeBuffer)
+					break;
+
+				size_t bytes = m_internal->Write(writeBuffer->m_data, writeBuffer->m_bytes);
+				JELLY_CHECK(bytes == writeBuffer->m_bytes, "Unable to flush write buffers to file.");
+			}
+
+			JELLY_ASSERT(m_internal->m_writeBufferList.GetCount() == 0);
+		}
+
 		#if defined(JELLY_WINDOWS_FILE_IO)	
 			JELLY_ASSERT(m_internal->m_handle != INVALID_HANDLE_VALUE);
-			JELLY_ASSERT(m_mode == MODE_WRITE_STREAM);
 
 			if (!FlushFileBuffers(m_internal->m_handle))
 				JELLY_FATAL_ERROR("FlushFileBuffers() failed (path %s): %u", m_path.c_str(), GetLastError());

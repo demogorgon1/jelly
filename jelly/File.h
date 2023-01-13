@@ -9,6 +9,8 @@ namespace jelly
 	class File
 	{
 	public:
+		static const size_t WRITE_BUFFER_SIZE = 64 * 1024;
+
 		struct Internal;
 
 		struct Reader

@@ -1,7 +1,7 @@
 #pragma once
 
+#include "CompactionJob.h"
 #include "CompactionResult.h"
-#include "CompactionStrategy.h"
 #include "IHost.h"
 #include "IStoreWriter.h"
 #include "NodeConfig.h"
@@ -237,13 +237,17 @@ namespace jelly
 			}
 		}
 
-		// Perform compaction, i.e. it will find permanent stores that are suitable for merging.
-		// This can be called from any thread, but only when compaction operation can be happening
-		// at the same time.
+		// Perform (minor) compaction on the specified store ids. Any tombstones found from before
+		// "min store id" will be evicted. This can be called from any thread, but only when compaction 
+		// operation can be happening at the same time.
 		void
 		PerformCompaction(
-			CompactionStrategy		aCompactionStrategy)
+			const CompactionJob&	aCompactionJob)
 		{
+			JELLY_ASSERT(aCompactionJob.m_oldestStoreId != UINT32_MAX);
+			JELLY_ASSERT(aCompactionJob.m_storeId1 != UINT32_MAX);
+			JELLY_ASSERT(aCompactionJob.m_storeId2 != UINT32_MAX);
+			JELLY_ASSERT(aCompactionJob.m_storeId1 != aCompactionJob.m_storeId2);
 			JELLY_ASSERT(m_compactionCallback);
 			JELLY_ASSERT(!m_hasPendingCompaction);
 			JELLY_ASSERT(!m_pendingCompactionResult);
@@ -251,63 +255,20 @@ namespace jelly
 			m_hasPendingCompaction = true;
 			m_pendingCompactionResult = std::make_unique<CompactionResult<_KeyType, _STLKeyHasher>>();
 
-			std::vector<IHost::StoreInfo> storeInfo;
-			m_host->GetStoreInfo(m_nodeId, storeInfo);
-
-			// Never consider the highest (latest) store id for compaction as it could be in the process of writing.
-			// Furthermore, obviously, we'll need more than 1 store elligible for compaction - i.e. we need a minimum
-			// of 3 stores to proceed.
-			if(storeInfo.size() >= 3)
 			{
-				uint32_t oldestStoreId = storeInfo[0].m_id;
+				std::lock_guard lock(m_currentCompactionStoreIdsLock);
 
-				switch(aCompactionStrategy)
-				{
-				case COMPACTION_STRATEGY_SMALLEST:
-					{
-						const IHost::StoreInfo* small1 = NULL;
-						const IHost::StoreInfo* small2 = NULL;
+				if (m_currentCompactionStoreIds.find(aCompactionJob.m_storeId1) != m_currentCompactionStoreIds.end())
+					return;
 
-						// Find two smallest stores
-						for (size_t i = 0; i < storeInfo.size() - 1; i++)
-						{
-							const IHost::StoreInfo& t = storeInfo[i];
+				if (m_currentCompactionStoreIds.find(aCompactionJob.m_storeId2) != m_currentCompactionStoreIds.end())
+					return;
 
-							if (small1 == NULL)
-								small1 = &t;
-							else if (small2 == NULL)
-								small2 = &t;
-							else if (small1->m_size > t.m_size)
-								small1 = &t;
-							else if (small2->m_size > t.m_size)
-								small2 = &t;
-						}
-
-						JELLY_ASSERT(small1 != NULL && small2 != NULL);
-
-						m_compactionCallback(oldestStoreId, small1->m_id, small2->m_id, m_pendingCompactionResult.get());
-					}
-					break;
-
-				case COMPACTION_STRATEGY_NEWEST:
-					{
-						const IHost::StoreInfo* newest1 = &storeInfo[storeInfo.size() - 2];
-						const IHost::StoreInfo* newest2 = &storeInfo[storeInfo.size() - 3];
-
-						m_compactionCallback(oldestStoreId, newest1->m_id, newest2->m_id, m_pendingCompactionResult.get());
-					}
-					break;
-
-				case COMPACTION_STRATEGY_NONE:
-					{
-						// Do nothing
-					}
-					break;
-
-				default:
-					JELLY_ASSERT(false);
-				}
+				m_currentCompactionStoreIds.insert(aCompactionJob.m_storeId1);
+				m_currentCompactionStoreIds.insert(aCompactionJob.m_storeId2);
 			}
+
+			m_compactionCallback(aCompactionJob, m_pendingCompactionResult.get());
 		}
 
 		// When PerformCompaction() has completed (on any thread) this method should be called on the main thread
@@ -317,6 +278,8 @@ namespace jelly
 		{
 			JELLY_ASSERT(m_hasPendingCompaction);
 			JELLY_ASSERT(m_pendingCompactionResult);
+
+			std::vector<uint32_t> deletedStoreIds;
 
 			for(typename CompactionResult<_KeyType, _STLKeyHasher>::CompactedStore* compactedStore : m_pendingCompactionResult->GetCompactedStores())
 			{
@@ -328,10 +291,19 @@ namespace jelly
 				}
 
 				m_host->DeleteStore(m_nodeId, compactedStore->m_storeId);
+
+				deletedStoreIds.push_back(compactedStore->m_storeId);
 			}
 
 			m_pendingCompactionResult = NULL;
 			m_hasPendingCompaction = false;
+
+			{
+				std::lock_guard lock(m_currentCompactionStoreIdsLock);
+
+				for(uint32_t deletedStoreId : deletedStoreIds)
+					m_currentCompactionStoreIds.erase(deletedStoreId);
+			}
 		}
 
 		// Data access
@@ -344,7 +316,7 @@ namespace jelly
 
 		typedef std::unordered_map<_KeyType, _ItemType*, _STLKeyHasher> TableType;
 		typedef std::map<_KeyType, _ItemType*> PendingStoreType;
-		typedef std::function<void(uint32_t, uint32_t, uint32_t, CompactionResult<_KeyType, _STLKeyHasher>*)> CompactionCallback;
+		typedef std::function<void(const CompactionJob&, CompactionResult<_KeyType, _STLKeyHasher>*)> CompactionCallback;
 		typedef std::function<void(uint32_t, IStoreWriter*, PendingStoreType*)> FlushPendingStoreCallback;
 		typedef CompactionRedirect<_KeyType, _STLKeyHasher> CompactionRedirectType;
 		typedef std::unordered_map<uint32_t, CompactionRedirectType*> CompactionRedirectMap;
@@ -485,7 +457,7 @@ namespace jelly
 
 		std::mutex													m_nextStoreIdLock;
 		uint32_t													m_nextStoreId;
-
+		
 		std::mutex													m_requestsLock;
 		uint32_t													m_requestsWriteIndex;
 		Queue<_RequestType>											m_requests[2];
@@ -495,6 +467,9 @@ namespace jelly
 
 		std::atomic_bool											m_hasPendingCompaction;
 		std::unique_ptr<CompactionResult<_KeyType, _STLKeyHasher>>	m_pendingCompactionResult;
+
+		std::mutex													m_currentCompactionStoreIdsLock;
+		std::unordered_set<uint32_t>								m_currentCompactionStoreIds;
 
 		WAL*
 		_GetPendingWAL(

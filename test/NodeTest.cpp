@@ -32,6 +32,23 @@ namespace jelly
 				UIntLock<uint32_t>,
 				UIntKey<uint32_t>::Hasher> LockNodeType;
 
+			template <typename _NodeType>
+			void
+			_PerformCompaction(
+				_NodeType*													aNode,
+				IHost*														aHost)
+			{
+				CompactionAdvisor compactionAdvisor(aNode->GetNodeId(), aHost, 1, 1, 0, CompactionAdvisor::STRATEGY_SIZE_TIERED);
+				compactionAdvisor.Update();
+
+				CompactionJob compactionJob = compactionAdvisor.GetNextSuggestion();
+				if(compactionJob.IsSet())
+				{
+					aNode->PerformCompaction(compactionJob);
+					aNode->ApplyCompactionResult();
+				}
+			}
+
 			template <typename _ItemType>
 			void
 			_VerifyFileStreamReader(
@@ -586,14 +603,12 @@ namespace jelly
 							if (seconds % 7 == 0)
 							{
 								printf("lock: perform compaction...\n");
-								lockNode.PerformCompaction(COMPACTION_STRATEGY_SMALLEST);
-								lockNode.ApplyCompactionResult();
+								_PerformCompaction(&lockNode, aHost);
 							}
 							if (seconds % 8 == 0)
 							{
 								printf("blob: perform compaction...\n");
-								blobNode.PerformCompaction(COMPACTION_STRATEGY_SMALLEST);
-								blobNode.ApplyCompactionResult();
+								_PerformCompaction(&blobNode, aHost);
 							}
 
 							if(seconds == 60)
@@ -784,7 +799,7 @@ namespace jelly
 
 					BlobNodeType blobNode(aHost, 0, config);
 					_VerifyResidentKeys(&blobNode, { });
-					blobNode.PerformCompaction(COMPACTION_STRATEGY_SMALLEST);
+					blobNode.PerformCompaction(CompactionJob(0, 0, 1));
 					blobNode.ApplyCompactionResult();
 					_VerifyResidentKeys(&blobNode, { });
 
@@ -1159,7 +1174,7 @@ namespace jelly
 					LockNodeType lockNode(aHost, 0);
 
 					// Do a compaction
-					lockNode.PerformCompaction(COMPACTION_STRATEGY_SMALLEST);
+					lockNode.PerformCompaction(CompactionJob(0, 0, 1));
 					lockNode.ApplyCompactionResult();
 				}
 
@@ -1191,7 +1206,7 @@ namespace jelly
 					}
 
 					// Do a compaction - but this time use "newest" strategy, so we get the one that include a tombstone
-					lockNode.PerformCompaction(COMPACTION_STRATEGY_NEWEST);
+					lockNode.PerformCompaction(CompactionJob(2, 3, 4));
 					lockNode.ApplyCompactionResult();
 				}
 

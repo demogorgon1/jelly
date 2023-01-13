@@ -43,13 +43,9 @@ namespace jelly
 		{
 			_Restore();
 
-			this->m_compactionCallback = [&](
-				uint32_t										aOldest, 
-				uint32_t										a1, 
-				uint32_t										a2, 
-				CompactionResult<_KeyType, _STLKeyHasher>*		aOut) 
+			this->m_compactionCallback = [&](const CompactionJob& aCompactionJob, CompactionResult<_KeyType, _STLKeyHasher>* aOut) 
 			{ 
-				_PerformCompaction(aOldest, a1, a2, aOut); 
+				_PerformCompaction(aCompactionJob, aOut); 
 			};
 
 			this->m_flushPendingStoreCallback = [&](
@@ -376,14 +372,12 @@ namespace jelly
 
 		void
 		_PerformCompaction(
-			uint32_t									aOldestStoreId,
-			uint32_t									aStoreId1,
-			uint32_t									aStoreId2,
+			const CompactionJob&						aCompactionJob,
 			CompactionResult<_KeyType, _STLKeyHasher>*	aOut)
 		{
 			// Stores are always written in ascendening key order, so merging them is easy
-			std::unique_ptr<IFileStreamReader> f1(this->m_host->ReadStoreStream(this->m_nodeId, aStoreId1));
-			std::unique_ptr<IFileStreamReader> f2(this->m_host->ReadStoreStream(this->m_nodeId, aStoreId2));
+			std::unique_ptr<IFileStreamReader> f1(this->m_host->ReadStoreStream(this->m_nodeId, aCompactionJob.m_storeId1));
+			std::unique_ptr<IFileStreamReader> f2(this->m_host->ReadStoreStream(this->m_nodeId, aCompactionJob.m_storeId2));
 
 			{
 				uint32_t newStoreId = this->CreateStoreId();
@@ -411,14 +405,14 @@ namespace jelly
 
 					if (hasItem1 && !hasItem2)
 					{
-						if(!item1.m_tombstone.ShouldPrune(aOldestStoreId))
+						if(!item1.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
 							fOut->WriteItem(&item1, NULL);
 
 						hasItem1 = false;
 					}
 					else if (!hasItem1 && hasItem2)
 					{
-						if (!item2.m_tombstone.ShouldPrune(aOldestStoreId))
+						if (!item2.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
 							fOut->WriteItem(&item2, NULL);
 
 						hasItem2 = false;
@@ -429,14 +423,14 @@ namespace jelly
 
 						if (item1.m_key < item2.m_key)
 						{	
-							if (!item1.m_tombstone.ShouldPrune(aOldestStoreId))
+							if (!item1.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
 								fOut->WriteItem(&item1, NULL);
 
 							hasItem1 = false;
 						}
 						else if (item2.m_key < item1.m_key)
 						{
-							if (!item2.m_tombstone.ShouldPrune(aOldestStoreId))
+							if (!item2.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
 								fOut->WriteItem(&item2, NULL);
 
 							hasItem2 = false;
@@ -446,12 +440,12 @@ namespace jelly
 							// Items are the same - keep the one with the highest sequence number
 							if (item1.m_meta.m_seq > item2.m_meta.m_seq)
 							{
-								if (!item1.m_tombstone.ShouldPrune(aOldestStoreId))
+								if (!item1.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
 									fOut->WriteItem(&item1, NULL);
 							}
 							else
 							{
-								if (!item2.m_tombstone.ShouldPrune(aOldestStoreId))
+								if (!item2.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
 									fOut->WriteItem(&item2, NULL);
 							}
 
@@ -462,8 +456,8 @@ namespace jelly
 				}
 			}
 
-			aOut->AddCompactedStore(aStoreId1, NULL);
-			aOut->AddCompactedStore(aStoreId2, NULL);
+			aOut->AddCompactedStore(aCompactionJob.m_storeId1, NULL);
+			aOut->AddCompactedStore(aCompactionJob.m_storeId2, NULL);
 		}
 
 	};

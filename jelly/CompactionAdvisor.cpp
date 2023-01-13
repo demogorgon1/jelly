@@ -4,6 +4,7 @@
 #include <jelly/ErrorUtils.h>
 
 #include "RingBuffer.h"
+#include "SizeTieredCompactionStrategy.h"
 
 namespace jelly
 {
@@ -47,15 +48,23 @@ namespace jelly
 	{
 		Internal(
 			uint32_t							aTotalSizeMemory,
-			uint32_t							aTotalSizeTrendMemory)
+			uint32_t							aTotalSizeTrendMemory,
+			Strategy							aStrategy)
 			: m_totalSizeBuffer((size_t)aTotalSizeMemory)
 			, m_totalSizeTrendBuffer((size_t)aTotalSizeTrendMemory)
 		{
-
+			switch(aStrategy)
+			{
+			case STRATEGY_SIZE_TIERED:			m_compactionStrategy = std::make_unique<SizeTieredCompactionStrategy>(); break;
+			
+			default:				
+				JELLY_FATAL_ERROR("Invalid compaction strategy.");
+			}
 		}
 
-		RingBuffer<size_t>				m_totalSizeBuffer;
-		RingBuffer<int32_t>				m_totalSizeTrendBuffer;
+		RingBuffer<size_t>						m_totalSizeBuffer;
+		RingBuffer<int32_t>						m_totalSizeTrendBuffer;
+		std::unique_ptr<ICompactionStrategy>	m_compactionStrategy;
 	};
 
 	//------------------------------------------------------------------------
@@ -64,7 +73,9 @@ namespace jelly
 		uint32_t								aNodeId,
 		IHost*									aHost,
 		uint32_t								aTotalSizeMemory,
-		uint32_t								aTotalSizeTrendMemory)
+		uint32_t								aTotalSizeTrendMemory,
+		uint32_t								aMinCompactionStrategyUpdateIntervalMS,
+		Strategy								aStrategy)
 		: m_host(aHost)
 		, m_nodeId(aNodeId)
 		, m_suggestionBufferReadOffset(0)
@@ -73,7 +84,9 @@ namespace jelly
 	{
 		memset(m_suggestionBuffer, 0, sizeof(m_suggestionBuffer));
 
-		m_internal = std::make_unique<Internal>(aTotalSizeMemory, aTotalSizeTrendMemory);
+		m_internal = std::make_unique<Internal>(aTotalSizeMemory, aTotalSizeTrendMemory, aStrategy);
+
+		m_compactionStrategyUpdateCooldown.SetTimeout(aMinCompactionStrategyUpdateIntervalMS);
 	}
 	
 	CompactionAdvisor::~CompactionAdvisor()
@@ -88,8 +101,14 @@ namespace jelly
 		std::vector<IHost::StoreInfo> storeInfo;
 		m_host->GetStoreInfo(m_nodeId, storeInfo);
 
+		if (storeInfo.size() > 0)
+		{
+			// Remove latest store because it might be in the process of being created
+			storeInfo.resize(storeInfo.size() - 1);
+		}
+
 		// Update store size buffers and calculate trend and derivative
-		TotalStoreSize totalStoreSize;
+		ICompactionStrategy::TotalStoreSize totalStoreSize;
 
 		{
 			for (const IHost::StoreInfo& t : storeInfo)
@@ -105,20 +124,23 @@ namespace jelly
 		}
 
 		// Generate suggestions (if we have room for more and have enough stores)
-		if(m_suggestionCount < MAX_SUGGESTIONS && storeInfo.size() >= 3)
-		{			
-			for(uint32_t i = 0; i < (uint32_t)NUM_COMPACTION_STRATEGIES; i++)
-				_UpdateCompactionStrategy((CompactionStrategy)i, storeInfo, totalStoreSize);
-		}		
+		if(m_suggestionCount < MAX_SUGGESTIONS && storeInfo.size() >= 2 && m_compactionStrategyUpdateCooldown.HasExpired())
+		{
+			m_internal->m_compactionStrategy->Update(storeInfo, totalStoreSize, [&](
+				const CompactionJob& aSuggestion)
+			{
+				_AddSuggestion(aSuggestion);
+			});
+		}
 	}
 	
-	CompactionStrategy	
+	CompactionJob
 	CompactionAdvisor::GetNextSuggestion()
 	{
 		if(m_suggestionCount == 0)
-			return COMPACTION_STRATEGY_NONE;
+			return CompactionJob();
 
-		CompactionStrategy suggestion = m_suggestionBuffer[m_suggestionBufferReadOffset];
+		CompactionJob suggestion = m_suggestionBuffer[m_suggestionBufferReadOffset];
 		m_suggestionBufferReadOffset = (m_suggestionBufferReadOffset + 1) % MAX_SUGGESTIONS;
 		m_suggestionCount--;
 
@@ -129,7 +151,7 @@ namespace jelly
 
 	void				
 	CompactionAdvisor::_AddSuggestion(
-		CompactionStrategy						aSuggestion)
+		const CompactionJob&					aSuggestion)
 	{
 		if(m_suggestionCount < MAX_SUGGESTIONS)
 		{
@@ -137,16 +159,6 @@ namespace jelly
 			m_suggestionBufferWriteOffset = (m_suggestionBufferWriteOffset + 1) % MAX_SUGGESTIONS;
 			m_suggestionCount++;
 		}
-	}
-
-	void				
-	CompactionAdvisor::_UpdateCompactionStrategy(
-		CompactionStrategy						/*aCompactionStrategy*/,
-		const std::vector<IHost::StoreInfo>&	/*aStoreInfo*/,
-		const TotalStoreSize&					/*aTotalStoreSize*/)
-	{
-		//std::chrono::time_point<std::chrono::steady_clock> currentTime = std::chrono::steady_clock::now();
-		//uint32_t timeSinceLastCompaction = (uint32_t)std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - m_lastCompactionTimeStamps[aCompactionStrategy]).count();
 	}
 
 }

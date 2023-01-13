@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CompactionAdvisor.h"
-#include "CompactionStrategy.h"
+#include "CompactionJob.h"
 #include "Timer.h"
 
 namespace jelly
@@ -23,6 +23,8 @@ namespace jelly
 				, m_pendingStoreWALItemLimit(100000)
 				, m_compactionAdvisorSizeMemory(10)
 				, m_compactionAdvisorSizeTrendMemory(10)
+				, m_compactionAdvisorStrategy(CompactionAdvisor::STRATEGY_SIZE_TIERED)
+				, m_compactionAdvisorStrategyUpdateIntervalMS(10 * 1000)
 			{
 
 			}
@@ -34,6 +36,8 @@ namespace jelly
 			uint32_t										m_pendingStoreWALItemLimit;
 			uint32_t										m_compactionAdvisorSizeMemory;
 			uint32_t										m_compactionAdvisorSizeTrendMemory;
+			CompactionAdvisor::Strategy						m_compactionAdvisorStrategy;
+			uint32_t										m_compactionAdvisorStrategyUpdateIntervalMS;
 		};
 			
 		struct Event
@@ -46,13 +50,17 @@ namespace jelly
 				TYPE_PERFORM_COMPACTION
 			};
 
+			Event()
+				: m_type(Type(0))
+				, m_concurrentWALIndex(0)
+			{
+
+			}
+
 			Type											m_type;
 
-			union _u
-			{
-				CompactionStrategy							m_compactionStrategy;
-				uint32_t									m_concurrentWALIndex;
-			} m_u;
+			CompactionJob									m_compactionJob;		// TYPE_PERFORM_COMPACTION
+			uint32_t										m_concurrentWALIndex;	// TYPE_FLUSH_PENDING_WAL
 		};
 
 		typedef std::function<void(const Event&)> EventHandler;
@@ -63,7 +71,13 @@ namespace jelly
 			const Config&		aConfig = Config())
 			: m_node(aNode)
 			, m_config(aConfig)
-			, m_compactionAdvisor(aNode->GetNodeId(), aHost, aConfig.m_compactionAdvisorSizeMemory, aConfig.m_compactionAdvisorSizeTrendMemory)
+			, m_compactionAdvisor(
+				aNode->GetNodeId(), 
+				aHost, 
+				aConfig.m_compactionAdvisorSizeMemory, 
+				aConfig.m_compactionAdvisorSizeTrendMemory,
+				aConfig.m_compactionAdvisorStrategyUpdateIntervalMS,
+				aConfig.m_compactionAdvisorStrategy)
 		{
 			// Initialize concurrent WAL state
 			{
@@ -101,10 +115,10 @@ namespace jelly
 
 	private:
 
-		static Event EventFlushPendingWAL(uint32_t aConcurrentWALIndex) { Event t; t.m_type = Event::TYPE_FLUSH_PENDING_WAL; t.m_u.m_concurrentWALIndex = aConcurrentWALIndex; return t; }
+		static Event EventFlushPendingWAL(uint32_t aConcurrentWALIndex) { Event t; t.m_type = Event::TYPE_FLUSH_PENDING_WAL; t.m_concurrentWALIndex = aConcurrentWALIndex; return t; }
 		static Event EventFlushPendingStore() { Event t; t.m_type = Event::TYPE_FLUSH_PENDING_STORE; return t; }
 		static Event EventCleanupWALs() { Event t; t.m_type = Event::TYPE_CLEANUP_WALS; return t; }
-		static Event EventPerformCompaction(CompactionStrategy aCompactionStrategy) { Event t; t.m_type = Event::TYPE_PERFORM_COMPACTION; t.m_u.m_compactionStrategy = aCompactionStrategy; return t; }
+		static Event EventPerformCompaction(const CompactionJob& aCompactionJob) { Event t; t.m_type = Event::TYPE_PERFORM_COMPACTION; t.m_compactionJob = aCompactionJob; return t; }
 
 		const _NodeType*									m_node;
 		Config												m_config;
@@ -163,8 +177,8 @@ namespace jelly
 			{
 				m_compactionAdvisor.Update();
 
-				CompactionStrategy suggestion;
-				while((suggestion = m_compactionAdvisor.GetNextSuggestion()) != COMPACTION_STRATEGY_NONE)
+				CompactionJob suggestion;
+				while((suggestion = m_compactionAdvisor.GetNextSuggestion()).IsSet())
 					aEventHandler(EventPerformCompaction(suggestion));
 			}
 		}

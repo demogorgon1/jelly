@@ -53,9 +53,9 @@ namespace jelly
 		{
 			_Restore();
 
-			this->m_compactionCallback = [&](uint32_t aOldest, uint32_t a1, uint32_t a2, CompactionResult<_KeyType, _STLKeyHasher>* aOut) 
+			this->m_compactionCallback = [&](const CompactionJob& aCompactionJob, CompactionResult<_KeyType, _STLKeyHasher>* aOut) 
 			{ 
-				_PerformCompaction(aOldest, a1, a2, aOut); 
+				_PerformCompaction(aCompactionJob, aOut);
 			};
 			
 			this->m_flushPendingStoreCallback = [&](
@@ -551,14 +551,12 @@ namespace jelly
 
 		void
 		_PerformCompaction(
-			uint32_t									aOldestStoreId,
-			uint32_t									aStoreId1,
-			uint32_t									aStoreId2,
+			const CompactionJob&						aCompactionJob,
 			CompactionResult<_KeyType, _STLKeyHasher>*	aOut)
 		{
 			// Stores are always written in ascendening key order, so merging them is easy
-			std::unique_ptr<IFileStreamReader> f1(this->m_host->ReadStoreStream(this->m_nodeId, aStoreId1));
-			std::unique_ptr<IFileStreamReader> f2(this->m_host->ReadStoreStream(this->m_nodeId, aStoreId2));
+			std::unique_ptr<IFileStreamReader> f1(this->m_host->ReadStoreStream(this->m_nodeId, aCompactionJob.m_storeId1));
+			std::unique_ptr<IFileStreamReader> f2(this->m_host->ReadStoreStream(this->m_nodeId, aCompactionJob.m_storeId2));
 
 			std::unique_ptr<typename NodeBase::CompactionRedirectType> compactionRedirect1(new NodeBase::CompactionRedirectType());
 			std::unique_ptr<typename NodeBase::CompactionRedirectType> compactionRedirect2(new NodeBase::CompactionRedirectType());
@@ -597,7 +595,7 @@ namespace jelly
 
 					if (hasItem1 && !hasItem2)
 					{
-						if(!item1.m_tombstone.ShouldPrune(aOldestStoreId))
+						if(!item1.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
 						{
 							item1.m_storeOffset = fOut->WriteItem(&item1, this->m_host->GetCompressionProvider());
 							compactionRedirect1->AddEntry(item1.m_key, newStoreId, item1.m_storeOffset);
@@ -607,7 +605,7 @@ namespace jelly
 					}
 					else if (!hasItem1 && hasItem2)
 					{
-						if (!item2.m_tombstone.ShouldPrune(aOldestStoreId))
+						if (!item2.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
 						{
 							item2.m_storeOffset = fOut->WriteItem(&item2, this->m_host->GetCompressionProvider());
 							compactionRedirect2->AddEntry(item2.m_key, newStoreId, item2.m_storeOffset);
@@ -621,7 +619,7 @@ namespace jelly
 
 						if (item1.m_key < item2.m_key)
 						{								
-							if (!item1.m_tombstone.ShouldPrune(aOldestStoreId))
+							if (!item1.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
 							{
 								item1.m_storeOffset = fOut->WriteItem(&item1, this->m_host->GetCompressionProvider());
 								compactionRedirect1->AddEntry(item1.m_key, newStoreId, item1.m_storeOffset);
@@ -631,7 +629,7 @@ namespace jelly
 						}
 						else if (item2.m_key < item1.m_key)
 						{
-							if (!item2.m_tombstone.ShouldPrune(aOldestStoreId))
+							if (!item2.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
 							{
 								item2.m_storeOffset = fOut->WriteItem(&item2, this->m_host->GetCompressionProvider());
 								compactionRedirect2->AddEntry(item2.m_key, newStoreId, item2.m_storeOffset);
@@ -646,12 +644,12 @@ namespace jelly
 
 							if (item1.m_meta.m_seq > item2.m_meta.m_seq)
 							{
-								if (!item1.m_tombstone.ShouldPrune(aOldestStoreId))
+								if (!item1.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
 									offset = fOut->WriteItem(&item1, this->m_host->GetCompressionProvider());
 							}
 							else
 							{
-								if (!item2.m_tombstone.ShouldPrune(aOldestStoreId))
+								if (!item2.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
 									offset = fOut->WriteItem(&item2, this->m_host->GetCompressionProvider());
 							}
 
@@ -668,8 +666,8 @@ namespace jelly
 				}
 			}
 
-			aOut->AddCompactedStore(aStoreId1, compactionRedirect1.release());
-			aOut->AddCompactedStore(aStoreId2, compactionRedirect2.release());
+			aOut->AddCompactedStore(aCompactionJob.m_storeId1, compactionRedirect1.release());
+			aOut->AddCompactedStore(aCompactionJob.m_storeId2, compactionRedirect2.release());
 		}
 
 		void

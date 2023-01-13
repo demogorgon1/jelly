@@ -114,7 +114,7 @@ namespace jelly::Test::Sim
 						switch(aEvent.m_type)
 						{
 						case HousekeepingAdvisor<_NodeType>::Event::TYPE_FLUSH_PENDING_WAL:
-							m_node->FlushPendingWAL(aEvent.m_u.m_concurrentWALIndex);
+							m_node->FlushPendingWAL(aEvent.m_concurrentWALIndex);
 							break;
 
 						case HousekeepingAdvisor<_NodeType>::Event::TYPE_FLUSH_PENDING_STORE:
@@ -126,7 +126,8 @@ namespace jelly::Test::Sim
 							break;
 
 						case HousekeepingAdvisor<_NodeType>::Event::TYPE_PERFORM_COMPACTION:
-							// FIXME: perform compaction
+							m_node->PerformCompaction(aEvent.m_compactionJob);
+							m_node->ApplyCompactionResult();
 							break;
 
 						default:

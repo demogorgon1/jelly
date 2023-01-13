@@ -1,7 +1,8 @@
 #pragma once
 
-#include "CompactionStrategy.h"
+#include "CompactionJob.h"
 #include "IHost.h"
+#include "Timer.h"
 
 namespace jelly
 {
@@ -11,54 +12,43 @@ namespace jelly
 	class CompactionAdvisor
 	{
 	public:
+		enum Strategy
+		{
+			STRATEGY_SIZE_TIERED
+		};
+
 							CompactionAdvisor(
 								uint32_t								aNodeId,
 								IHost*									aHost,
 								uint32_t								aTotalSizeMemory,
-								uint32_t								aTotalSizeTrendMemory);
+								uint32_t								aTotalSizeTrendMemory,
+								uint32_t								aMinCompactionStrategyUpdateIntervalMS,
+								Strategy								aStrategy);
 							~CompactionAdvisor();
 
 		void				Update();
-		CompactionStrategy	GetNextSuggestion();
+		CompactionJob		GetNextSuggestion();
 
 	private:
 
 		uint32_t											m_nodeId;
 		IHost*												m_host;
+		Strategy											m_strategy;
 
-		std::chrono::time_point<std::chrono::steady_clock>	m_lastCompactionTimeStamps[NUM_COMPACTION_STRATEGIES];
+		Timer												m_compactionStrategyUpdateCooldown;
 
 		struct Internal;
 		std::unique_ptr<Internal>							m_internal;
 
 		// Ring-buffer for holding sugestions
 		static const size_t MAX_SUGGESTIONS = 16;
-		CompactionStrategy									m_suggestionBuffer[MAX_SUGGESTIONS];
+		CompactionJob										m_suggestionBuffer[MAX_SUGGESTIONS];
 		size_t												m_suggestionBufferReadOffset;
 		size_t												m_suggestionBufferWriteOffset;
 		size_t												m_suggestionCount;
 
-		struct TotalStoreSize
-		{
-			TotalStoreSize()
-				: m_c(0)
-				, m_dc(0)
-				, m_ddc(0)
-			{
-
-			}
-
-			size_t											m_c;	// Current
-			int32_t											m_dc;	// Trend of m_c
-			int32_t											m_ddc;	// Trend of m_dc;
-		};
-
 		void				_AddSuggestion(
-								CompactionStrategy						aSuggestion);
-		void				_UpdateCompactionStrategy(
-								CompactionStrategy						aCompactionStrategy,
-								const std::vector<IHost::StoreInfo>&	aStoreInfo,
-								const TotalStoreSize&					aTotalStoreSize);
+								const CompactionJob&					aSuggestion);
 	};
 
 }

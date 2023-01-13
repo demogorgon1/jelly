@@ -9,7 +9,8 @@ namespace jelly
 	{
 	public:
 							StoreManager(
-								const char*		aRoot);
+								const char*		aRoot,
+								const char*		aFilePrefix);
 							~StoreManager();
 
 		IStoreBlobReader*	GetStoreBlobReader(
@@ -26,6 +27,7 @@ namespace jelly
 	private:
 			
 		std::string	m_root;
+		std::string m_filePrefix;
 
 		struct Store;
 		typedef std::unordered_map<uint64_t, Store*> Map;

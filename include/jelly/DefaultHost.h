@@ -17,6 +17,7 @@ namespace jelly
 		};
 								DefaultHost(	
 									const char*					aRoot,
+									const char*					aFilePrefix,
 									CompressionMode				aCompressionMode);
 		virtual					~DefaultHost();
 
@@ -61,6 +62,7 @@ namespace jelly
 	private:
 		
 		std::string								m_root;
+		std::string								m_filePrefix;
 		std::unique_ptr<Compression::IProvider>	m_compressionProvider;
 		std::unique_ptr<StoreManager>			m_storeManager;
 	};

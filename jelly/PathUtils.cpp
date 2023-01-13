@@ -7,19 +7,38 @@
 namespace jelly
 {
 
+	namespace
+	{
+
+		void
+		_ValidateFilePrefix(
+			const char*						aFilePrefix)
+		{
+			const char* p = aFilePrefix;
+			while(*p != '\0')
+			{
+				JELLY_CHECK(*p != '-', "Invalid file prefix: %s", aFilePrefix);
+				p++;
+			}
+		}
+
+	}
+
 	namespace PathUtils
 	{
 
 		std::string
 		MakePath(
 			const char*						aRoot,
+			const char*						aFilePrefix,
 			FileType						aFileType,
 			uint32_t						aNodeId,
 			uint32_t						aId)
 		{
+			_ValidateFilePrefix(aFilePrefix);
 			const char* typeString = (aFileType == FILE_TYPE_WAL) ? "wal" : "store";
 			char path[1024];
-			size_t result = (size_t)std::snprintf(path, sizeof(path), "%s/jelly-%s-%u-%u.bin", aRoot, typeString, aNodeId, aId);
+			size_t result = (size_t)std::snprintf(path, sizeof(path), "%s/%sjelly-%s-%u-%u.bin", aRoot, aFilePrefix, typeString, aNodeId, aId);
 			JELLY_CHECK(result <= sizeof(path), "Path too long.");
 			return path;
 		}
@@ -27,6 +46,7 @@ namespace jelly
 		bool
 		ParsePath(
 			const std::filesystem::path&	aPath,
+			const char*						aFilePrefix,
 			FileType&						aOutFileType,
 			uint32_t&						aOutNodeId,
 			uint32_t&						aOutId)
@@ -35,6 +55,8 @@ namespace jelly
 			{
 				if (aPath.extension() != ".bin")
 					return false;
+
+				_ValidateFilePrefix(aFilePrefix);
 
 				std::stringstream tokenizer(aPath.filename().replace_extension("").string());
 
@@ -46,7 +68,7 @@ namespace jelly
 				if (tokens.size() != 4)
 					return false;
 
-				if (tokens[0] != "jelly")
+				if (tokens[0] != std::string(aFilePrefix) + std::string("jelly"))
 					return false;
 
 				if (tokens[1] == "store")

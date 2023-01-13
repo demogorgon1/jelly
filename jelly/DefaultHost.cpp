@@ -16,10 +16,12 @@ namespace jelly
 
 	DefaultHost::DefaultHost(
 		const char*					aRoot,
+		const char*					aFilePrefix,
 		CompressionMode				aCompressionMode)
 		: m_root(aRoot)
+		, m_filePrefix(aFilePrefix)
 	{
-		m_storeManager = std::make_unique<StoreManager>(aRoot);
+		m_storeManager = std::make_unique<StoreManager>(aRoot, aFilePrefix);
 
 		switch(aCompressionMode)
 		{
@@ -52,7 +54,7 @@ namespace jelly
 			PathUtils::FileType fileType;
 			uint32_t id;
 			uint32_t nodeId;
-			if(entry.is_regular_file() && PathUtils::ParsePath(entry.path(), fileType, nodeId, id))
+			if(entry.is_regular_file() && PathUtils::ParsePath(entry.path(), m_filePrefix.c_str(), fileType, nodeId, id))
 			{
 				if(aNodeId == UINT32_MAX || nodeId == aNodeId)
 					std::filesystem::remove(entry.path());
@@ -87,7 +89,7 @@ namespace jelly
 				PathUtils::FileType fileType;
 				uint32_t id;
 				uint32_t nodeId;
-				if (entry.is_regular_file() && PathUtils::ParsePath(entry.path(), fileType, nodeId, id))
+				if (entry.is_regular_file() && PathUtils::ParsePath(entry.path(), m_filePrefix.c_str(), fileType, nodeId, id))
 				{
 					if(nodeId == aNodeId)
 					{
@@ -121,7 +123,7 @@ namespace jelly
 				PathUtils::FileType fileType;
 				uint32_t nodeId;
 				uint32_t id;
-				if (entry.is_regular_file() && PathUtils::ParsePath(entry.path(), fileType, nodeId, id))
+				if (entry.is_regular_file() && PathUtils::ParsePath(entry.path(), m_filePrefix.c_str(), fileType, nodeId, id))
 				{	
 					if(nodeId == aNodeId && fileType == PathUtils::FILE_TYPE_STORE)
 					{
@@ -147,7 +149,7 @@ namespace jelly
 		uint32_t					aId) 
 	{
 		std::unique_ptr<FileStreamReader> f(new FileStreamReader(
-			PathUtils::MakePath(m_root.c_str(), PathUtils::FILE_TYPE_WAL, aNodeId, aId).c_str(),
+			PathUtils::MakePath(m_root.c_str(), m_filePrefix.c_str(), PathUtils::FILE_TYPE_WAL, aNodeId, aId).c_str(),
 			m_compressionProvider ? m_compressionProvider->CreateStreamDecompressor() : NULL));
 
 		if(!f->IsValid())
@@ -162,7 +164,7 @@ namespace jelly
 		uint32_t					aId) 
 	{
 		std::unique_ptr<WALWriter> f(new WALWriter(
-			PathUtils::MakePath(m_root.c_str(), PathUtils::FILE_TYPE_WAL, aNodeId, aId).c_str(),
+			PathUtils::MakePath(m_root.c_str(), m_filePrefix.c_str(), PathUtils::FILE_TYPE_WAL, aNodeId, aId).c_str(),
 			m_compressionProvider ? m_compressionProvider->CreateStreamCompressor() : NULL));
 
 		if (!f->IsValid())
@@ -178,7 +180,7 @@ namespace jelly
 	{
 		try
 		{
-			std::filesystem::remove(PathUtils::MakePath(m_root.c_str(), PathUtils::FILE_TYPE_WAL, aNodeId, aId).c_str());
+			std::filesystem::remove(PathUtils::MakePath(m_root.c_str(), m_filePrefix.c_str(), PathUtils::FILE_TYPE_WAL, aNodeId, aId).c_str());
 		}
 		catch (std::exception& e)
 		{
@@ -195,7 +197,7 @@ namespace jelly
 		CloseStoreBlobReader(aNodeId, aId);
 
 		std::unique_ptr<FileStreamReader> f(new FileStreamReader(
-			PathUtils::MakePath(m_root.c_str(), PathUtils::FILE_TYPE_STORE, aNodeId, aId).c_str(),
+			PathUtils::MakePath(m_root.c_str(), m_filePrefix.c_str(), PathUtils::FILE_TYPE_STORE, aNodeId, aId).c_str(),
 			NULL));
 
 		if (!f->IsValid())
@@ -229,7 +231,7 @@ namespace jelly
 		uint32_t					aId) 
 	{
 		std::unique_ptr<StoreWriter> f(new StoreWriter(
-			PathUtils::MakePath(m_root.c_str(), PathUtils::FILE_TYPE_STORE, aNodeId, aId).c_str()));
+			PathUtils::MakePath(m_root.c_str(), m_filePrefix.c_str(), PathUtils::FILE_TYPE_STORE, aNodeId, aId).c_str()));
 
 		if (!f->IsValid())
 			return NULL;

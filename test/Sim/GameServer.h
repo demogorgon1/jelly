@@ -61,21 +61,22 @@ namespace jelly::Test::Sim
 			const Stats&						aStats,
 			const std::vector<Stats::Entry>&	aStateInfo,
 			CSVOutput*							aCSV,
-			const char*							aCSVColumnPrefix)
+			const char*							aCSVColumnPrefix,
+			const Config*						aConfig)
 		{		
-			aStats.Print(Stats::TYPE_SAMPLE, STAT_NUM_CLIENTS, "NUM_CLIENTS", aCSVColumnPrefix, aCSV);
-			aStats.Print(Stats::TYPE_COUNTER, STAT_SET_REQUESTS, "SET_REQUESTS", aCSVColumnPrefix, aCSV);
-			aStats.Print(Stats::TYPE_COUNTER, STAT_GET_REQUESTS, "GET_REQUESTS", aCSVColumnPrefix, aCSV);
-			aStats.Print(Stats::TYPE_COUNTER, STAT_LOCK_REQUESTS, "LOCK_REQUESTS", aCSVColumnPrefix, aCSV);
-			aStats.Print(Stats::TYPE_COUNTER, STAT_UNLOCK_REQUESTS, "UNLOCK_REQUESTS", aCSVColumnPrefix, aCSV);
+			aStats.Print(Stats::TYPE_SAMPLE, STAT_NUM_CLIENTS, "NUM_CLIENTS", aCSVColumnPrefix, aCSV, aConfig);
+			aStats.Print(Stats::TYPE_COUNTER, STAT_SET_REQUESTS, "SET_REQUESTS", aCSVColumnPrefix, aCSV, aConfig);
+			aStats.Print(Stats::TYPE_COUNTER, STAT_GET_REQUESTS, "GET_REQUESTS", aCSVColumnPrefix, aCSV, aConfig);
+			aStats.Print(Stats::TYPE_COUNTER, STAT_LOCK_REQUESTS, "LOCK_REQUESTS", aCSVColumnPrefix, aCSV, aConfig);
+			aStats.Print(Stats::TYPE_COUNTER, STAT_UNLOCK_REQUESTS, "UNLOCK_REQUESTS", aCSVColumnPrefix, aCSV, aConfig);
 
-			Stats::PrintStateInfo("INIT", Client::STATE_INIT, aStateInfo, aStats, STAT_INIT_TIME, aCSVColumnPrefix, aCSV);
-			Stats::PrintStateInfo("NEED_LOCK", Client::STATE_NEED_LOCK, aStateInfo, aStats, STAT_NEED_LOCK_TIME, aCSVColumnPrefix, aCSV);
-			Stats::PrintStateInfo("WAITING_FOR_LOCK", Client::STATE_WAITING_FOR_LOCK, aStateInfo, aStats, STAT_WAITING_FOR_LOCK_TIME, aCSVColumnPrefix, aCSV);
-			Stats::PrintStateInfo("NEED_BLOB", Client::STATE_NEED_BLOB, aStateInfo, aStats, STAT_NEED_BLOB_TIME, aCSVColumnPrefix, aCSV);
-			Stats::PrintStateInfo("WAITING_FOR_BLOB_GET", Client::STATE_WAITING_FOR_BLOB_GET, aStateInfo, aStats, STAT_WAITING_FOR_BLOB_GET_TIME, aCSVColumnPrefix, aCSV);
-			Stats::PrintStateInfo("CONNECTED", Client::STATE_CONNECTED, aStateInfo, aStats, STAT_CONNECTED_TIME, aCSVColumnPrefix, aCSV);
-			Stats::PrintStateInfo("WAITING_FOR_BLOB_SET", Client::STATE_WAITING_FOR_BLOB_SET, aStateInfo, aStats, STAT_WAITING_FOR_BLOB_SET_TIME, aCSVColumnPrefix, aCSV);
+			Stats::PrintStateInfo("INIT", Client::STATE_INIT, aStateInfo, aStats, STAT_INIT_TIME, aCSVColumnPrefix, aCSV, aConfig);
+			Stats::PrintStateInfo("NEED_LOCK", Client::STATE_NEED_LOCK, aStateInfo, aStats, STAT_NEED_LOCK_TIME, aCSVColumnPrefix, aCSV, aConfig);
+			Stats::PrintStateInfo("WAITING_FOR_LOCK", Client::STATE_WAITING_FOR_LOCK, aStateInfo, aStats, STAT_WAITING_FOR_LOCK_TIME, aCSVColumnPrefix, aCSV, aConfig);
+			Stats::PrintStateInfo("NEED_BLOB", Client::STATE_NEED_BLOB, aStateInfo, aStats, STAT_NEED_BLOB_TIME, aCSVColumnPrefix, aCSV, aConfig);
+			Stats::PrintStateInfo("WAITING_FOR_BLOB_GET", Client::STATE_WAITING_FOR_BLOB_GET, aStateInfo, aStats, STAT_WAITING_FOR_BLOB_GET_TIME, aCSVColumnPrefix, aCSV, aConfig);
+			Stats::PrintStateInfo("CONNECTED", Client::STATE_CONNECTED, aStateInfo, aStats, STAT_CONNECTED_TIME, aCSVColumnPrefix, aCSV, aConfig);
+			Stats::PrintStateInfo("WAITING_FOR_BLOB_SET", Client::STATE_WAITING_FOR_BLOB_SET, aStateInfo, aStats, STAT_WAITING_FOR_BLOB_SET_TIME, aCSVColumnPrefix, aCSV, aConfig);
 		}
 
 		static uint32_t

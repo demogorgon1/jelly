@@ -49,12 +49,13 @@ namespace jelly::Test::Sim
 			const Stats&						aStats,
 			const std::vector<Stats::Entry>&	aStateInfo,
 			CSVOutput*							aCSV,
-			const char*							aCSVColumnPrefix)
+			const char*							aCSVColumnPrefix,
+			const Config*						aConfig)
 		{
-			aStats.Print(Stats::TYPE_SAMPLE, STAT_PROCESSED_REQUESTS, "PROCESSED_REQUESTS", aCSVColumnPrefix, aCSV);
+			aStats.Print(Stats::TYPE_SAMPLE, STAT_PROCESSED_REQUESTS, "PROCESSED_REQUESTS", aCSVColumnPrefix, aCSV, aConfig);
 
-			Stats::PrintStateInfo("INIT", STATE_INIT, aStateInfo, aStats, STAT_INIT_TIME, aCSVColumnPrefix, aCSV);
-			Stats::PrintStateInfo("RUNNING", STATE_RUNNING, aStateInfo, aStats, STAT_RUNNING_TIME, aCSVColumnPrefix, aCSV);
+			Stats::PrintStateInfo("INIT", STATE_INIT, aStateInfo, aStats, STAT_INIT_TIME, aCSVColumnPrefix, aCSV, aConfig);
+			Stats::PrintStateInfo("RUNNING", STATE_RUNNING, aStateInfo, aStats, STAT_RUNNING_TIME, aCSVColumnPrefix, aCSV, aConfig);
 		}
 
 		static uint32_t
@@ -69,7 +70,6 @@ namespace jelly::Test::Sim
 			: m_network(aNetwork)
 			, m_id(aId)
 			, m_state(STATE_INIT)
-			, m_accumRequestCount(0)
 			, m_hasNode(false)
 		{
 			m_stateTimeStamp = std::chrono::steady_clock::now();
@@ -94,8 +94,9 @@ namespace jelly::Test::Sim
 					m_node = std::make_unique<_NodeType>(aHost, m_id, config);
 					m_hasNode = true;
 
-					m_flushPendingWALsTimer.SetTimeout(1000);
-					m_performCompactionTimer.SetTimeout(60 * 1000);
+					typename HousekeepingAdvisor<_NodeType>::Config housekeepingAdvisorConfig;
+
+					m_housekeepingAdvisor = std::make_unique<HousekeepingAdvisor<_NodeType>>(aHost, m_node.get(), housekeepingAdvisorConfig);
 
 					m_state = STATE_RUNNING;
 				}
@@ -107,19 +108,31 @@ namespace jelly::Test::Sim
 
 					aStats.Sample(STAT_PROCESSED_REQUESTS, numProcessedRequests);
 				
-					m_accumRequestCount += numProcessedRequests;
-
-					if (m_accumRequestCount > 0 && m_flushPendingWALsTimer.HasExpired())
+					m_housekeepingAdvisor->Update([&](
+						const HousekeepingAdvisor<_NodeType>::Event& aEvent)
 					{
-						m_node->FlushPendingWAL(0);
+						switch(aEvent.m_type)
+						{
+						case HousekeepingAdvisor<_NodeType>::Event::TYPE_FLUSH_PENDING_WAL:
+							m_node->FlushPendingWAL(aEvent.m_u.m_concurrentWALIndex);
+							break;
 
-						m_accumRequestCount = 0;
-					}
+						case HousekeepingAdvisor<_NodeType>::Event::TYPE_FLUSH_PENDING_STORE:
+							m_node->FlushPendingStore();
+							break;
 
-					//if(m_performCompactionTimer.HasExpired())
-					//{
-					//	m_node->PerformCompaction();
-					//}
+						case HousekeepingAdvisor<_NodeType>::Event::TYPE_CLEANUP_WALS:
+							m_node->CleanupWALs();
+							break;
+
+						case HousekeepingAdvisor<_NodeType>::Event::TYPE_PERFORM_COMPACTION:
+							// FIXME: perform compaction
+							break;
+
+						default:
+							JELLY_ASSERT(false);
+						}
+					});						
 				}
 				break;
 
@@ -151,11 +164,7 @@ namespace jelly::Test::Sim
 
 		std::atomic_bool									m_hasNode;
 		std::unique_ptr<_NodeType>							m_node;
-
-		uint32_t											m_accumRequestCount;
-
-		Timer												m_flushPendingWALsTimer;
-		Timer												m_performCompactionTimer;
+		std::unique_ptr<HousekeepingAdvisor<_NodeType>>		m_housekeepingAdvisor;
 
 		Stats												m_stats;
 

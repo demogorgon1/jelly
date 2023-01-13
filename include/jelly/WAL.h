@@ -19,6 +19,7 @@ namespace jelly
 			: m_id(aId)
 			, m_writer(aWriter)
 			, m_refCount(0)
+			, m_size(0)
 		{
 
 		}
@@ -45,6 +46,7 @@ namespace jelly
 		Close()
 		{
 			JELLY_ASSERT(m_writer);
+			m_size = m_writer->GetSize();
 			m_writer = NULL;
 		}
 
@@ -55,17 +57,27 @@ namespace jelly
 				m_writer->Cancel();
 		}
 
+		void
+		SetSize(
+			size_t				aSize)
+		{
+			m_size = aSize;
+		}
+
 		// Data access
-		uint32_t	GetId() const { return m_id; }
-		uint32_t	GetRefCount() const { return m_refCount; }
-		bool		IsClosed() const { return !m_writer; }
-		IWALWriter*	GetWriter() { return m_writer.get(); }
+		uint32_t			GetId() const { return m_id; }
+		uint32_t			GetRefCount() const { return m_refCount; }
+		bool				IsClosed() const { return !m_writer; }
+		IWALWriter*			GetWriter() { return m_writer.get(); }
+		const IWALWriter*	GetWriter() const { return m_writer.get(); }
+		size_t				GetSize() const { return m_writer ? m_writer->GetSize() : m_size; }
 
 	private:
 
 		uint32_t							m_id;
 		std::unique_ptr<IWALWriter>			m_writer;
 		uint32_t							m_refCount;
+		size_t								m_size;
 	};
 
 }

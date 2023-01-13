@@ -26,6 +26,7 @@ namespace jelly
 			, m_prev(NULL)
 			, m_storeId(0)
 			, m_storeOffset(0)
+			, m_walInstanceCount(0)
 		{
 			m_meta.m_seq = aSeq;
 		}
@@ -40,6 +41,7 @@ namespace jelly
 			, m_prev(NULL)
 			, m_storeId(0)
 			, m_storeOffset(0)
+			, m_walInstanceCount(0)
 		{
 			m_meta.m_seq = aSeq;
 			m_blob.Copy(aBlob);
@@ -117,6 +119,7 @@ namespace jelly
 	
 		// Remaining members are part of runtime state, not serialized
 		WAL*								m_pendingWAL;
+		uint32_t							m_walInstanceCount;
 		uint32_t							m_storeId;
 		size_t								m_storeOffset;
 

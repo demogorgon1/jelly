@@ -451,7 +451,7 @@ namespace jelly
 
 				// IWALWriter implementation
 				size_t	
-				GetSize() override
+				GetSize() const override
 				{
 					return m_bufferList->m_totalBytes;
 				}
@@ -487,6 +487,12 @@ namespace jelly
 					}
 
 					m_pending.clear();
+				}
+
+				size_t
+				GetPendingWriteCount() const override
+				{
+					return m_pending.size();
 				}
 
 				// Public data

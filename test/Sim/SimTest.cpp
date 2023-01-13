@@ -170,10 +170,12 @@ namespace jelly::Test::Sim
 
 			void
 			PrintStats(
-				const char*	aHeader,
-				CSVOutput*	aCSV)
+				const char*		aHeader,
+				CSVOutput*		aCSV,
+				const Config*	aConfig)
 			{
-				printf("\n--- %s ---\n", aHeader);
+				if(aConfig->m_simTestStdOut)
+					printf("\n--- %s ---\n", aHeader);
 
 				Stats combinedStats;
 				_T::InitStats(combinedStats);
@@ -191,7 +193,7 @@ namespace jelly::Test::Sim
 					combinedStats.Add(threadStats);
 				}
 
-				_T::PrintStats(combinedStats, stateCounters, aCSV, m_csvColumnPrefix.c_str());
+				_T::PrintStats(combinedStats, stateCounters, aCSV, m_csvColumnPrefix.c_str(), aConfig);
 			}
 
 		private:
@@ -244,12 +246,13 @@ namespace jelly::Test::Sim
 					if(csv)
 						csv->StartNewRow();
 			
-					system("clear");
+					if(aConfig->m_simTestStdOut)
+						system("clear");
 
-					clients.PrintStats("CLIENTS", csv.get());
-					gameServers.PrintStats("GAME_SERVERS", csv.get());
-					blobServers.PrintStats("BLOB_SERVERS", csv.get());
-					lockServers.PrintStats("LOCK_SERVERS", csv.get());
+					clients.PrintStats("CLIENTS", csv.get(), aConfig);
+					gameServers.PrintStats("GAME_SERVERS", csv.get(), aConfig);
+					blobServers.PrintStats("BLOB_SERVERS", csv.get(), aConfig);
+					lockServers.PrintStats("LOCK_SERVERS", csv.get(), aConfig);
 
 					if(csv)
 						csv->Flush();

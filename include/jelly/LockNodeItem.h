@@ -20,6 +20,7 @@ namespace jelly
 			: m_key(aKey)
 			, m_lock(aLock)
 			, m_pendingWAL(NULL)
+			, m_walInstanceCount(0)
 		{
 
 		}
@@ -34,6 +35,7 @@ namespace jelly
 			: m_key(aKey)
 			, m_lock(aLock)
 			, m_pendingWAL(NULL)
+			, m_walInstanceCount(0)
 		{
 			m_meta.m_seq = aSeq;
 			m_meta.m_blobSeq = aBlobSeq;
@@ -113,6 +115,7 @@ namespace jelly
 
 		// Runtime state, not serialized
 		WAL*								m_pendingWAL;
+		uint32_t							m_walInstanceCount;
 	};
 
 }

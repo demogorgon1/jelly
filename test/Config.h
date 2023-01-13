@@ -35,6 +35,10 @@ namespace jelly
 					{
 						m_simTest = true;
 					}
+					else if (strcmp(arg, "-simtestnostdout") == 0)
+					{
+						m_simTestStdOut = false;
+					}
 					else if (strcmp(arg, "-simnumclients") == 0)
 					{
 						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
@@ -138,6 +142,7 @@ namespace jelly
 			uint32_t					m_simSetIntervalMS = 1000;
 			std::string					m_simCSVOutput;
 			std::vector<std::string>	m_simCSVOutputColumns;
+			bool						m_simTestStdOut = true;
 		};
 
 	}

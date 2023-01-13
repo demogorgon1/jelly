@@ -24,13 +24,14 @@ namespace jelly
 		bool		IsValid() const;
 
 		// IWALWriter implementation
-		size_t		GetSize() override;
+		size_t		GetSize() const override;
 		void		WriteItem(
 						const IItem*					aItem,
 						CompletionEvent*				aCompletionEvent,
 						Result*							aResult) override;
 		void		Flush() override;
 		void		Cancel() override;
+		size_t		GetPendingWriteCount() const override;
 
 	private:
 

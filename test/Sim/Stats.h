@@ -160,7 +160,8 @@ namespace jelly::Test::Sim
 			const Stats&						aStats, 
 			uint32_t							aIndex,
 			const char*							aCSVColumnPrefix,
-			CSVOutput*							aCSV)
+			CSVOutput*							aCSV,
+			const Config*						aConfig)
 		{
 			JELLY_ASSERT((size_t)aState < aStateInfo.size());
 			const Entry& stateEntry = aStateInfo[aState];
@@ -172,11 +173,14 @@ namespace jelly::Test::Sim
 				char timingInfoString[256];
 				if(timeSampleEntry.m_count > 0)
 				{
-					snprintf(timingInfoString, sizeof(timingInfoString), "(changes: avg:%ums, min:%ums, max:%ums, count:%u)",
-						(uint32_t)(timeSampleEntry.m_sum / timeSampleEntry.m_count), 
-						(uint32_t)timeSampleEntry.m_min,
-						(uint32_t)timeSampleEntry.m_max,
-						(uint32_t)timeSampleEntry.m_count);
+					if (aConfig->m_simTestStdOut)
+					{
+						snprintf(timingInfoString, sizeof(timingInfoString), "(changes: avg:%ums, min:%ums, max:%ums, count:%u)",
+							(uint32_t)(timeSampleEntry.m_sum / timeSampleEntry.m_count), 
+							(uint32_t)timeSampleEntry.m_min,
+							(uint32_t)timeSampleEntry.m_max,
+							(uint32_t)timeSampleEntry.m_count);
+					}
 
 					if(aCSV != NULL)
 					{
@@ -210,13 +214,16 @@ namespace jelly::Test::Sim
 					timingInfoString[0] = '\0';
 				}
 
-				printf("[STATE]%s : %u avg:%.1fs, min:%.1fs, max:%.1fs %s\n", 
-					aName, 
-					(uint32_t)stateEntry.m_count, 
-					((float)stateEntry.m_sum / (float)stateEntry.m_count) / 1000.0f, 
-					(float)stateEntry.m_min / 1000.0f, 
-					(float)stateEntry.m_max / 1000.0f,
-					timingInfoString);
+				if (aConfig->m_simTestStdOut)
+				{
+					printf("[STATE]%s : %u avg:%.1fs, min:%.1fs, max:%.1fs %s\n", 
+						aName, 
+						(uint32_t)stateEntry.m_count, 
+						((float)stateEntry.m_sum / (float)stateEntry.m_count) / 1000.0f, 
+						(float)stateEntry.m_min / 1000.0f, 
+						(float)stateEntry.m_max / 1000.0f,
+						timingInfoString);
+				}
 
 				if (aCSV != NULL)
 				{
@@ -313,14 +320,16 @@ namespace jelly::Test::Sim
 			uint32_t		aIndex,
 			const char*		aName,
 			const char*		aCSVColumnPrefix,
-			CSVOutput*		aCSV) const
+			CSVOutput*		aCSV,
+			const Config*	aConfig) const
 		{
 			JELLY_ASSERT((size_t)aIndex < m_entries.size());
 			const Entry& t = m_entries[aIndex];
 
 			if(aType == TYPE_COUNTER)
 			{
-				printf("%-32s : %u\n", aName, (uint32_t)t.m_count);
+				if (aConfig->m_simTestStdOut)
+					printf("%-32s : %u\n", aName, (uint32_t)t.m_count);
 
 				if(aCSV != NULL)
 				{
@@ -333,11 +342,13 @@ namespace jelly::Test::Sim
 			{
 				if (t.m_count == 0)
 				{
-					printf("%-32s : N/A\n", aName);
+					if (aConfig->m_simTestStdOut)
+						printf("%-32s : N/A\n", aName);
 				}
 				else
 				{
-					printf("%-32s : [avg:%8u][min:%8u][max:%8u]\n", aName, (uint32_t)(t.m_sum / t.m_count), (uint32_t)t.m_min, (uint32_t)t.m_max);
+					if (aConfig->m_simTestStdOut)
+						printf("%-32s : [avg:%8u][min:%8u][max:%8u]\n", aName, (uint32_t)(t.m_sum / t.m_count), (uint32_t)t.m_min, (uint32_t)t.m_max);
 
 					if (aCSV != NULL)
 					{

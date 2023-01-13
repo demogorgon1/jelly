@@ -68,7 +68,16 @@ namespace jelly
 						item->m_pendingWAL->RemoveReference();
 						item->m_pendingWAL = NULL;
 					}
+
+					if(item->m_walInstanceCount > 0)
+					{
+						JELLY_ASSERT(item->m_walInstanceCount <= this->m_pendingStoreWALItemCount);
+						this->m_pendingStoreWALItemCount -= item->m_walInstanceCount;
+						item->m_walInstanceCount = 0;
+					}
 				}
+
+				JELLY_ASSERT(this->m_pendingStoreWALItemCount == 0);
 			};
 		}
 
@@ -332,6 +341,8 @@ namespace jelly
 					this->SetItem(key, item.release());
 				}
 			}
+
+			aWAL->SetSize(aReader->GetReadOffset());
 		}
 
 		void

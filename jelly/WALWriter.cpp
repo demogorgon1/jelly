@@ -43,7 +43,7 @@ namespace jelly
 	//--------------------------------------------------------------------------
 
 	size_t
-	WALWriter::GetSize() 
+	WALWriter::GetSize() const
 	{
 		return m_file.GetSize();
 	}
@@ -97,6 +97,12 @@ namespace jelly
 		}
 
 		m_pendingItemWrites.clear();
+	}
+
+	size_t		
+	WALWriter::GetPendingWriteCount() const
+	{
+		return m_pendingItemWrites.size();
 	}
 
 }

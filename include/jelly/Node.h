@@ -5,6 +5,7 @@
 #include "IHost.h"
 #include "IStoreWriter.h"
 #include "NodeConfig.h"
+#include "PerfTimer.h"
 #include "Result.h"
 #include "Queue.h"
 #include "WAL.h"
@@ -36,6 +37,7 @@ namespace jelly
 			, m_config(aConfig)
 			, m_stopped(false)
 			, m_hasPendingCompaction(false)
+			, m_pendingStoreWALItemCount(0)
 		{
 			for(uint32_t i = 0; i < m_config.m_walConcurrency; i++)
 				m_pendingWALs.push_back(NULL);
@@ -150,6 +152,21 @@ namespace jelly
 				pendingWAL->GetWriter()->Flush();
 		}
 
+		// Return the number of requests waiting to be flushed to the specified concurrent WAL. This should be
+		// called on the main thread, before any calls to FlushPendingWAL().
+		size_t
+		GetPendingWALRequestCount(
+			uint32_t		aWALConcurrentIndex) const
+		{
+			JELLY_ASSERT(aWALConcurrentIndex < m_pendingWALs.size());
+
+			const WAL* pendingWAL = m_pendingWALs[aWALConcurrentIndex];
+			if (pendingWAL != NULL)
+				return pendingWAL->GetWriter()->GetPendingWriteCount();
+
+			return 0;
+		}
+
 		// Flush the pending store to permanent storage. Must be called from the main thread.
 		// Items flushed here will remove their reference to their pending WAL.
 		void
@@ -157,7 +174,7 @@ namespace jelly
 		{			
 			if(m_pendingStore.size() == 0)
 				return;
-
+			
 			{
 				uint32_t storeId = CreateStoreId();
 
@@ -170,7 +187,36 @@ namespace jelly
 			m_pendingStore.clear();
 		}
 
-		// Delete all closed WALs with no references.
+		// Return the number of items in the pending store. Each of these items hold a reference to a pending
+		// WAL. Must be called from the main thread.
+		size_t
+		GetPendingStoreItemCount() const
+		{
+			return m_pendingStore.size();
+		}
+
+		// Returns the number of items that has been written to WALs for the pending store. This can be larger 
+		// than GetPendingStoreItemCount() if the same item has been written multiple times between pending store 
+		// flushes. Must be called from the main thread.
+		uint32_t
+		GetPendingStoreWALItemCount() const
+		{
+			return m_pendingStoreWALItemCount;
+		}
+
+		// Return total size of all WALs on disk. Must be called from the main thread.
+		size_t
+		GetTotalWALSize() const
+		{
+			size_t totalSize = 0;
+
+			for(WAL* wal : m_wals)
+				totalSize += wal->GetSize();
+
+			return totalSize;
+		}
+
+		// Delete all closed WALs with no references. Must be called from the main thread.
 		void
 		CleanupWALs()
 		{
@@ -252,6 +298,12 @@ namespace jelly
 					}
 					break;
 
+				case COMPACTION_STRATEGY_NONE:
+					{
+						// Do nothing
+					}
+					break;
+
 				default:
 					JELLY_ASSERT(false);
 				}
@@ -285,6 +337,8 @@ namespace jelly
 		// Data access
 		uint32_t			GetNodeId() const { return m_nodeId; }
 		bool				IsStopped() const { std::lock_guard lock(m_requestsLock); return m_stopped; }
+		size_t				GetPendingWALCount() const { return m_pendingWALs.size(); }
+		IHost*				GetHost() { return m_host; }
 
 	protected:
 
@@ -380,6 +434,10 @@ namespace jelly
 								
 				aItem->m_pendingWAL = wal;
 				aItem->m_pendingWAL->AddReference();
+
+				aItem->m_walInstanceCount++;
+
+				m_pendingStoreWALItemCount++;
 			}		
 		}
 
@@ -421,6 +479,7 @@ namespace jelly
 		PendingStoreType											m_pendingStore;
 		CompactionRedirectMap										m_compactionRedirectMap;
 		bool														m_stopped;
+		uint32_t													m_pendingStoreWALItemCount;
 
 	private:
 

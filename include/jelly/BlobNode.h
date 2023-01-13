@@ -63,6 +63,8 @@ namespace jelly
 				IStoreWriter*				aWriter,
 				NodeBase::PendingStoreType*	/*aPendingStoreType*/)
 			{ 				
+				size_t itemsProcessed = 0;
+
 				for(std::pair<const _KeyType, Item*>& i : this->m_pendingStore)
 				{
 					Item* item = i.second;
@@ -75,7 +77,18 @@ namespace jelly
 						item->m_pendingWAL->RemoveReference();
 						item->m_pendingWAL = NULL;
 					}
+
+					if (item->m_walInstanceCount > 0)
+					{
+						JELLY_ASSERT(item->m_walInstanceCount <= this->m_pendingStoreWALItemCount);
+						this->m_pendingStoreWALItemCount -= item->m_walInstanceCount;
+						item->m_walInstanceCount = 0;
+					}
+
+					itemsProcessed++;
 				}
+
+				JELLY_ASSERT(this->m_pendingStoreWALItemCount == 0);
 
 				_ObeyResidentBlobSizeLimit();
  			};
@@ -465,6 +478,8 @@ namespace jelly
 					this->SetItem(key, item.release());
 				}
 			}
+
+			aWAL->SetSize(aReader->GetReadOffset());
 		}
 
 		void

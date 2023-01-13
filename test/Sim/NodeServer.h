@@ -127,7 +127,7 @@ namespace jelly::Test::Sim
 
 						case HousekeepingAdvisor<_NodeType>::Event::TYPE_PERFORM_COMPACTION:
 							{
-								std::unique_ptr<_NodeType::CompactionResultType> compactionResult(m_node->PerformCompaction(aEvent.m_compactionJob));
+								std::unique_ptr<typename _NodeType::CompactionResultType> compactionResult(m_node->PerformCompaction(aEvent.m_compactionJob));
 								m_node->ApplyCompactionResult(compactionResult.get());
 							}
 							break;

@@ -74,7 +74,7 @@ namespace jelly
 		}
 
 		for(PendingItemWrite& t : m_pendingItemWrites)					
-			t.m_item->Write(writer, NULL);
+			t.m_item->Write(writer);
 
 		if(m_compressor)
 			m_compressor->Flush();

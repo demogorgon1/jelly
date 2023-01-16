@@ -79,19 +79,18 @@ namespace jelly
 				// Blobs
 				{
 					Blob blob;
-					blob.SetSize(5);
-					memcpy(blob.GetBuffer(), "hello", 5);
+					blob.GetBuffer().SetSize(5);
+					memcpy(blob.GetBuffer().GetPointer(), "hello", 5);
 
 					{
-						BufferWriter<100> writer;
-						JELLY_ASSERT(blob.Write(&writer, NULL));
+						Buffer<100> buffer;
+						blob.ToBuffer(NULL, buffer);
 
-						BufferReader reader(writer.GetBuffer(), writer.GetBufferSize());
 						Blob blob2;
-						JELLY_ASSERT(blob2.Read(&reader, NULL));
+						blob2.FromBuffer(NULL, buffer);
 						JELLY_ASSERT(blob2 == blob);
-						JELLY_ASSERT(blob2.GetSize() == 5);
-						JELLY_ASSERT(memcmp(blob2.GetBuffer(), "hello", 5) == 0);
+						JELLY_ASSERT(blob2.GetBuffer().GetSize() == 5);
+						JELLY_ASSERT(memcmp(blob2.GetBuffer().GetPointer(), "hello", 5) == 0);
 					}
 
 					#if defined(JELLY_ZSTD)
@@ -99,37 +98,40 @@ namespace jelly
 						{
 							ZstdCompression compressionProvider;
 
-							BufferWriter<100> writer;
-							JELLY_ASSERT(blob.Write(&writer, &compressionProvider));
+							Buffer<100> buffer;
+							blob.ToBuffer(&compressionProvider, buffer);
 
-							BufferReader reader(writer.GetBuffer(), writer.GetBufferSize());
 							Blob blob2;
-							JELLY_ASSERT(blob2.Read(&reader, &compressionProvider));
+							blob2.FromBuffer(&compressionProvider, buffer);
 							JELLY_ASSERT(blob2 == blob);
-							JELLY_ASSERT(blob2.GetSize() == 5);
-							JELLY_ASSERT(memcmp(blob2.GetBuffer(), "hello", 5) == 0);
+							JELLY_ASSERT(blob2.GetBuffer().GetSize() == 5);
+							JELLY_ASSERT(memcmp(blob2.GetBuffer().GetPointer(), "hello", 5) == 0);
 						}
 
 						// Make a blob that can actually be compressed and try with that instead
 						{
 							ZstdCompression compressionProvider;
 
-							blob.SetSize(100); // Gonna have a lot of 0s
+							// Add 95 zeros
+							{
+								BufferWriter writer(blob.GetBuffer());
+								for(size_t i = 0; i < 95; i++)
+									writer.WriteUInt<uint8_t>(0);
+							}
 
-							BufferWriter<100> writer;
-							JELLY_ASSERT(blob.Write(&writer, &compressionProvider));
+							Buffer<100> buffer;
+							blob.ToBuffer(&compressionProvider, buffer);
 
-							BufferReader reader(writer.GetBuffer(), writer.GetBufferSize());
 							Blob blob2;
-							JELLY_ASSERT(blob2.Read(&reader, &compressionProvider));
+							blob2.FromBuffer(&compressionProvider, buffer);
 							JELLY_ASSERT(blob2 == blob);
-							JELLY_ASSERT(blob2.GetSize() == 100);
-							JELLY_ASSERT(memcmp(blob2.GetBuffer(), "hello", 5) == 0); // First 5 bytes should be hello
+							JELLY_ASSERT(blob2.GetBuffer().GetSize() == 100);
+							JELLY_ASSERT(memcmp(blob2.GetBuffer().GetPointer(), "hello", 5) == 0);
 
 							for(size_t i = 5; i < 100; i++)
 							{
 								// Remaining bytes should be 0
-								JELLY_ASSERT(((const uint8_t*)blob2.GetBuffer())[i] == 0);
+								JELLY_ASSERT(((const uint8_t*)blob2.GetBuffer().GetPointer())[i] == 0);
 							}
 						}
 					#endif

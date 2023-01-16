@@ -8,11 +8,11 @@ namespace jelly
 	namespace
 	{
 		
-		struct Buffer
+		struct MemoryBuffer
 		{
 			static const size_t MAX_SIZE = 32768;
 
-			Buffer()
+			MemoryBuffer()
 				: m_size(0)
 				, m_next(NULL)
 			{
@@ -20,9 +20,9 @@ namespace jelly
 			}
 
 			// Public data
-			uint8_t		m_data[MAX_SIZE];
-			size_t		m_size;
-			Buffer*		m_next;
+			uint8_t			m_data[MAX_SIZE];
+			size_t			m_size;
+			MemoryBuffer*	m_next;
 		};
 
 		struct BufferList
@@ -40,7 +40,7 @@ namespace jelly
 			{
 				while(m_head != NULL)
 				{
-					Buffer* next = m_head->m_next;
+					MemoryBuffer* next = m_head->m_next;
 					delete m_head;
 					m_head = next;
 				}
@@ -52,13 +52,13 @@ namespace jelly
 				if(m_head == NULL)
 				{
 					JELLY_ASSERT(m_tail == NULL);
-					m_head = new Buffer();
+					m_head = new MemoryBuffer();
 					m_tail = m_head;
 				}
 				else
 				{
 					JELLY_ASSERT(m_head != NULL);
-					m_tail->m_next = new Buffer();
+					m_tail->m_next = new MemoryBuffer();
 					m_tail = m_tail->m_next;
 				}
 			}
@@ -66,26 +66,26 @@ namespace jelly
 			void
 			GetBufferByOffset(
 				size_t			aOffset,
-				const Buffer*&	aOutBuffer,
+				const MemoryBuffer*&	aOutBuffer,
 				size_t&			aOutBufferOffset)
 			{
 				if(m_array.size() == 0)
 				{
 					// Make array for easy offset lookup
-					for(const Buffer* buffer = m_head; buffer != NULL; buffer = buffer->m_next)
+					for(const MemoryBuffer* buffer = m_head; buffer != NULL; buffer = buffer->m_next)
 						m_array.push_back(buffer);
 
 					if(m_array.size() > 1)
 					{
 						// If more than one buffer, all of them except last should be max size
 						for(size_t i = 0; i < m_array.size() - 1; i++)
-							JELLY_ASSERT(m_array[i]->m_size == Buffer::MAX_SIZE);
+							JELLY_ASSERT(m_array[i]->m_size == MemoryBuffer::MAX_SIZE);
 					}
 				}
 
-				size_t i = aOffset / Buffer::MAX_SIZE;
+				size_t i = aOffset / MemoryBuffer::MAX_SIZE;
 				JELLY_ASSERT(i < m_array.size());
-				size_t j = aOffset % Buffer::MAX_SIZE;
+				size_t j = aOffset % MemoryBuffer::MAX_SIZE;
 				JELLY_ASSERT(j < m_array[i]->m_size);
 				
 				aOutBuffer = m_array[i];
@@ -93,11 +93,11 @@ namespace jelly
 			}
 			
 			// Public data
-			Buffer*						m_head;
-			Buffer*						m_tail;
+			MemoryBuffer*						m_head;
+			MemoryBuffer*						m_tail;
 			size_t						m_totalBytes;
 			std::atomic_bool			m_writeGuard;
-			std::vector<const Buffer*>	m_array;
+			std::vector<const MemoryBuffer*>	m_array;
 		};
 
 		struct BufferListWriter
@@ -127,11 +127,11 @@ namespace jelly
 
 				while(remaining > 0)
 				{
-					size_t spaceLeft = m_bufferList->m_tail != NULL ? (Buffer::MAX_SIZE - m_bufferList->m_tail->m_size) : 0;
+					size_t spaceLeft = m_bufferList->m_tail != NULL ? (MemoryBuffer::MAX_SIZE - m_bufferList->m_tail->m_size) : 0;
 					if(spaceLeft == 0)
 					{
 						m_bufferList->CreateBufferAtTail();
-						spaceLeft = Buffer::MAX_SIZE;
+						spaceLeft = MemoryBuffer::MAX_SIZE;
 					}
 
 					size_t toCopy = std::min<size_t>(spaceLeft, remaining);
@@ -154,7 +154,7 @@ namespace jelly
 			: public IReader
 		{
 			BufferListReader(
-				const Buffer*	aStartBuffer,
+				const MemoryBuffer*	aStartBuffer,
 				size_t			aStartBufferOffset)
 				: m_currentBuffer(aStartBuffer)
 				, m_currentBufferOffset(aStartBufferOffset)
@@ -205,7 +205,7 @@ namespace jelly
 			}
 
 			// Public data
-			const Buffer*		m_currentBuffer;
+			const MemoryBuffer*		m_currentBuffer;
 			size_t				m_currentBufferOffset;
 			size_t				m_globalReadOffset;
 		};
@@ -311,13 +311,18 @@ namespace jelly
 				{
 					JELLY_ASSERT(m_bufferList != NULL);
 
-					const Buffer* buffer;
+					std::unique_ptr<BlobBuffer> blobBuffer = std::make_unique<BlobBuffer>();
+					blobBuffer->SetSize(aItem->GetStoredBlobSize());
+
+					const MemoryBuffer* buffer;
 					size_t bufferStartOffset;
 					m_bufferList->GetBufferByOffset(aOffset, buffer, bufferStartOffset);
 
 					BufferListReader reader(buffer, bufferStartOffset);
-					if(!aItem->Read(&reader, NULL, IItem::READ_TYPE_BLOB_ONLY))
+					if(reader.Read(blobBuffer->GetPointer(), blobBuffer->GetSize()) != blobBuffer->GetSize())
 						JELLY_ASSERT(false);
+
+					aItem->UpdateBlobBuffer(blobBuffer);
 				}
 
 				void	
@@ -349,15 +354,14 @@ namespace jelly
 				// IStoreWriter implementation
 				size_t	
 				WriteItem(
-					const IItem*					aItem,
-					const Compression::IProvider*	aItemCompression)
+					const IItem*					aItem)
 				{
 					JELLY_ASSERT(m_bufferList->m_writeGuard);
 
 					size_t offset = m_bufferList->m_totalBytes;
 
 					BufferListWriter writer(m_bufferList);
-					aItem->Write(&writer, aItemCompression);
+					aItem->Write(&writer);
 
 					return offset;
 				}
@@ -463,7 +467,7 @@ namespace jelly
 					Result*				aResult) override
 				{
 					BufferListWriter writer(m_bufferList);
-					aItem->Write(&writer, NULL);
+					aItem->Write(&writer);
 
 					m_pending.push_back(std::make_pair(aCompletionEvent, aResult));
 				}

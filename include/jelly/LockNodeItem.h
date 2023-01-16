@@ -44,7 +44,7 @@ namespace jelly
 		}
 
 		void
-		CopyFrom(
+		MoveFrom(
 			LockNodeItem*									aOther)
 		{
 			m_key = aOther->m_key;
@@ -70,41 +70,32 @@ namespace jelly
 		}
 
 		// IItem implementation
-		void
+		size_t
 		Write(
-			IWriter*										aWriter,
-			const Compression::IProvider*					/*aItemCompression*/) const override
+			IWriter*										aWriter) const override
 		{
-			JELLY_CHECK(m_key.Write(aWriter), "Failed to write lock item key.");
-			JELLY_CHECK(m_lock.Write(aWriter), "Failed to write lock item lock.");
-			JELLY_CHECK(aWriter->Write(&m_meta, sizeof(m_meta)) == sizeof(m_meta), "Failed to write lock item meta data.");
-			JELLY_CHECK(aWriter->Write(&m_tombstone, sizeof(m_tombstone)) == sizeof(m_tombstone), "Failed to write lock item tombstone data.");
+			m_key.Write(aWriter);			
+			m_lock.Write(aWriter);
+			m_meta.Write(aWriter);
+			m_tombstone.Write(aWriter);
+
+			return 0; // Only used for blobs
 		}
 
 		bool
 		Read(
 			IReader*										aReader,
-			const Compression::IProvider*					/*aItemCompression*/,
-			ReadType										aReadType = READ_TYPE_ALL) override
+			size_t*											/*aOutBlobOffset*/) override
 		{
-			JELLY_ASSERT(aReadType == READ_TYPE_ALL);
-
 			if (!m_key.Read(aReader))
 				return false;
 			if (!m_lock.Read(aReader))
 				return false;
-			if (aReader->Read(&m_meta, sizeof(m_meta)) != sizeof(m_meta))
+			if(!m_meta.Read(aReader))
 				return false;
-			if (aReader->Read(&m_tombstone, sizeof(m_tombstone)) != sizeof(m_tombstone))
+			if(!m_tombstone.Read(aReader))
 				return false;
 			return true;
-		}
-
-		size_t
-		GetStoredBlobSize() const
-		{
-			JELLY_ASSERT(false);
-			return 0;
 		}
 
 		// Public data

@@ -28,17 +28,14 @@ namespace jelly
 		
 	size_t
 	StoreWriter::WriteItem(
-		const IItem*					aItem,
-		const Compression::IProvider*	aItemCompression)
+		const IItem*					aItem)
 	{
 		size_t offset = m_file.GetSize();
 
 		File::Writer writer;
 		m_file.GetWriter(writer);
 
-		aItem->Write(&writer, aItemCompression);
-
-		return offset;
+		return offset + aItem->Write(&writer);
 	}
 
 }

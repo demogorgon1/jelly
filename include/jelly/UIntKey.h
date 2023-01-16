@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ErrorUtils.h"
+
 namespace jelly
 {
 	
@@ -18,13 +20,21 @@ namespace jelly
 
 		UIntKey(_T aValue = 0) : m_value(aValue) {}
 
-		bool	Write(IWriter* aWriter) const { return aWriter->WriteUInt(m_value); }
+		void	Write(IWriter* aWriter) const { JELLY_CHECK(aWriter->WriteUInt(m_value), "Failed to write uint key."); }
 		bool	Read(IReader* aReader) { return aReader->ReadUInt(m_value); }
 		bool	operator==(const UIntKey<_T>& aOther) const { return m_value == aOther.m_value; }
 		bool	operator!=(const UIntKey<_T>& aOther) const { return m_value != aOther.m_value; }
 		bool	operator<(const UIntKey<_T>& aOther) const { return m_value < aOther.m_value; }
+		bool	operator==(const _T& aOther) const { return m_value == aOther; }
+		bool	operator!=(const _T& aOther) const { return m_value != aOther; }
+		bool	operator<(const _T& aOther) const { return m_value < aOther; }
+		
+		operator _T() const
+		{
+			return m_value;
+		}
 
-		uint32_t	m_value;
+		_T		m_value;
 	};
 
 }

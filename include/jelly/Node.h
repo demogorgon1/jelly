@@ -346,6 +346,12 @@ namespace jelly
 			m_table[aKey] = aValue;
 		}
 
+		size_t
+		GetItemCount() const
+		{
+			return m_table.size();
+		}
+
 		void
 		AddRequestToQueue(
 			_RequestType*			aRequest)
@@ -389,6 +395,7 @@ namespace jelly
 			{
 				uint32_t walConcurrencyIndex = 0;
 
+				// Pick a pending WAL to write to, using the hash of item key
 				{
 					_STLKeyHasher hasher;
 					size_t hash = hasher(aItem->m_key);
@@ -397,13 +404,18 @@ namespace jelly
 
 				WAL* wal = _GetPendingWAL(walConcurrencyIndex);
 
+				// Append to WAL
 				wal->GetWriter()->WriteItem(aItem, aCompletionEvent, aResult);
 								
 				aItem->m_pendingWAL = wal;
 				aItem->m_pendingWAL->AddReference();
 
+				// Number of instances that this item exists in different pending WALs (if an item is written repeatedly 
+				// (which is likely), many copies of it will exist in the same WALs)
 				aItem->m_walInstanceCount++;
 
+				// Total number of item instances across all pending WALs. This is a useful metric for deciding when to 
+				// flush pending store to disk.
 				m_pendingStoreWALItemCount++;
 			}		
 		}
@@ -459,9 +471,6 @@ namespace jelly
 
 		std::vector<WAL*>											m_pendingWALs;
 		std::vector<WAL*>											m_wals;
-
-		//std::atomic_bool											m_hasPendingCompaction;
-		//std::unique_ptr<CompactionResult<_KeyType, _STLKeyHasher>>	m_pendingCompactionResult;
 
 		std::mutex													m_currentCompactionStoreIdsLock;
 		std::unordered_set<uint32_t>								m_currentCompactionStoreIds;

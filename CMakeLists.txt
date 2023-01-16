@@ -16,6 +16,7 @@ endmacro()
 
 jelly_option(JELLY_ZSTD "Use ZSTD." OFF)
 jelly_option(JELLY_PRECOMPILED_HEADERS "Enable precompiled headers." ON)
+jelly_option(JELLY_EXTRA_CONSISTENCY_CHECKS "Enable extra consistency checks." OFF)
 
 enable_testing()
 

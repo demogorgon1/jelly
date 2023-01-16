@@ -1,5 +1,7 @@
 #pragma once
 
+#include "VarSizeUInt.h"
+
 namespace jelly
 {
 
@@ -14,8 +16,20 @@ namespace jelly
 		WriteUInt(
 			_T							aValue)
 		{
-			// FIXME: varsize int
-			return Write(&aValue, sizeof(aValue)) == sizeof(aValue);
+			VarSizeUInt::Encoder<_T> t;
+			t.Encode(aValue);
+			if(Write(t.GetBuffer(), t.GetBufferSize()) != t.GetBufferSize())
+				return false;
+			
+			return true;
+		}
+
+		template <typename _T>
+		bool
+		WritePOD(
+			const _T&					aValue)
+		{
+			return Write(&aValue, sizeof(_T)) == sizeof(_T);
 		}
 
 		// Virtual interface

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "VarSizeUInt.h"
+
 namespace jelly
 {
 
@@ -12,10 +14,37 @@ namespace jelly
 		template <typename _T>
 		bool
 		ReadUInt(
+			_T&						aOutValue,
+			size_t*					aOutSize = NULL)
+		{
+			bool readError = false;
+			size_t size = 0;
+
+			aOutValue = VarSizeUInt::Decode<_T>([&]() -> uint8_t
+			{
+				uint8_t byte;
+				if(!ReadPOD<uint8_t>(byte))
+				{
+					readError = true;
+					return 0;
+				}
+
+				size++;
+				return byte;
+			});
+
+			if(aOutSize != NULL)
+				*aOutSize = size;
+
+			return !readError;
+		}
+
+		template <typename _T>
+		bool
+		ReadPOD(
 			_T&						aOutValue)
 		{
-			// FIXME: varsize int
-			return Read(&aOutValue, sizeof(aOutValue)) == sizeof(aOutValue);
+			return Read(&aOutValue, sizeof(_T)) == sizeof(_T);
 		}
 
 		// Virtual interface

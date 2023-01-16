@@ -9,15 +9,20 @@ namespace jelly
 		: public IReader
 	{
 	public:
-				BufferReader(
-					const void*		aBuffer,
-					size_t			aBufferSize);
-				~BufferReader();
+					BufferReader(
+						const void*		aBuffer,
+						size_t			aBufferSize);
+					~BufferReader();
 		
 		// IReader implementation
-		size_t	Read(
-					void*			aBuffer,
-					size_t			aBufferSize) override;
+		size_t		Read(
+						void*			aBuffer,
+						size_t			aBufferSize) override;
+
+		// Data access
+		const void* GetCurrentPointer() const { return m_p; }
+		size_t		GetRemainingSize() const { return m_remaining; }
+
 
 	private:
 

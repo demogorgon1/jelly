@@ -1,6 +1,7 @@
 #include "Base.h"
 
 #include "Blob.h"
+#include "BlobBuffer.h"
 #include "BlobNode.h"
 #include "BlobNodeItem.h"
 #include "BlobNodeRequest.h"

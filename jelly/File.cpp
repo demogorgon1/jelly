@@ -28,9 +28,9 @@ namespace jelly
 
 	namespace
 	{
-		struct WriteBuffer
+		struct FileWriteBuffer
 		{
-			WriteBuffer()
+			FileWriteBuffer()
 				: m_p(m_data)
 				, m_spaceLeft(File::WRITE_BUFFER_SIZE)
 				, m_bytes(0)
@@ -43,7 +43,7 @@ namespace jelly
 			uint8_t*		m_p;
 			size_t			m_spaceLeft;
 			size_t			m_bytes;
-			WriteBuffer*	m_next;
+			FileWriteBuffer*	m_next;
 		};
 
 		struct WriteBufferList
@@ -61,7 +61,7 @@ namespace jelly
 				while(m_head != NULL)
 				{
 					JELLY_ASSERT(m_count > 0);
-					WriteBuffer* next = m_head->m_next;
+					FileWriteBuffer* next = m_head->m_next;
 					delete m_head;
 					m_head = next;
 					m_count--;
@@ -81,7 +81,7 @@ namespace jelly
 				{
 					if(m_tail == NULL || m_tail->m_spaceLeft == 0)
 					{
-						WriteBuffer* newWriteBuffer = new WriteBuffer();
+						FileWriteBuffer* newWriteBuffer = new FileWriteBuffer();
 						if(m_tail != NULL)
 							m_tail->m_next = newWriteBuffer;
 						else
@@ -109,13 +109,13 @@ namespace jelly
 				return m_head != NULL;
 			}
 
-			WriteBuffer*
+			FileWriteBuffer*
 			DetachNextWriteBuffer()
 			{
 				if(m_head == NULL)
 					return NULL;
 
-				WriteBuffer* nextWriteBuffer = m_head;
+				FileWriteBuffer* nextWriteBuffer = m_head;
 
 				m_head = m_head->m_next;
 				
@@ -129,8 +129,8 @@ namespace jelly
 			}
 
 			// Public data
-			WriteBuffer*	m_head;
-			WriteBuffer*	m_tail;
+			FileWriteBuffer*	m_head;
+			FileWriteBuffer*	m_tail;
 			size_t			m_count;
 		};
 	}
@@ -232,7 +232,7 @@ namespace jelly
 
 		if(m_internal->m_writeBufferList.GetCount() > 1)
 		{
-			std::unique_ptr<WriteBuffer> writeBuffer(m_internal->m_writeBufferList.DetachNextWriteBuffer());
+			std::unique_ptr<FileWriteBuffer> writeBuffer(m_internal->m_writeBufferList.DetachNextWriteBuffer());
 			JELLY_ASSERT(writeBuffer);
 
 			// FIXME: this could be done asynchronously 
@@ -444,7 +444,7 @@ namespace jelly
 		{
 			for(;;)
 			{
-				std::unique_ptr<WriteBuffer> writeBuffer(m_internal->m_writeBufferList.DetachNextWriteBuffer());
+				std::unique_ptr<FileWriteBuffer> writeBuffer(m_internal->m_writeBufferList.DetachNextWriteBuffer());
 				if(!writeBuffer)
 					break;
 

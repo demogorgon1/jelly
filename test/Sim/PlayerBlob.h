@@ -25,20 +25,20 @@ namespace jelly::Test::Sim
 
 		void
 		ToBlob(
-			Blob&			aBlob) const
+			Blob<1>&		aBlob) const
 		{
-			aBlob.SetSize(DATA_SIZE + sizeof(m_id));
-			memcpy(aBlob.GetBuffer(), &m_id, sizeof(m_id));
-			memcpy((uint8_t*)aBlob.GetBuffer() + sizeof(m_id), m_someData, DATA_SIZE);
+			aBlob.GetBuffer().SetSize(DATA_SIZE + sizeof(m_id));
+			memcpy(aBlob.GetBuffer().GetPointer(), &m_id, sizeof(m_id));
+			memcpy((uint8_t*)aBlob.GetBuffer().GetPointer() + sizeof(m_id), m_someData, DATA_SIZE);
 		}
 
 		void
 		FromBlob(
-			const Blob&		aBlob)
+			const Blob<1>&	aBlob)
 		{
-			JELLY_ASSERT(aBlob.GetSize() == DATA_SIZE + sizeof(m_id));
-			memcpy(&m_id, aBlob.GetBuffer(), sizeof(m_id));
-			memcpy(m_someData, (const uint8_t*)aBlob.GetBuffer() + sizeof(m_id), DATA_SIZE);
+			JELLY_ASSERT(aBlob.GetBuffer().GetSize() == DATA_SIZE + sizeof(m_id));
+			memcpy(&m_id, aBlob.GetBuffer().GetPointer(), sizeof(m_id));
+			memcpy(m_someData, (const uint8_t*)aBlob.GetBuffer().GetPointer() + sizeof(m_id), DATA_SIZE);
 		}
 
 		// Public data

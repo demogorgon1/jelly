@@ -8,7 +8,7 @@ namespace jelly
 	{
 		UIntLock(_T aValue = 0) : m_value(aValue) {}
 
-		bool	Write(IWriter* aWriter) const { return aWriter->WriteUInt(m_value); }
+		void	Write(IWriter* aWriter) const { JELLY_CHECK(aWriter->WriteUInt(m_value), "Failed to write uint lock."); }
 		bool	Read(IReader* aReader) { return aReader->ReadUInt(m_value); }
 		bool	operator==(const UIntLock& aOther) const { return m_value == aOther.m_value; }
 		bool	operator!=(const UIntLock& aOther) const { return m_value != aOther.m_value; }

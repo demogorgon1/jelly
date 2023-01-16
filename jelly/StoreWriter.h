@@ -19,8 +19,7 @@ namespace jelly
 			
 		// IStoreWriter implementation
 		size_t		WriteItem(
-						const IItem*					aItem,
-						const Compression::IProvider*	aItemCompression) override;
+						const IItem*					aItem) override;
 
 	private:
 

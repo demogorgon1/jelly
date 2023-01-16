@@ -57,7 +57,7 @@ namespace jelly
 				{
 					Item* item = i.second;
 
-					aWriter->WriteItem(item, NULL);
+					aWriter->WriteItem(item);
 
 					if (item->m_pendingWAL != NULL)
 					{
@@ -311,7 +311,7 @@ namespace jelly
 				{
 					if (item.get()->m_meta.m_seq > existing->m_meta.m_seq)
 					{
-						existing->CopyFrom(item.get());
+						existing->MoveFrom(item.get());
 
 						if (existing->m_pendingWAL != NULL)
 						{
@@ -359,7 +359,7 @@ namespace jelly
 				{
 					if (item.get()->m_meta.m_seq > existing->m_meta.m_seq)
 					{
-						existing->CopyFrom(item.get());
+						existing->MoveFrom(item.get());
 					}
 				}
 				else
@@ -406,14 +406,14 @@ namespace jelly
 					if (hasItem1 && !hasItem2)
 					{
 						if(!item1.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
-							fOut->WriteItem(&item1, NULL);
+							fOut->WriteItem(&item1);
 
 						hasItem1 = false;
 					}
 					else if (!hasItem1 && hasItem2)
 					{
 						if (!item2.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
-							fOut->WriteItem(&item2, NULL);
+							fOut->WriteItem(&item2);
 
 						hasItem2 = false;
 					}
@@ -424,14 +424,14 @@ namespace jelly
 						if (item1.m_key < item2.m_key)
 						{	
 							if (!item1.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
-								fOut->WriteItem(&item1, NULL);
+								fOut->WriteItem(&item1);
 
 							hasItem1 = false;
 						}
 						else if (item2.m_key < item1.m_key)
 						{
 							if (!item2.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
-								fOut->WriteItem(&item2, NULL);
+								fOut->WriteItem(&item2);
 
 							hasItem2 = false;
 						}
@@ -441,12 +441,12 @@ namespace jelly
 							if (item1.m_meta.m_seq > item2.m_meta.m_seq)
 							{
 								if (!item1.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
-									fOut->WriteItem(&item1, NULL);
+									fOut->WriteItem(&item1);
 							}
 							else
 							{
 								if (!item2.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
-									fOut->WriteItem(&item2, NULL);
+									fOut->WriteItem(&item2);
 							}
 
 							hasItem1 = false;

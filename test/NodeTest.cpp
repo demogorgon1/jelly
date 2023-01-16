@@ -27,6 +27,24 @@ namespace jelly
 
 			typedef CompactionResult<UIntKey<uint32_t>, UIntKey<uint32_t>::Hasher> CompactionResultType;
 
+			struct BlobNodeItemData
+			{
+				bool
+				CompareItem(
+					const Compression::IProvider*							aCompression,
+					const BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>&		aItem) const
+				{
+					UInt32Blob blob;
+					blob.FromBuffer(aCompression, *aItem.m_blob);
+					return m_key == aItem.m_key && m_seq == aItem.m_meta.m_seq && m_blob == blob;
+				}
+
+				// Public data
+				uint32_t	m_key;
+				uint32_t	m_seq;
+				uint32_t	m_blob;
+			};
+
 			template <typename _NodeType>
 			void
 			_PerformCompaction(
@@ -47,7 +65,7 @@ namespace jelly
 			template <typename _ItemType>
 			void
 			_VerifyFileStreamReader(
-				Compression::IProvider*										aCompression,
+				Compression::IProvider*										/*aCompression*/,
 				IFileStreamReader*											aFileStreamReader,
 				const std::vector<_ItemType>&								aExpected)
 			{
@@ -58,8 +76,30 @@ namespace jelly
 				{
 					JELLY_ASSERT(!f->IsEnd());
 					_ItemType item;
-					JELLY_ASSERT(item.Read(f.get(), aCompression));
+					JELLY_ASSERT(item.Read(f.get(), NULL));
 					JELLY_ASSERT(item.Compare(&expected));
+				}
+
+				JELLY_ASSERT(f->IsEnd());
+			}
+
+			template <typename _ItemType>
+			void
+			_VerifyBlobNodeFileStreamReader(
+				Compression::IProvider*										aCompression,
+				IFileStreamReader*											aFileStreamReader,
+				const std::vector<BlobNodeItemData>&						aExpected)
+			{
+				std::unique_ptr<IFileStreamReader> f(aFileStreamReader);
+				JELLY_ASSERT(f);
+
+				for (const BlobNodeItemData& expected : aExpected)
+				{
+					JELLY_ASSERT(!f->IsEnd());
+					_ItemType item;
+					JELLY_ASSERT(item.Read(f.get(), NULL));
+
+					JELLY_ASSERT(expected.CompareItem(aCompression, item));
 				}
 
 				JELLY_ASSERT(f->IsEnd());
@@ -78,6 +118,17 @@ namespace jelly
 
 			template <typename _ItemType>
 			void
+			_VerifyBlobNodeWAL(
+				DefaultHost*												aHost,
+				uint32_t													aNodeId,
+				uint32_t													aId,
+				const std::vector<BlobNodeItemData>&						aExpected)
+			{
+				_VerifyBlobNodeFileStreamReader<_ItemType>(NULL, aHost->ReadWALStream(aNodeId, aId), aExpected);
+			}
+
+			template <typename _ItemType>
+			void
 			_VerifyStore(
 				DefaultHost*												aHost,
 				uint32_t													aNodeId,
@@ -85,6 +136,17 @@ namespace jelly
 				const std::vector<_ItemType>&								aExpected)
 			{
 				_VerifyFileStreamReader<_ItemType>(aHost->GetCompressionProvider(), aHost->ReadStoreStream(aNodeId, aId), aExpected);
+			}
+
+			template <typename _ItemType>
+			void
+			_VerifyBlobNodeStore(
+				DefaultHost*												aHost,
+				uint32_t													aNodeId,
+				uint32_t													aId,
+				const std::vector<BlobNodeItemData>&						aExpected)
+			{
+				_VerifyBlobNodeFileStreamReader<_ItemType>(aHost->GetCompressionProvider(), aHost->ReadStoreStream(aNodeId, aId), aExpected);
 			}
 
 			void
@@ -674,7 +736,7 @@ namespace jelly
 					_VerifyResidentKeys(&blobNode, { 1 });
 				}
 
-				_VerifyWAL<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 0, 0, { { 1, 1, 123 } });
+				_VerifyBlobNodeWAL<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 0, 0, { { 1, 1, 123 } });
 				_VerifyNoWAL(aHost, 0, 1);
 
 				// Restart node and try more requests
@@ -741,8 +803,8 @@ namespace jelly
 				}
 
 				_VerifyNoWAL(aHost, 0, 0);
-				_VerifyWAL<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 0, 1, { { 1, 2, 789 } });
-				_VerifyStore<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 0, 0, { { 1, 2, 789 } });
+				_VerifyBlobNodeWAL<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 0, 1, { { 1, 2, 789 } });
+				_VerifyBlobNodeStore<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 0, 0, { { 1, 2, 789 } });
 
 				// Do 1 write with another key which we'll try to load later after compaction
 				{
@@ -783,11 +845,11 @@ namespace jelly
 					_VerifyResidentKeys(&blobNode, { 2, 1 });
 				}
 
-				_VerifyStore<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 0, 0, { { 1, 2, 789 } });
-				_VerifyStore<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 0, 1, { { 1, 3, 1000 }, {2, 1, 1234 } });
-				_VerifyStore<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 0, 2, { { 1, 4, 1001 } });
+				_VerifyBlobNodeStore<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 0, 0, { { 1, 2, 789 } });
+				_VerifyBlobNodeStore<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 0, 1, { { 1, 3, 1000 }, {2, 1, 1234 } });
+				_VerifyBlobNodeStore<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 0, 2, { { 1, 4, 1001 } });
 
-				// Perform compaction, which should remove two of the store files and create a new one
+				// Perform compaction, removing two of the store files and create a new one
 				{
 					BlobNodeType::Config config;
 					config.m_maxResidentBlobSize = 0;
@@ -821,8 +883,8 @@ namespace jelly
 
 				_VerifyNoStore(aHost, 0, 0);
 				_VerifyNoStore(aHost, 0, 1);
-				_VerifyStore<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 0, 2, { { 1, 4, 1001 } });
-				_VerifyStore<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 0, 3, { { 1, 3, 1000 }, { 2, 1, 1234 } });
+				_VerifyBlobNodeStore<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 0, 2, { { 1, 4, 1001 } });
+				_VerifyBlobNodeStore<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 0, 3, { { 1, 3, 1000 }, { 2, 1, 1234 } });
 			}
 
 			void
@@ -1309,7 +1371,7 @@ namespace jelly
 
 				{
 					BlobNodeType::Config config;
-					config.m_maxResidentBlobSize = 5 * (sizeof(uint32_t) * 11); // Each blob is 1 uint32_t + 10 more
+					config.m_maxResidentBlobCount = 5; // Using count limit as we can't really predict compressed blob sizes 
 
 					BlobNodeType blobNode(aHost, 0, config);
 					
@@ -1479,8 +1541,8 @@ namespace jelly
 					}
 				}
 
-				_VerifyStore<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 2, 0, { { 1, 1, 101 } });
-				_VerifyStore<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 2, 1, { { 1, 2, 102 } });
+				_VerifyBlobNodeStore<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 2, 0, { { 1, 1, 101 } });
+				_VerifyBlobNodeStore<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 2, 1, { { 1, 2, 102 } });
 
 				// Restart
 

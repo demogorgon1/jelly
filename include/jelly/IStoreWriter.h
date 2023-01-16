@@ -3,11 +3,6 @@
 namespace jelly
 {
 
-	namespace Compression
-	{
-		class IProvider;
-	}
-
 	class IItem;
 
 	// Interface for store writer implementation
@@ -18,8 +13,7 @@ namespace jelly
 
 		// Virtual interface
 		virtual size_t	WriteItem(
-							const IItem*					aItem,
-							const Compression::IProvider*	aItemCompression) = 0;	
+							const IItem*					aItem) = 0;	
 	};
 
 }

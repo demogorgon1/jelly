@@ -1,6 +1,8 @@
 #pragma once
 
 #include "ErrorUtils.h"
+#include "IReader.h"
+#include "IWriter.h"
 
 namespace jelly
 {
@@ -20,6 +22,31 @@ namespace jelly
 			{
 			}
 
+			void
+			Write(
+				IWriter*			aWriter) const
+			{
+				JELLY_CHECK(aWriter->WriteUInt(m_timeStamp), "Failed to write lock time stamp.");
+				JELLY_CHECK(aWriter->WriteUInt(m_seq), "Failed to write lock sequence number.");
+				JELLY_CHECK(aWriter->WriteUInt(m_blobSeq), "Failed to write lock blob sequence number.");
+				JELLY_CHECK(aWriter->WritePOD(m_blobNodeIds), "Failed to write lock time stamp.");
+			}
+
+			bool
+			Read(
+				IReader*			aReader)
+			{
+				if (!aReader->ReadUInt(m_timeStamp))
+					return false;
+				if (!aReader->ReadUInt(m_seq))
+					return false;
+				if (!aReader->ReadUInt(m_blobSeq))
+					return false;
+				if (!aReader->ReadPOD(m_blobNodeIds))
+					return false;
+				return true;
+			}
+
 			// Public data
 			uint64_t							m_timeStamp;
 			uint32_t							m_seq;
@@ -35,6 +62,25 @@ namespace jelly
 			{
 			}
 
+			void
+			Write(
+				IWriter*			aWriter) const
+			{
+				JELLY_CHECK(aWriter->WriteUInt(m_timeStamp), "Failed to write blob time stamp.");
+				JELLY_CHECK(aWriter->WriteUInt(m_seq), "Failed to write blob sequence number.");
+			}
+
+			bool
+			Read(
+				IReader*			aReader)
+			{
+				if (!aReader->ReadUInt(m_timeStamp))
+					return false;
+				if (!aReader->ReadUInt(m_seq))
+					return false;
+				return true;
+			}
+
 			// Public data
 			uint64_t							m_timeStamp;
 			uint32_t							m_seq;
@@ -46,6 +92,22 @@ namespace jelly
 				: m_storeId(UINT32_MAX)
 			{
 
+			}
+
+			void
+			Write(
+				IWriter*			aWriter) const
+			{
+				JELLY_CHECK(aWriter->WritePOD(m_storeId), "Failed to write tombstone store id.");
+			}
+
+			bool
+			Read(
+				IReader*			aReader)
+			{
+				if (!aReader->ReadPOD(m_storeId))
+					return false;
+				return true;
 			}
 
 			void

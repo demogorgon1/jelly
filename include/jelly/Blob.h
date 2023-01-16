@@ -1,277 +1,106 @@
 #pragma once
 
+#include "Buffer.h"
+#include "BufferReader.h"
 #include "BufferWriter.h"
 #include "Compression.h"
-#include "ErrorUtils.h"
-#include "IReader.h"
-#include "IWriter.h"
+#include "IBuffer.h"
 
 namespace jelly
 {
 
+	template<size_t _StaticSize = 1>
 	class Blob
 	{
 	public:
 		Blob()
-			: m_size(0)
-			, m_data(NULL)
 		{
 
 		}
 
 		~Blob()
 		{
-			if(m_data != NULL)
-				delete [] m_data;
+
 		}
 
 		void
-		SetSize(
-			size_t							aSize)
+		ToBuffer(
+			const Compression::IProvider*	aCompression,	
+			IBuffer&						aOut) const
 		{
-			_Realloc(aSize);
-		}
+			JELLY_ASSERT(aOut.GetSize() == 0);
 
-		const void*
-		GetBuffer() const
-		{
-			return m_data;
-		}
+			BufferWriter writer(aOut);
 
-		void*
-		GetBuffer()
-		{
-			return m_data;
-		}
-
-		bool
-		Write(
-			IWriter*						aWriter,
-			const Compression::IProvider*	aCompression) const
-		{
-			if(!aWriter->WriteUInt<size_t>(m_size))
-				return false;
-
+			// FIXME: some kind of compression method fingerprint
+			
 			if(aCompression != NULL)
-			{				
-				BufferWriter<16834> compressed;
+			{
+				if(!writer.WriteUInt<size_t>(m_buffer.GetSize())) // Uncompressed size (compressed size is implied by total buffer size)
+					JELLY_ASSERT(false);
 
-				aCompression->CompressBuffer(m_data, m_size, [&compressed](
-					const void*	aCompressedData,
+				aCompression->CompressBuffer(m_buffer.GetPointer(), m_buffer.GetSize(), [&](
+					const void* aCompressedData,
 					size_t		aCompressedDataSize)
 				{
-					compressed.Write(aCompressedData, aCompressedDataSize);
+					if(writer.Write(aCompressedData, aCompressedDataSize) != aCompressedDataSize)
+						JELLY_ASSERT(false);
 				});
-
-				if(compressed.GetBufferSize() < m_size)
-				{
-					// Write compressed blob
-					if (!aWriter->WriteUInt<size_t>(compressed.GetBufferSize()))
-						return false;
-
-					if(aWriter->Write(compressed.GetBuffer(), compressed.GetBufferSize()) != compressed.GetBufferSize())
-						return false;
-				}
-				else
-				{
-					// Write uncompressed blob as compression didn't actually reduce the size
-					if (!aWriter->WriteUInt<size_t>(m_size))
-						return false;
-
-					if (aWriter->Write(m_data, m_size) != m_size)
-						return false;
-				}
 			}
 			else
 			{
-				if (!aWriter->WriteUInt<size_t>(m_size))
-					return false;
-
-				if (aWriter->Write(m_data, m_size) != m_size)
-					return false;
+				if(writer.Write(m_buffer.GetPointer(), m_buffer.GetSize()) != m_buffer.GetSize())
+					JELLY_ASSERT(false);
 			}
-
-			return true;
 		}
 
-		bool
-		Read(
-			IReader*						aReader,
-			const Compression::IProvider*	aCompression)
+		void
+		FromBuffer(
+			const Compression::IProvider*	aCompression,
+			const IBuffer&					aBuffer) 
 		{
-			size_t uncompressedSize;
-			if(!aReader->ReadUInt<size_t>(uncompressedSize))
-				return false;
+			JELLY_ASSERT(m_buffer.GetSize() == 0);
 
-			_Realloc(uncompressedSize);
+			BufferReader reader(aBuffer.GetPointer(), aBuffer.GetSize());
+			BufferWriter writer(m_buffer);
 
-			size_t compressedSize;
-			if (!aReader->ReadUInt<size_t>(compressedSize))
-				return false;
+			// FIXME: verify some kind of compression method fingerprint
 
-			JELLY_CHECK(compressedSize <= m_size, "Invalid compressed blob size.");
-
-			if(compressedSize < m_size)
+			if(aCompression != NULL)
 			{
-				JELLY_CHECK(aCompression != NULL, "Unable to uncompressed blob.");
+				size_t uncompressedSize;
+				if(!reader.ReadUInt<size_t>(uncompressedSize))
+					JELLY_ASSERT(false);
 
-				uint8_t* compressed = new uint8_t[compressedSize];
-
-				try
+				aCompression->DecompressBuffer(reader.GetCurrentPointer(), reader.GetRemainingSize(), [&](
+					const void*	aUncompressedData,
+					size_t		aUncompressedDataSize)
 				{
-					if(aReader->Read(compressed, compressedSize) != compressedSize)
-					{
-						delete[] compressed;
-						return false;
-					}
-
-					size_t writeOffset = 0;
-
-					aCompression->DecompressBuffer(compressed, compressedSize, [&](
-						const void*		aDecompressedData,
-						size_t			aDecompressedDataSize)
-					{
-						JELLY_CHECK(writeOffset + aDecompressedDataSize <= m_size, "Uncompressing blob caused buffer overflow.");
-
-						memcpy(m_data + writeOffset, aDecompressedData, aDecompressedDataSize);
-
-						writeOffset += aDecompressedDataSize;
-					});
-				}
-				catch(...)
-				{
-					delete [] compressed;
-					return false;
-				}
-
-				delete[] compressed;
+					if(writer.Write(aUncompressedData, aUncompressedDataSize) != aUncompressedDataSize)
+						JELLY_ASSERT(false);
+				});
 			}
 			else
 			{
-				if(aReader->Read(m_data, m_size) != m_size)
-					return false;
+				if(writer.Write(aBuffer.GetPointer(), aBuffer.GetSize()) != aBuffer.GetSize())
+					JELLY_ASSERT(false);
 			}
-
-			return true;
 		}
 
 		bool		
 		operator==(
 			const Blob&						aOther) const 
 		{
-			if(GetSize() != aOther.GetSize())
-				return false;
+			return m_buffer == aOther.m_buffer;
+		}
 
-			return memcmp(GetBuffer(), aOther.GetBuffer(), GetSize()) == 0;
-		}
-		
-		bool		
-		IsSet() const 
-		{ 
-			return m_data != NULL;
-		}
-		
-		void		
-		Reset() 
-		{
-			if (m_data != NULL)
-				delete[] m_data;
-
-			m_data = NULL;
-			m_size = 0;
-		}
-		
-		size_t		
-		GetSize() const 
-		{ 
-			return m_size;
-		}
-		
-		size_t		
-		GetStoredSize() const 
-		{ 
-			return m_size;
-		}
-		
-		void		
-		Move(
-			Blob&							aOther) 
-		{ 
-			Reset();
-
-			m_data = aOther.m_data;
-			m_size = aOther.m_size;
-
-			aOther.m_data = NULL;
-			aOther.m_size = 0;
-		}
-		
-		void		
-		Copy(
-			const Blob&						aOther) 
-		{
-			if(!aOther.IsSet())
-			{
-				Reset();
-			}
-			else
-			{
-				_Realloc(aOther.GetSize());
-
-				memcpy(m_data, aOther.GetBuffer(), aOther.GetSize());
-			}
-		}
-		
-		void		
-		Delete() 
-		{		
-			if(m_data != NULL)
-			{
-				delete [] m_data;
-				m_data = NULL;
-			}
-
-			m_size = 0;
-		}
+		// Data access
+		const Buffer<_StaticSize>&	GetBuffer() const { return m_buffer; }
+		Buffer<_StaticSize>&		GetBuffer() { return m_buffer; }
 
 	private:
-
-		uint8_t*	m_data;
-		size_t		m_size;
-
-		void
-		_Realloc(
-			size_t							aNewSize)
-		{
-			if(aNewSize == m_size)
-				return;
-
-			uint8_t* newData = new uint8_t[aNewSize];
-
-			if(m_data != NULL)
-			{
-				if(aNewSize > m_size)
-				{
-					if(m_size > 0)
-						memcpy(newData, m_data, m_size);
-
-					memset(newData + m_size, 0, aNewSize - m_size);
-				}
-				else
-				{
-					memcpy(newData, m_data, aNewSize);
-				}
-
-				delete[] m_data;
-			}
-			else
-			{
-				memset(newData, 0, aNewSize);
-			}
-
-			m_data = newData;
-			m_size = aNewSize;
-		}
+		
+		Buffer<_StaticSize>		m_buffer;
 	};
 
 }

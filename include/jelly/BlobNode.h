@@ -32,11 +32,13 @@ namespace jelly
 		{
 			Config()
 				: m_maxResidentBlobSize(1024 * 1024 * 1024)
+				, m_maxResidentBlobCount(1024 * 1024 * 1024)
 			{
 
 			}
 
 			size_t			m_maxResidentBlobSize;
+			size_t			m_maxResidentBlobCount;
 			NodeConfig		m_node;
 		};
 
@@ -70,7 +72,8 @@ namespace jelly
 					Item* item = i.second;
 
 					item->m_storeId = aStoreId;
-					item->m_storeOffset = aWriter->WriteItem(item, this->m_host->GetCompressionProvider());
+					item->m_storeOffset = aWriter->WriteItem(item);
+					item->m_storeSize = item->m_blob->GetSize();
 
 					if (item->m_pendingWAL != NULL)
 					{
@@ -90,7 +93,7 @@ namespace jelly
 
 				JELLY_ASSERT(this->m_pendingStoreWALItemCount == 0);
 
-				_ObeyResidentBlobSizeLimit();
+				_ObeyResidentBlobLimits();
  			};
 		}
 
@@ -112,7 +115,6 @@ namespace jelly
 			Request*										aRequest)
 		{
 			JELLY_ASSERT(aRequest->m_result == RESULT_NONE);
-			JELLY_ASSERT(aRequest->m_blob.IsSet());
 
 			aRequest->m_callback = [=, this]()
 			{
@@ -198,6 +200,13 @@ namespace jelly
 		{
 			bool obeyResidentBlobSizeLimit = false;
 
+			std::unique_ptr<BlobBuffer> newBlob;
+			if(!aDelete)
+			{
+				newBlob = std::make_unique<BlobBuffer>();
+				aRequest->m_blob.ToBuffer(this->m_host->GetCompressionProvider(), *newBlob);
+			}
+
 			Item* item;
 			if (!this->GetItem(aRequest->m_key, item))
 			{
@@ -207,12 +216,11 @@ namespace jelly
 				}
 				else
 				{
-					m_totalResidentBlobSize += aRequest->m_blob.GetSize();
-
 					this->SetItem(aRequest->m_key, item = new Item(aRequest->m_key, aRequest->m_seq));				
 
-					item->m_blob.Move(aRequest->m_blob);
+					item->m_blob = std::move(newBlob);
 
+					m_totalResidentBlobSize += item->m_blob->GetSize();
 					m_residentItems.Add(item);
 
 					obeyResidentBlobSizeLimit = true;
@@ -227,20 +235,32 @@ namespace jelly
 					return RESULT_OUTDATED;
 				}
 
-				if(item->m_blob.IsSet())
+				if(item->m_blob)
 				{
-					JELLY_ASSERT(m_totalResidentBlobSize >= item->m_blob.GetSize());
-					m_totalResidentBlobSize -= item->m_blob.GetSize();
+					// Already has a blob and is resident
+					JELLY_ASSERT(m_totalResidentBlobSize >= item->m_blob->GetSize());
+					m_totalResidentBlobSize -= item->m_blob->GetSize();
 
 					if(!aDelete)
-						m_totalResidentBlobSize += aRequest->m_blob.GetSize();
+						m_totalResidentBlobSize += newBlob->GetSize();
 
 					m_residentItems.MoveToTail(item);
 				}
+				else if(item->m_tombstone.IsSet())
+				{
+					// Was deleted (and is also resident)
+					if (!aDelete)
+						m_totalResidentBlobSize += newBlob->GetSize();
+
+					m_residentItems.MoveToTail(item);
+
+					obeyResidentBlobSizeLimit = true;
+				}
 				else
 				{
+					// No blob, not resident
 					if(!aDelete)
-						m_totalResidentBlobSize += aRequest->m_blob.GetSize();
+						m_totalResidentBlobSize += newBlob->GetSize();
 
 					m_residentItems.Add(item);
 
@@ -248,10 +268,12 @@ namespace jelly
 				}
 
 				if(aDelete)
-					item->m_blob.Delete();
+					item->m_blob.reset();
 				else
-					item->m_blob.Move(aRequest->m_blob);
+					item->m_blob = std::move(newBlob);				
 			}
+
+			item->m_isResident = true; 
 
 			item->m_meta.m_seq = aRequest->m_seq;
 			item->m_meta.m_timeStamp = aRequest->m_timeStamp;
@@ -266,7 +288,7 @@ namespace jelly
 			aRequest->m_hasPendingWrite = true;
 
 			if(obeyResidentBlobSizeLimit)
-				_ObeyResidentBlobSizeLimit();
+				_ObeyResidentBlobLimits();
 
 			return RESULT_OK;
 		}
@@ -289,7 +311,7 @@ namespace jelly
 				return RESULT_OUTDATED;
 			}
 
-			if(!item->m_blob.IsSet())
+			if(!item->m_blob)
 			{
 				// FIXME: slooow
 				JELLY_ASSERT(item->m_storeId != UINT32_MAX);
@@ -316,19 +338,19 @@ namespace jelly
 
 				storeBlobReader->ReadItemBlob(storeOffset, item);
 
-				m_totalResidentBlobSize += item->m_blob.GetSize();
+				m_totalResidentBlobSize += item->m_blob->GetSize();
 
 				m_residentItems.Add(item);
 
-				aRequest->m_blob.Copy(item->m_blob);
+				aRequest->m_blob.FromBuffer(this->m_host->GetCompressionProvider(), *item->m_blob);
 
-				_ObeyResidentBlobSizeLimit();
+				_ObeyResidentBlobLimits();
 			}
 			else
 			{
 				m_residentItems.MoveToTail(item);
 
-				aRequest->m_blob.Copy(item->m_blob);
+				aRequest->m_blob.FromBuffer(this->m_host->GetCompressionProvider(), *item->m_blob);
 			}
 
 			aRequest->m_seq = item->m_meta.m_seq;
@@ -388,11 +410,11 @@ namespace jelly
 				{
 					Item* item = i.second;
 
-					if (item->m_blob.IsSet())
+					if (item->m_blob)
 					{
 						timeStampSorter.insert(TimeStampSorterValue({ item->m_key, item->m_meta.m_timeStamp }, item));
 
-						totalSize += item->m_blob.GetSize();
+						totalSize += item->m_blob->GetSize();
 					}
 				};
 
@@ -417,7 +439,7 @@ namespace jelly
 
 			this->CleanupWALs();
 
-			_ObeyResidentBlobSizeLimit();
+			_ObeyResidentBlobLimits();
 		}
 
 		void
@@ -438,17 +460,19 @@ namespace jelly
 				{
 					if (item.get()->m_meta.m_seq > existing->m_meta.m_seq)
 					{
-						if(existing->m_blob.IsSet())
+						if(existing->m_blob)
 						{
-							JELLY_ASSERT(m_totalResidentBlobSize >= existing->m_blob.GetSize());
-							m_totalResidentBlobSize -= existing->m_blob.GetSize();
+							JELLY_ASSERT(m_totalResidentBlobSize >= existing->m_blob->GetSize());
+							m_totalResidentBlobSize -= existing->m_blob->GetSize();
 						}
 
-						m_totalResidentBlobSize += item->m_blob.GetSize();
+						if(item->m_blob)
+							m_totalResidentBlobSize += item->m_blob->GetSize();
 
-						existing->CopyFrom(item.get());
+						existing->MoveFrom(item.get());
 
-						m_residentItems.MoveToTail(existing);
+						if(item->m_isResident)
+							m_residentItems.MoveToTail(existing);
 
 						if (existing->m_pendingWAL != NULL)
 						{
@@ -473,7 +497,8 @@ namespace jelly
 
 					this->m_pendingStore.insert(std::pair<const _KeyType, Item*>(item->m_key, item.get()));
 
-					m_totalResidentBlobSize += item->m_blob.GetSize();
+					if(item->m_blob)
+						m_totalResidentBlobSize += item->m_blob->GetSize();
 
 					this->SetItem(key, item.release());
 				}
@@ -486,7 +511,7 @@ namespace jelly
 		_LoadStore(
 			IFileStreamReader*			aReader,
 			uint32_t					aStoreId)
-		{
+		{			
 			while (!aReader->IsEnd())
 			{
 				std::unique_ptr<Item> item(new Item());
@@ -494,35 +519,45 @@ namespace jelly
 				item->m_storeOffset = aReader->GetReadOffset();
 				item->m_storeId = aStoreId;
 
-				if(!item->Read(aReader, this->m_host->GetCompressionProvider()))
+				if(!item->Read(aReader, &item->m_storeOffset))
 					break;
+
+				item->m_storeSize = item->m_blob->GetSize();
 
 				_KeyType key = item.get()->m_key;
 
-				if(m_totalResidentBlobSize >= m_blobNodeConfig.m_maxResidentBlobSize)
-					item->m_blob.Reset();
+				if(m_totalResidentBlobSize >= m_blobNodeConfig.m_maxResidentBlobSize || this->GetItemCount() >= m_blobNodeConfig.m_maxResidentBlobCount)
+				{
+					item->m_blob.reset();
+					item->m_isResident = false;
+				}
+				else
+				{
+					item->m_isResident = true;
+
+				}
 
 				Item* existing;
 				if (this->GetItem(key, existing))
 				{
 					if (item.get()->m_meta.m_seq > existing->m_meta.m_seq)
 					{
-						if(existing->m_blob.IsSet())
+						if(existing->m_blob)
 						{
-							JELLY_ASSERT(m_totalResidentBlobSize >= existing->m_blob.GetSize());
-							m_totalResidentBlobSize -= existing->m_blob.GetSize();
+							JELLY_ASSERT(m_totalResidentBlobSize >= existing->m_blob->GetSize());
+							m_totalResidentBlobSize -= existing->m_blob->GetSize();
 						}
 
-						if(item->m_blob.IsSet())
-							m_totalResidentBlobSize += item->m_blob.GetSize();
+						if(item->m_blob)
+							m_totalResidentBlobSize += item->m_blob->GetSize();
 
-						existing->CopyFrom(item.get());
+						existing->MoveFrom(item.get());
 					}
 				}
 				else
 				{
-					if(item->m_blob.IsSet())
-						m_totalResidentBlobSize += item->m_blob.GetSize();
+					if(item->m_blob)
+						m_totalResidentBlobSize += item->m_blob->GetSize();
 
 					this->SetItem(key, item.release());
 				}
@@ -576,18 +611,16 @@ namespace jelly
 
 				for (;;)
 				{
-					// FIXME: we don't need to decompress blobs for this
-
 					if (!hasItem1)
 					{
 						item1.m_storeOffset = f1->GetReadOffset();
-						hasItem1 = item1.Read(f1.get(), this->m_host->GetCompressionProvider());
+						hasItem1 = item1.Read(f1.get(), &item1.m_storeOffset);
 					}
 
 					if (!hasItem2)
 					{
 						item2.m_storeOffset = f2->GetReadOffset();
-						hasItem2 = item2.Read(f2.get(), this->m_host->GetCompressionProvider());
+						hasItem2 = item2.Read(f2.get(), &item2.m_storeOffset);
 					}
 
 					if (!hasItem1 && !hasItem2)
@@ -597,7 +630,7 @@ namespace jelly
 					{
 						if(!item1.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
 						{
-							item1.m_storeOffset = fOut->WriteItem(&item1, this->m_host->GetCompressionProvider());
+							item1.m_storeOffset = fOut->WriteItem(&item1);
 							compactionRedirect1->AddEntry(item1.m_key, newStoreId, item1.m_storeOffset);
 						}
 
@@ -607,7 +640,7 @@ namespace jelly
 					{
 						if (!item2.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
 						{
-							item2.m_storeOffset = fOut->WriteItem(&item2, this->m_host->GetCompressionProvider());
+							item2.m_storeOffset = fOut->WriteItem(&item2);
 							compactionRedirect2->AddEntry(item2.m_key, newStoreId, item2.m_storeOffset);
 						}
 
@@ -621,7 +654,7 @@ namespace jelly
 						{								
 							if (!item1.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
 							{
-								item1.m_storeOffset = fOut->WriteItem(&item1, this->m_host->GetCompressionProvider());
+								item1.m_storeOffset = fOut->WriteItem(&item1);
 								compactionRedirect1->AddEntry(item1.m_key, newStoreId, item1.m_storeOffset);
 							}
 
@@ -631,7 +664,7 @@ namespace jelly
 						{
 							if (!item2.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
 							{
-								item2.m_storeOffset = fOut->WriteItem(&item2, this->m_host->GetCompressionProvider());
+								item2.m_storeOffset = fOut->WriteItem(&item2);
 								compactionRedirect2->AddEntry(item2.m_key, newStoreId, item2.m_storeOffset);
 							}
 
@@ -645,12 +678,12 @@ namespace jelly
 							if (item1.m_meta.m_seq > item2.m_meta.m_seq)
 							{
 								if (!item1.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
-									offset = fOut->WriteItem(&item1, this->m_host->GetCompressionProvider());
+									offset = fOut->WriteItem(&item1);
 							}
 							else
 							{
 								if (!item2.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
-									offset = fOut->WriteItem(&item2, this->m_host->GetCompressionProvider());
+									offset = fOut->WriteItem(&item2);
 							}
 
 							if(offset != UINT64_MAX)
@@ -671,12 +704,13 @@ namespace jelly
 		}
 
 		void
-		_ObeyResidentBlobSizeLimit()
+		_ObeyResidentBlobLimits()
 		{
-			while(m_totalResidentBlobSize > m_blobNodeConfig.m_maxResidentBlobSize)
+			while(m_totalResidentBlobSize > m_blobNodeConfig.m_maxResidentBlobSize || m_residentItems.m_count > m_blobNodeConfig.m_maxResidentBlobCount)
 			{
 				Item* head = m_residentItems.m_head;
 				JELLY_ASSERT(head != NULL);
+				JELLY_ASSERT(head->m_isResident);
 
 				if(head->m_pendingWAL != NULL)
 				{
@@ -684,10 +718,12 @@ namespace jelly
 					break;
 				}
 
-				JELLY_ASSERT(head->m_blob.IsSet());
-				m_totalResidentBlobSize -= head->m_blob.GetSize();
-				head->m_blob.Reset();
+				JELLY_ASSERT(head->m_blob);
+				m_totalResidentBlobSize -= head->m_blob->GetSize();
+				head->m_blob.reset();
 				m_residentItems.Remove(head);
+
+				head->m_isResident = false;
 			}
 		}
 

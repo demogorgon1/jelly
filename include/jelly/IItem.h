@@ -1,12 +1,10 @@
 #pragma once
 
+#include "BlobBuffer.h"
+#include "ErrorUtils.h"
+
 namespace jelly
 {
-
-	namespace Compression
-	{
-		class IProvider;
-	}
 
 	class IReader;
 	class IWriter;
@@ -15,23 +13,19 @@ namespace jelly
 	class IItem
 	{
 	public:
-		enum ReadType
-		{
-			READ_TYPE_ALL,
-			READ_TYPE_BLOB_ONLY
-		};
-
 		virtual			~IItem() {}
 
 		// Virtual interface
-		virtual void	Write(
-							IWriter*						aWriter,
-							const Compression::IProvider*	aItemCompression) const = 0;
+		virtual size_t	Write(
+							IWriter*						aWriter) const = 0;
 		virtual bool	Read(
 							IReader*						aReader,
-							const Compression::IProvider*	aItemCompression,
-							ReadType						aReadType = READ_TYPE_ALL) = 0;
-		virtual size_t	GetStoredBlobSize() const = 0;
+							size_t*							aOutBlobOffset) = 0;
+
+		// Virtual methods
+		virtual void	UpdateBlobBuffer(
+							std::unique_ptr<BlobBuffer>&	/*aBlobBuffer*/) { JELLY_ASSERT(false); }
+		virtual size_t	GetStoredBlobSize() const { JELLY_ASSERT(false); return 0; }
 	};
 
 }

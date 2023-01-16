@@ -23,6 +23,6 @@ in a game server or as the inner-most moving parts of a larger distributed datab
 users before this becomes a problem, though. This makes _jelly_ very simple.
 * _Jelly_ runs a pass on all data on disk (both stores and write-ahead logs) on startup. This means it can take some time if restart is required, but it's really not that bad even with a lot of users. Game servers will generate a lot of data,
 but the vast majority of it will be overwrites. And your blobs are small, right?
-* This is mainly low-level a storage engine. No networking in the box, you'll have to glue everything together yourself.
+* This is mainly a low-level storage engine. No networking comes in the box, you'll have to glue everything together yourself.
 * This is largely an expirement and I'm yet to run proper comparative benchmarks against alternative ways
 to store data. 

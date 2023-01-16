@@ -36,7 +36,7 @@ namespace jelly
 				{
 					UInt32Blob blob;
 					blob.FromBuffer(aCompression, *aItem.m_blob);
-					return m_key == aItem.m_key && m_seq == aItem.m_meta.m_seq && m_blob == blob;
+					return m_key == aItem.m_key && m_seq == aItem.m_meta.m_seq && blob == m_blob;
 				}
 
 				// Public data

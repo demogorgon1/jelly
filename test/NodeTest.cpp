@@ -64,7 +64,7 @@ namespace jelly
 
 			template <typename _ItemType>
 			void
-			_VerifyFileStreamReader(
+			_VerifyLockNodeFileStreamReader(
 				Compression::IProvider*										/*aCompression*/,
 				IFileStreamReader*											aFileStreamReader,
 				const std::vector<_ItemType>&								aExpected)
@@ -107,13 +107,13 @@ namespace jelly
 
 			template <typename _ItemType>
 			void
-			_VerifyWAL(
+			_VerifyLockNodeWAL(
 				DefaultHost*												aHost,
 				uint32_t													aNodeId,
 				uint32_t													aId,
 				const std::vector<_ItemType>&								aExpected)
 			{
-				_VerifyFileStreamReader<_ItemType>(NULL, aHost->ReadWALStream(aNodeId, aId), aExpected);
+				_VerifyLockNodeFileStreamReader<_ItemType>(NULL, aHost->ReadWALStream(aNodeId, aId, true), aExpected);
 			}
 
 			template <typename _ItemType>
@@ -124,18 +124,18 @@ namespace jelly
 				uint32_t													aId,
 				const std::vector<BlobNodeItemData>&						aExpected)
 			{
-				_VerifyBlobNodeFileStreamReader<_ItemType>(NULL, aHost->ReadWALStream(aNodeId, aId), aExpected);
+				_VerifyBlobNodeFileStreamReader<_ItemType>(NULL, aHost->ReadWALStream(aNodeId, aId, false), aExpected);
 			}
 
 			template <typename _ItemType>
 			void
-			_VerifyStore(
+			_VerifyLockNodeStore(
 				DefaultHost*												aHost,
 				uint32_t													aNodeId,
 				uint32_t													aId,
 				const std::vector<_ItemType>&								aExpected)
 			{
-				_VerifyFileStreamReader<_ItemType>(aHost->GetCompressionProvider(), aHost->ReadStoreStream(aNodeId, aId), aExpected);
+				_VerifyLockNodeFileStreamReader<_ItemType>(aHost->GetCompressionProvider(), aHost->ReadStoreStream(aNodeId, aId), aExpected);
 			}
 
 			template <typename _ItemType>
@@ -155,7 +155,7 @@ namespace jelly
 				uint32_t													aNodeId,
 				uint32_t													aId)
 			{
-				std::unique_ptr<IFileStreamReader> f(aHost->ReadWALStream(aNodeId, aId));
+				std::unique_ptr<IFileStreamReader> f(aHost->ReadWALStream(aNodeId, aId, false));
 				JELLY_ASSERT(!f);
 			}
 
@@ -911,7 +911,7 @@ namespace jelly
 					}
 				}	
 
-				_VerifyWAL<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 0, { { 1, 1, 123, UINT32_MAX, 0xFFFFFFFF } });
+				_VerifyLockNodeWAL<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 0, { { 1, 1, 123, UINT32_MAX, 0xFFFFFFFF } });
 				
 				// Restart node
 
@@ -983,8 +983,8 @@ namespace jelly
 					}
 				}
 
-				_VerifyWAL<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 0, { { 1, 1, 123, UINT32_MAX, 0xFFFFFFFF } });
-				_VerifyWAL<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 1, { { 1, 2, 0, 1, 0xFF030201 } });
+				_VerifyLockNodeWAL<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 0, { { 1, 1, 123, UINT32_MAX, 0xFFFFFFFF } });
+				_VerifyLockNodeWAL<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 1, { { 1, 2, 0, 1, 0xFF030201 } });
 
 				// Restart
 
@@ -1037,14 +1037,14 @@ namespace jelly
 				}
 
 				_VerifyNoWAL(aHost, 0, 0);
-				_VerifyWAL<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 1, { { 1, 2, 0, 1, 0xFF030201 } });
-				_VerifyWAL<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 2,
+				_VerifyLockNodeWAL<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 1, { { 1, 2, 0, 1, 0xFF030201 } });
+				_VerifyLockNodeWAL<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 2,
 				{ 
 					{ 1, 3, 456, 1, 0xFF030201 },
 					{ 3, 1, 456, UINT32_MAX, 0xFFFFFFFF },
 					{ 2, 1, 456, UINT32_MAX, 0xFFFFFFFF }
 				});
-				_VerifyStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 0,
+				_VerifyLockNodeStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 0,
 				{ 
 					{ 1, 3, 456, 1, 0xFF030201 },
 					{ 2, 1, 456, UINT32_MAX, 0xFFFFFFFF },
@@ -1193,7 +1193,7 @@ namespace jelly
 				}
 
 				// Only thing on disk should be a WAL with 3 entries - lock, unlock, and finally delete (tombstone'd)
-				_VerifyWAL<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 0, 
+				_VerifyLockNodeWAL<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 0,
 				{ 
 					{ 1, 1, 100, UINT32_MAX, UINT32_MAX, UINT32_MAX },
 					{ 1, 2, 0, 1, 0, UINT32_MAX },
@@ -1224,10 +1224,10 @@ namespace jelly
 				}
 
 				// Now we should have 4 stores - id 0 with a tombstone, id 1 with the other lock, id 2 with another lock, id 3 with last lock
-				_VerifyStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 0, { { 1, 3, 0, UINT32_MAX, UINT32_MAX, 0 } }); // key 1 tombstone
-				_VerifyStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 1, { { 2, 1, 100, UINT32_MAX, UINT32_MAX, UINT32_MAX } }); // key 2 lock
-				_VerifyStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 2, { { 3, 1, 100, UINT32_MAX, UINT32_MAX, UINT32_MAX } }); // key 3 lock
-				_VerifyStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 3, { { 4, 1, 100, UINT32_MAX, UINT32_MAX, UINT32_MAX } }); // key 4 lock
+				_VerifyLockNodeStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 0, { { 1, 3, 0, UINT32_MAX, UINT32_MAX, 0 } }); // key 1 tombstone
+				_VerifyLockNodeStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 1, { { 2, 1, 100, UINT32_MAX, UINT32_MAX, UINT32_MAX } }); // key 2 lock
+				_VerifyLockNodeStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 2, { { 3, 1, 100, UINT32_MAX, UINT32_MAX, UINT32_MAX } }); // key 3 lock
+				_VerifyLockNodeStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 3, { { 4, 1, 100, UINT32_MAX, UINT32_MAX, UINT32_MAX } }); // key 4 lock
 
 				// Restart
 
@@ -1242,9 +1242,9 @@ namespace jelly
 				}
 
 				// Now we should have 1 store less
-				_VerifyStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 2, { { 3, 1, 100, UINT32_MAX, UINT32_MAX, UINT32_MAX } }); // key 3 lock
-				_VerifyStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 3, { { 4, 1, 100, UINT32_MAX, UINT32_MAX, UINT32_MAX } }); // key 4 lock
-				_VerifyStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 4,
+				_VerifyLockNodeStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 2, { { 3, 1, 100, UINT32_MAX, UINT32_MAX, UINT32_MAX } }); // key 3 lock
+				_VerifyLockNodeStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 3, { { 4, 1, 100, UINT32_MAX, UINT32_MAX, UINT32_MAX } }); // key 4 lock
+				_VerifyLockNodeStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 4,
 				{ 
 					{ 1, 3, 0, UINT32_MAX, UINT32_MAX, 0 }, // key 1 tombstone
 					{ 2, 1, 100, UINT32_MAX, UINT32_MAX, UINT32_MAX }, // key 2 lock
@@ -1274,9 +1274,9 @@ namespace jelly
 				}
 
 				// Tombstone should be gone now
-				_VerifyStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 2, { { 3, 1, 100, UINT32_MAX, UINT32_MAX, UINT32_MAX } }); // key 3 lock
-				_VerifyStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 5, { { 5, 1, 100, UINT32_MAX, UINT32_MAX, UINT32_MAX } }); // key 5 lock
-				_VerifyStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 6,
+				_VerifyLockNodeStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 2, { { 3, 1, 100, UINT32_MAX, UINT32_MAX, UINT32_MAX } }); // key 3 lock
+				_VerifyLockNodeStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 5, { { 5, 1, 100, UINT32_MAX, UINT32_MAX, UINT32_MAX } }); // key 5 lock
+				_VerifyLockNodeStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 6,
 				{ 
 					{ 2, 1, 100, UINT32_MAX, UINT32_MAX, UINT32_MAX }, // key 2 lock
 					{ 4, 1, 100, UINT32_MAX, UINT32_MAX, UINT32_MAX } // key 4 lock

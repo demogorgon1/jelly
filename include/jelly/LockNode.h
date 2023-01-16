@@ -21,10 +21,11 @@ namespace jelly
 			_KeyType, 
 			LockNodeRequest<_KeyType, _LockType>, 
 			LockNodeItem<_KeyType, _LockType>,
-			_STLKeyHasher>
+			_STLKeyHasher,
+			true> // Enable streaming compression of WALs
 	{
 	public:
-		typedef Node<_KeyType, LockNodeRequest<_KeyType, _LockType>, LockNodeItem<_KeyType, _LockType>, _STLKeyHasher> NodeBase;
+		typedef Node<_KeyType, LockNodeRequest<_KeyType, _LockType>, LockNodeItem<_KeyType, _LockType>, _STLKeyHasher, true> NodeBase;
 
 		struct Config
 		{
@@ -282,7 +283,7 @@ namespace jelly
 			{
 				WAL* wal = this->AddWAL(id, NULL);
 
-				std::unique_ptr<IFileStreamReader> f(this->m_host->ReadWALStream(this->m_nodeId, id));
+				std::unique_ptr<IFileStreamReader> f(this->m_host->ReadWALStream(this->m_nodeId, id, true));
 				if (f)
 					_LoadWAL(f.get(), wal);
 

@@ -586,7 +586,8 @@ namespace jelly
 		IFileStreamReader*		
 		MemoryHost::ReadWALStream(
 			uint32_t					aNodeId,
-			uint32_t					aId) 
+			uint32_t					aId,
+			bool						/*aUseStreamingCompression*/)
 		{
 			WALMap::iterator i = m_walMap.find(std::make_pair(aNodeId, aId));
 			JELLY_ASSERT(i != m_walMap.end());
@@ -596,7 +597,8 @@ namespace jelly
 		IWALWriter*				
 		MemoryHost::CreateWAL(
 			uint32_t					aNodeId,
-			uint32_t					aId) 
+			uint32_t					aId,
+			bool						/*aUseStreamingCompression*/)
 		{
 			WALMap::iterator i = m_walMap.find(std::make_pair(aNodeId, aId));
 			JELLY_ASSERT(i == m_walMap.end());

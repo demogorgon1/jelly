@@ -28,10 +28,12 @@ namespace jelly
 										std::vector<StoreInfo>&		aOut) override;
 			IFileStreamReader*		ReadWALStream(
 										uint32_t					aNodeId,
-										uint32_t					aId) override;
+										uint32_t					aId,
+										bool						aUseStreamingCompression) override;
 			IWALWriter*				CreateWAL(
 										uint32_t					aNodeId,
-										uint32_t					aId) override;
+										uint32_t					aId,
+										bool						aUseStreamingCompression) override;
 			void					DeleteWAL(
 										uint32_t					aNodeId,
 										uint32_t					aId) override;

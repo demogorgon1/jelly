@@ -146,11 +146,12 @@ namespace jelly
 	IFileStreamReader*
 	DefaultHost::ReadWALStream(
 		uint32_t					aNodeId,
-		uint32_t					aId) 
+		uint32_t					aId,
+		bool						aUseStreamingCompression)
 	{
 		std::unique_ptr<FileStreamReader> f(new FileStreamReader(
 			PathUtils::MakePath(m_root.c_str(), m_filePrefix.c_str(), PathUtils::FILE_TYPE_WAL, aNodeId, aId).c_str(),
-			m_compressionProvider ? m_compressionProvider->CreateStreamDecompressor() : NULL));
+			m_compressionProvider && aUseStreamingCompression ? m_compressionProvider->CreateStreamDecompressor() : NULL));
 
 		if(!f->IsValid())
 			return NULL;
@@ -161,11 +162,12 @@ namespace jelly
 	IWALWriter*
 	DefaultHost::CreateWAL(
 		uint32_t					aNodeId,
-		uint32_t					aId) 
+		uint32_t					aId,
+		bool						aUseStreamingCompression) 
 	{
 		std::unique_ptr<WALWriter> f(new WALWriter(
 			PathUtils::MakePath(m_root.c_str(), m_filePrefix.c_str(), PathUtils::FILE_TYPE_WAL, aNodeId, aId).c_str(),
-			m_compressionProvider ? m_compressionProvider->CreateStreamCompressor() : NULL));
+			m_compressionProvider && aUseStreamingCompression ? m_compressionProvider->CreateStreamCompressor() : NULL));
 
 		if (!f->IsValid())
 			return NULL;

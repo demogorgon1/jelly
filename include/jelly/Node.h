@@ -20,7 +20,8 @@ namespace jelly
 		typename _KeyType,
 		typename _RequestType,
 		typename _ItemType,
-		typename _STLKeyHasher
+		typename _STLKeyHasher,
+		bool _CompressWAL
 	>
 	class Node
 	{
@@ -498,7 +499,7 @@ namespace jelly
 			{
 				uint32_t id = m_nextWALId++;
 
-				pendingWAL = AddWAL(id, m_host->CreateWAL(m_nodeId, id));
+				pendingWAL = AddWAL(id, m_host->CreateWAL(m_nodeId, id, _CompressWAL));
 			}
 
 			return pendingWAL;

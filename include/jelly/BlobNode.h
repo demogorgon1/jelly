@@ -23,10 +23,11 @@ namespace jelly
 			_KeyType, 
 			BlobNodeRequest<_KeyType, _BlobType>, 
 			BlobNodeItem<_KeyType, _BlobType>,
-			_STLKeyHasher>
+			_STLKeyHasher,
+			false> // Disable streaming compression of WALs (blobs are already compressed)
 	{
 	public:
-		typedef Node<_KeyType, BlobNodeRequest<_KeyType, _BlobType>, BlobNodeItem<_KeyType, _BlobType>, _STLKeyHasher> NodeBase;
+		typedef Node<_KeyType, BlobNodeRequest<_KeyType, _BlobType>, BlobNodeItem<_KeyType, _BlobType>, _STLKeyHasher, false> NodeBase;
 
 		struct Config
 		{
@@ -429,7 +430,7 @@ namespace jelly
 			{
 				WAL* wal = this->AddWAL(id, NULL);
 
-				std::unique_ptr<IFileStreamReader> f(this->m_host->ReadWALStream(this->m_nodeId, id));
+				std::unique_ptr<IFileStreamReader> f(this->m_host->ReadWALStream(this->m_nodeId, id, false));
 				if (f)
 					_LoadWAL(f.get(), wal);
 

@@ -59,6 +59,14 @@ namespace jelly
 				return m_value == aOther.m_value;
 			}
 
+			bool
+			operator==(
+				uint32_t						aOther) const
+			{
+				JELLY_ASSERT(m_loaded);
+				return m_value == aOther;
+			}
+
 			// Public data
 			uint32_t	m_value;
 			bool		m_loaded;

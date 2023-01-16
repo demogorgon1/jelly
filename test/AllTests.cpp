@@ -8,6 +8,7 @@
 #include "MiscTest.h"
 #include "NodeTest.h"
 #include "StepTest.h"
+#include "WriteTest.h"
 
 namespace jelly
 {
@@ -31,6 +32,9 @@ namespace jelly
 
 				if(aConfig->m_simTest)
 					Sim::SimTest(aWorkingDirectory, aConfig);
+
+				if(aConfig->m_writeTest)
+					WriteTest::Run(aConfig);
 			}
 
 		}

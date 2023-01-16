@@ -94,6 +94,14 @@ namespace jelly
 			return m_buffer == aOther.m_buffer;
 		}
 
+		Blob&
+		operator=(
+			const Blob&						aOther) 
+		{
+			m_buffer = aOther.m_buffer;
+			return *this;
+		}
+
 		// Data access
 		const Buffer<_StaticSize>&	GetBuffer() const { return m_buffer; }
 		Buffer<_StaticSize>&		GetBuffer() { return m_buffer; }

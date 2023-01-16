@@ -21,6 +21,22 @@ namespace jelly
 					{
 						m_hammerTest = true;
 					}
+					else if (strcmp(arg, "-writetest") == 0)
+					{
+						m_writeTest = true;
+					}
+					else if (strcmp(arg, "-writetestblobcount") == 0)
+					{
+						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
+						m_writeTestBlobCount = (uint32_t)atoi(aArgs[i + 1]);
+						i++;
+					}
+					else if (strcmp(arg, "-writetestblobsize") == 0)
+					{
+						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
+						m_writeTestBlobSize = (uint32_t)atoi(aArgs[i + 1]);
+						i++;
+					}
 					else if(strcmp(arg, "-steptestseed") == 0)
 					{
 						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
@@ -143,6 +159,11 @@ namespace jelly
 			std::string					m_simCSVOutput;
 			std::vector<std::string>	m_simCSVOutputColumns;
 			bool						m_simTestStdOut = true;
+
+			// WriteTest
+			bool						m_writeTest = false;
+			uint32_t					m_writeTestBlobCount = 10000;
+			uint32_t					m_writeTestBlobSize = 1024;
 		};
 
 	}

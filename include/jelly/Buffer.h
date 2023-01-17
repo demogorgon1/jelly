@@ -28,6 +28,15 @@ namespace jelly
 			_Copy(aOther);
 		}
 
+		Buffer(
+			const Buffer<_StaticSize>&	aOther)
+			: m_size(0)
+			, m_data(m_static)
+			, m_bufferSize(_StaticSize)
+		{
+			_Copy(aOther);
+		}
+
 		virtual
 		~Buffer()
 		{
@@ -53,6 +62,15 @@ namespace jelly
 		Buffer<_StaticSize>&
 		operator=(
 			const IBuffer&	aOther) 
+		{
+			_Copy(aOther);
+
+			return *this;
+		}
+
+		Buffer<_StaticSize>&
+		operator=(
+			const Buffer<_StaticSize>&	aOther)
 		{
 			_Copy(aOther);
 

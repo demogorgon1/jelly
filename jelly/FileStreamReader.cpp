@@ -131,11 +131,8 @@ namespace jelly
 			{
 				if(m_head == NULL)
 				{
-					File::Reader reader;
-					m_file.GetReader(UINT64_MAX, reader);
-
 					uint8_t compressed[32768];
-					size_t compressedSize = reader.Read(compressed, sizeof(compressed));
+					size_t compressedSize = m_file.Read(compressed, sizeof(compressed));
 					if(compressedSize == 0)
 					{
 						break;
@@ -172,10 +169,7 @@ namespace jelly
 		}
 		else
 		{
-			File::Reader reader;
-			m_file.GetReader(UINT64_MAX, reader);
-
-			size_t bytes = reader.Read(aBuffer, aBufferSize);
+			size_t bytes = m_file.Read(aBuffer, aBufferSize);
 			m_offset += bytes;
 			return bytes;
 		}

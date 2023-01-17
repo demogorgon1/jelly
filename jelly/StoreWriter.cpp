@@ -32,10 +32,7 @@ namespace jelly
 	{
 		size_t offset = m_file.GetSize();
 
-		File::Writer writer;
-		m_file.GetWriter(writer);
-
-		return offset + aItem->Write(&writer);
+		return offset + aItem->Write(&m_file);
 	}
 
 }

@@ -1,0 +1,132 @@
+#pragma once
+
+#if defined(_WIN32)
+
+#include <jelly/ErrorUtils.h>
+#include <jelly/IReader.h>
+#include <jelly/IWriter.h>
+
+namespace jelly
+{
+
+	namespace IOWin32
+	{
+
+		class Handle
+		{
+		public:
+						Handle(
+							HANDLE				aHandle = INVALID_HANDLE_VALUE);
+						~Handle();
+
+			Handle&		operator=(
+							HANDLE				aHandle);
+			void		Release();
+			bool		IsSet() const;
+			
+			operator HANDLE() const
+			{
+				JELLY_ASSERT(m_handle != INVALID_HANDLE_VALUE);
+				return m_handle;
+			}
+
+		private:
+
+			HANDLE								m_handle;
+		};
+
+		//-----------------------------------------------------------------------------------
+
+		class FileReadRandom
+		{
+		public:
+						FileReadRandom(
+							const char*			aPath);
+						~FileReadRandom();
+
+			bool		IsValid();
+			void		ReadAtOffset(
+							size_t				aOffset,
+							void*				aBuffer,
+							size_t				aBufferSize);
+
+		private:
+
+			Handle								m_handle;
+		};
+
+		//-----------------------------------------------------------------------------------
+
+		class FileReadStream
+			: public IReader
+		{
+		public:
+						FileReadStream(
+							const char*			aPath);
+						~FileReadStream();
+
+			bool		IsValid();
+			size_t		GetSize() const;
+
+			// IReader implementation
+			size_t		Read(
+							void*				aBuffer,
+							size_t				aBufferSize) override;
+
+		private:
+
+			Handle								m_handle;
+			size_t								m_size;
+		};
+
+		//-----------------------------------------------------------------------------------
+
+		class FileWriteStream
+			: public IWriter
+		{
+		public:
+						FileWriteStream(
+							const char*			aPath);
+						~FileWriteStream();
+
+			void		Flush();
+			size_t		GetSize() const;
+
+			// IWriter implementation
+			size_t		Write(
+							const void*			aBuffer,
+							size_t				aBufferSize) override;
+
+		private:
+
+			struct FileWriteBuffer
+			{
+				static const size_t SIZE = 512 * 1024;
+
+				FileWriteBuffer()
+					: m_bytes(0)
+					, m_spaceLeft(SIZE)
+				{
+
+				}
+
+				// Public data
+				size_t							m_bytes;
+				size_t							m_spaceLeft;
+				uint8_t							m_buffer[SIZE];
+			};
+			
+			std::unique_ptr<FileWriteBuffer>	m_pendingWriteBuffer;
+
+			Handle								m_handle;
+			size_t								m_size;
+
+			void		_WriteBuffer(
+							FileWriteBuffer*	aWriteBuffer);
+		};
+
+	}
+
+}
+
+#endif

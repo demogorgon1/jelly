@@ -15,24 +15,23 @@ namespace jelly
 			Run(
 				const Config* aConfig)
 			{			
-				std::vector<std::unique_ptr<Blob<1>>> blobs;
+				std::vector<Blob<1>> blobs;
 
 				// Create blobs
 				{
 					PerfTimer t;
 
+					blobs.resize((size_t)aConfig->m_writeTestBlobCount);
+
 					std::mt19937 random;
 
-					for (uint32_t i = 0; i < aConfig->m_writeTestBlobCount; i++)
+					for (Blob<1>& blob : blobs)
 					{
 						size_t blobSize = (size_t)aConfig->m_writeTestBlobSize;
+						blob.GetBuffer().SetSize(blobSize);
 
-						std::unique_ptr<Blob<1>> blob = std::make_unique<Blob<1>>();
-						blob->GetBuffer().SetSize(blobSize);
 						for (size_t j = 0; j < blobSize; j++)
-							((uint8_t*)blob->GetBuffer().GetPointer())[j] = (uint8_t)(random() % 64); // (not COMPLETELY random, stay in 0-63 range for a bit of compression)
-
-						blobs.push_back(std::move(blob));
+							((uint8_t*)blob.GetBuffer().GetPointer())[j] = (uint8_t)(random() % 64); // (not COMPLETELY random, stay in 0-63 range for a bit of compression)
 					}
 
 					printf("Created blobs in %u ms...\n", (uint32_t)t.GetElapsedMilliseconds());
@@ -62,7 +61,7 @@ namespace jelly
 
 							req->m_key = (uint32_t)i;
 							req->m_seq = 0;
-							req->m_blob = *blobs[i];
+							req->m_blob = blobs[i];
 
 							blobNode.Set(req);
 						}
@@ -97,6 +96,8 @@ namespace jelly
 						printf("Flushed pending store in %u ms...\n", (uint32_t)t.GetElapsedMilliseconds());
 					}					
 				}
+
+				printf("..\n");
 			}
 
 		}

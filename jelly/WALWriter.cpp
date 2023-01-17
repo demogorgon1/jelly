@@ -22,9 +22,7 @@ namespace jelly
 				const void* aBuffer,
 				size_t		aBufferSize)
 			{				
-				File::Writer writer;
-				m_file.GetWriter(writer);
-				if(writer.Write(aBuffer, aBufferSize) != aBufferSize)
+				if(m_file.Write(aBuffer, aBufferSize) != aBufferSize)
 					JELLY_FATAL_ERROR("Failed to write compressed data to file: %s", m_file.GetPath());
 			});
 		}
@@ -60,7 +58,6 @@ namespace jelly
 	void
 	WALWriter::Flush() 
 	{
-		File::Writer uncompressedWriter;
 		IWriter* writer;
 			
 		if(m_compressor)
@@ -69,8 +66,7 @@ namespace jelly
 		}
 		else
 		{
-			m_file.GetWriter(uncompressedWriter);
-			writer = &uncompressedWriter;
+			writer = &m_file;
 		}
 
 		for(PendingItemWrite& t : m_pendingItemWrites)					

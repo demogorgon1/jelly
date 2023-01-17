@@ -41,7 +41,7 @@ namespace jelly
 			if (m_fd != -1)
 			{
 				int result = close(m_fd);
-				JELLY_CHECK(result != -1, "close() failed: %u", m_path.c_str(), errno);
+				JELLY_CHECK(result != -1, "close() failed: %u", errno);
 
 				m_fd = -1;
 			}
@@ -50,7 +50,7 @@ namespace jelly
 		bool
 		Handle::IsSet() const
 		{
-			return m_handle != m_fd;
+			return m_fd != -1;
 		}
 
 		//-----------------------------------------------------------------------------------
@@ -167,7 +167,7 @@ namespace jelly
 			int mode = S_IRUSR | S_IWUSR;
 
 			m_handle = open(aPath, flags, mode);
-			JELLY_CHECK(m_handle.IsSet(), "open() failed: %u (path: %s)", errorCode, aPath);
+			JELLY_CHECK(m_handle.IsSet(), "open() failed: %u (path: %s)", errno, aPath);
 		}
 		
 		FileWriteStream::~FileWriteStream()

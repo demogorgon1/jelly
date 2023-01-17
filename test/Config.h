@@ -21,6 +21,10 @@ namespace jelly
 					{
 						m_hammerTest = true;
 					}
+					else if (strcmp(arg, "-readtest") == 0)
+					{
+						m_readTest = true;
+					}
 					else if (strcmp(arg, "-writetest") == 0)
 					{
 						m_writeTest = true;
@@ -164,6 +168,9 @@ namespace jelly
 			bool						m_writeTest = false;
 			uint32_t					m_writeTestBlobCount = 10000;
 			uint32_t					m_writeTestBlobSize = 1024;
+
+			// ReadTest
+			bool						m_readTest = false;
 		};
 
 	}

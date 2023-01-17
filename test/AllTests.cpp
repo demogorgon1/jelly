@@ -7,6 +7,7 @@
 #include "HousekeepingAdvisorTest.h"
 #include "MiscTest.h"
 #include "NodeTest.h"
+#include "ReadTest.h"
 #include "StepTest.h"
 #include "WriteTest.h"
 
@@ -35,6 +36,9 @@ namespace jelly
 
 				if(aConfig->m_writeTest)
 					WriteTest::Run(aConfig);
+
+				if(aConfig->m_readTest)
+					ReadTest::Run(aConfig);
 			}
 
 		}

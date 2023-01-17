@@ -40,7 +40,7 @@ namespace jelly
 				{
 					typedef BlobNode<UIntKey<uint32_t>, Blob<1>, UIntKey<uint32_t>::Hasher> BlobNodeType;
 
-					DefaultHost host(".", "writetest", DefaultHost::COMPRESSION_MODE_ZSTD);
+					DefaultHost host(".", "wrtest", DefaultHost::COMPRESSION_MODE_ZSTD);
 
 					host.DeleteAllFiles(UINT32_MAX);
 
@@ -96,8 +96,6 @@ namespace jelly
 						printf("Flushed pending store in %u ms...\n", (uint32_t)t.GetElapsedMilliseconds());
 					}					
 				}
-
-				printf("..\n");
 			}
 
 		}

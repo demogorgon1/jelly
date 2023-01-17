@@ -50,6 +50,11 @@ namespace jelly
 			#if defined(_DEBUG)
 				DebugBreak();
 			#else
+				#if defined(_WIN32)
+					if (IsDebuggerPresent())
+						DebugBreak();
+				#endif
+
 				exit(EXIT_FAILURE);
 			#endif
 		}

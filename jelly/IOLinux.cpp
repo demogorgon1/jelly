@@ -151,19 +151,6 @@ namespace jelly
 		{
 			JELLY_ASSERT(m_handle.IsSet());
 
-			ssize_t bytes = read(m_handle, aBuffer, aBufferSize);
-			JELLY_CHECK(bytes >= 0, "read() failed: %u", errno);
-
-			return (size_t)bytes;
-		}
-
-		size_t		
-		FileReadStream::Read(
-			void*				aBuffer,
-			size_t				aBufferSize) 
-		{
-			JELLY_ASSERT(m_handle.IsSet());
-
 			size_t remaining = aBufferSize;
 			uint8_t* p = (uint8_t*)aBuffer;
 			size_t readBytes = 0;

@@ -88,21 +88,15 @@ namespace jelly
 		{
 			JELLY_ASSERT(m_handle.IsSet());
 
-			LARGE_INTEGER distance;
-			distance.LowPart = (DWORD)(aOffset & 0xFFFFFFFF);
-			distance.HighPart = (DWORD)(aOffset >> 32);
+			OVERLAPPED overlapped;
+			memset(&overlapped, 0, sizeof(overlapped));
+			overlapped.Offset = (DWORD)(aOffset & UINT32_MAX);
+			overlapped.OffsetHigh = (DWORD)((aOffset >> 32) & UINT32_MAX);
 
-			{
-				BOOL result = SetFilePointerEx(m_handle, distance, NULL, FILE_BEGIN);
-				JELLY_CHECK(result != 0, "SetFilePointerEx() failed (offset %llu).", aOffset);
-			}
-
-			{
-				DWORD bytesRead;
-				BOOL result = ReadFile(m_handle, aBuffer, (DWORD)aBufferSize, &bytesRead, NULL);
-				JELLY_CHECK(result != 0, "ReadFile() failed (offset %llu, buffer size %llu).", aOffset, aBufferSize);
-				JELLY_ASSERT(bytesRead == (DWORD)aBufferSize);
-			}
+			DWORD bytesRead;
+			BOOL result = ReadFile(m_handle, aBuffer, (DWORD)aBufferSize, &bytesRead, &overlapped);
+			JELLY_CHECK(result != 0, "ReadFile() failed (offset %llu, buffer size %llu).", aOffset, aBufferSize);
+			JELLY_ASSERT(bytesRead == (DWORD)aBufferSize);
 		}
 
 		//-----------------------------------------------------------------------------------

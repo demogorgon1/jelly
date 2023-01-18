@@ -33,7 +33,6 @@ namespace jelly
 		size_t				aOffset,
 		IItem*				aItem)
 	{
-		// FIXME: this is obviously ridiculous... don't open file for every read
 		if(!m_file)
 			m_file = std::make_unique<File>(m_path.c_str(), File::MODE_READ_RANDOM);
 

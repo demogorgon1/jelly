@@ -314,7 +314,6 @@ namespace jelly
 
 			if(!item->m_blob)
 			{
-				// FIXME: slooow
 				JELLY_ASSERT(item->m_storeId != UINT32_MAX);
 
 				uint32_t storeId = item->m_storeId;

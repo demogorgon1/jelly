@@ -15,14 +15,14 @@ namespace jelly
 		class Handle
 		{
 		public:
-						Handle(
-							int					aFd = -1);
-						~Handle();
+							Handle(
+								int					aFd = -1);
+							~Handle();
 
-			Handle&		operator=(
-							int					aFd);
-			void		Release();
-			bool		IsSet() const;
+			Handle&			operator=(
+								int					aFd);
+			void			Release();
+			bool			IsSet() const;
 			
 			operator int() const
 			{
@@ -40,15 +40,15 @@ namespace jelly
 		class FileReadRandom
 		{
 		public:
-						FileReadRandom(
-							const char*			aPath);
-						~FileReadRandom();
+							FileReadRandom(
+								const char*			aPath);
+							~FileReadRandom();
 
-			bool		IsValid();
-			void		ReadAtOffset(
-							size_t				aOffset,
-							void*				aBuffer,
-							size_t				aBufferSize);
+			bool			IsValid();
+			void			ReadAtOffset(
+								size_t				aOffset,
+								void*				aBuffer,
+								size_t				aBufferSize);
 
 		private:
 
@@ -61,17 +61,17 @@ namespace jelly
 			: public IReader
 		{
 		public:
-						FileReadStream(
-							const char*			aPath);
-						~FileReadStream();
+							FileReadStream(
+								const char*			aPath);
+							~FileReadStream();
 
-			bool		IsValid();
-			size_t		GetSize() const;
+			bool			IsValid();
+			size_t			GetSize() const;
 
 			// IReader implementation
-			size_t		Read(
-							void*				aBuffer,
-							size_t				aBufferSize) override;
+			size_t			Read(
+								void*				aBuffer,
+								size_t				aBufferSize) override;
 
 		private:
 
@@ -96,6 +96,9 @@ namespace jelly
 
 			Handle								m_handle;
 			size_t								m_size;
+
+			FileReadBuffer*	_ReadBuffer();
+
 		};
 
 		//-----------------------------------------------------------------------------------
@@ -104,17 +107,17 @@ namespace jelly
 			: public IWriter
 		{
 		public:
-						FileWriteStream(
-							const char*			aPath);
-						~FileWriteStream();
+							FileWriteStream(
+								const char*			aPath);
+							~FileWriteStream();
 
-			void		Flush();
-			size_t		GetSize() const;
+			void			Flush();
+			size_t			GetSize() const;
 
 			// IWriter implementation
-			size_t		Write(
-							const void*			aBuffer,
-							size_t				aBufferSize) override;
+			size_t			Write(
+								const void*			aBuffer,
+								size_t				aBufferSize) override;
 
 		private:
 
@@ -140,8 +143,8 @@ namespace jelly
 			Handle								m_handle;
 			size_t								m_size;
 
-			void		_WriteBuffer(
-							FileWriteBuffer*	 aWriteBuffer);
+			void			_WriteBuffer(
+								FileWriteBuffer*	 aWriteBuffer);
 		};
 
 	}

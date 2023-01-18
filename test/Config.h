@@ -25,6 +25,18 @@ namespace jelly
 					{
 						m_readTest = true;
 					}
+					else if (strcmp(arg, "-readtestblobcount") == 0)
+					{
+						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
+						m_readTestBlobCount = (uint32_t)atoi(aArgs[i + 1]);
+						i++;
+					}
+					else if (strcmp(arg, "-readtestblobcountmemorylimit") == 0)
+					{
+						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
+						m_readTestBlobCountMemoryLimit = (uint32_t)atoi(aArgs[i + 1]);
+						i++;
+					}					
 					else if (strcmp(arg, "-writetest") == 0)
 					{
 						m_writeTest = true;
@@ -171,6 +183,8 @@ namespace jelly
 
 			// ReadTest
 			bool						m_readTest = false;
+			uint32_t					m_readTestBlobCount = 0;
+			uint32_t					m_readTestBlobCountMemoryLimit = UINT32_MAX;
 		};
 
 	}

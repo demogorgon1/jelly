@@ -23,7 +23,7 @@ namespace jelly
 
 					blobs.resize((size_t)aConfig->m_writeTestBlobCount);
 
-					std::mt19937 random;
+					std::mt19937 random(12345);
 
 					for (Blob<1>& blob : blobs)
 					{
@@ -66,7 +66,7 @@ namespace jelly
 							blobNode.Set(req);
 						}
 
-						printf("Queued up requests in %u ms...\n", (uint32_t)t.GetElapsedMilliseconds());
+						printf("Queued up write requests in %u ms...\n", (uint32_t)t.GetElapsedMilliseconds());
 					}
 
 					// Process requests
@@ -75,7 +75,7 @@ namespace jelly
 
 						blobNode.ProcessRequests();
 
-						printf("Processed requests in %u ms...\n", (uint32_t)t.GetElapsedMilliseconds());
+						printf("Processed write requests in %u ms...\n", (uint32_t)t.GetElapsedMilliseconds());
 					}
 
 					// Flush pending WAL

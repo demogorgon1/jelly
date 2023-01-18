@@ -7,7 +7,7 @@ namespace jelly
 	struct NodeConfig
 	{
 		NodeConfig()
-			: m_walSizeLimit(16 * 1024 * 1024)
+			: m_walSizeLimit(64 * 1024 * 1024)
 			, m_walConcurrency(1)
 		{
 

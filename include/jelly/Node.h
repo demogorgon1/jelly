@@ -143,7 +143,7 @@ namespace jelly
 		// Flush the specified concurrent WAL. This must be done after ProcessRequests(), but doesn't need to be
 		// on the main thread. Requests that required stuff to be written to a WAL isn't going to be flagged as
 		// completed before the WAL has been flushed.
-		void
+		size_t
 		FlushPendingWAL(
 			uint32_t		aWALConcurrentIndex)
 		{
@@ -151,7 +151,9 @@ namespace jelly
 
 			WAL* pendingWAL = m_pendingWALs[aWALConcurrentIndex];
 			if(pendingWAL != NULL)
-				pendingWAL->GetWriter()->Flush();
+				return pendingWAL->GetWriter()->Flush();
+
+			return 0;
 		}
 
 		// Return the number of requests waiting to be flushed to the specified concurrent WAL. This should be
@@ -171,11 +173,11 @@ namespace jelly
 
 		// Flush the pending store to permanent storage. Must be called from the main thread.
 		// Items flushed here will remove their reference to their pending WAL.
-		void
+		size_t
 		FlushPendingStore()
 		{			
 			if(m_pendingStore.size() == 0)
-				return;
+				return 0;
 			
 			{
 				uint32_t storeId = CreateStoreId();
@@ -186,7 +188,9 @@ namespace jelly
 				m_flushPendingStoreCallback(storeId, writer.get(), &m_pendingStore);
 			}
 
+			size_t count = m_pendingStore.size();
 			m_pendingStore.clear();
+			return count;
 		}
 
 		// Return the number of items in the pending store. Each of these items hold a reference to a pending
@@ -219,9 +223,11 @@ namespace jelly
 		}
 
 		// Delete all closed WALs with no references. Must be called from the main thread.
-		void
+		size_t
 		CleanupWALs()
 		{
+			size_t deletedWALs = 0;
+
 			for(size_t i = 0; i < m_wals.size(); i++)
 			{
 				WAL* wal = m_wals[i];
@@ -235,8 +241,12 @@ namespace jelly
 					i--;
 
 					m_host->DeleteWAL(m_nodeId, id);
+
+					deletedWALs++;
 				}
 			}
+
+			return deletedWALs;
 		}
 
 		// Perform (minor) compaction on the specified store ids. Any tombstones found from before

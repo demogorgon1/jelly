@@ -55,7 +55,7 @@ namespace jelly
 		m_pendingItemWrites.push_back({aItem, aCompletionEvent, aResult});
 	}
 
-	void
+	size_t
 	WALWriter::Flush() 
 	{
 		IWriter* writer;
@@ -80,7 +80,9 @@ namespace jelly
 		for (PendingItemWrite& t : m_pendingItemWrites)
 			t.m_completionEvent->Signal();
 
+		size_t count = m_pendingItemWrites.size();
 		m_pendingItemWrites.clear();
+		return count;
 	}
 
 	void		

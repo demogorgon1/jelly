@@ -29,7 +29,7 @@ namespace jelly
 						const IItem*					aItem,
 						CompletionEvent*				aCompletionEvent,
 						Result*							aResult) override;
-		void		Flush() override;
+		size_t		Flush() override;
 		void		Cancel() override;
 		size_t		GetPendingWriteCount() const override;
 

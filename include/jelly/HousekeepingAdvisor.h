@@ -17,7 +17,7 @@ namespace jelly
 		{	
 			Config()
 				: m_minWALFlushIntervalMS(500)
-				, m_cleanupWALIntervalMS(2 * 60 * 1000)
+				, m_cleanupWALIntervalMS(60 * 1000)
 				, m_minCompactionIntervalMS(5 * 1000)
 				, m_pendingStoreItemLimit(30000)
 				, m_pendingStoreWALItemLimit(300000)

@@ -20,7 +20,7 @@ namespace jelly
 							const IItem*		aItem,
 							CompletionEvent*	aCompletionEvent,
 							Result*				aResult) = 0;
-		virtual void	Flush() = 0;
+		virtual size_t	Flush() = 0;
 		virtual void	Cancel() = 0;
 		virtual size_t	GetPendingWriteCount() const = 0;
 	

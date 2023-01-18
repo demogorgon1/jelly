@@ -474,13 +474,15 @@ namespace jelly
 					m_pending.push_back(std::make_pair(aCompletionEvent, aResult));
 				}
 
-				void	
+				size_t	
 				Flush() override
 				{
 					for(size_t i = 0; i < m_pending.size(); i++)
 						m_pending[i].first->Signal();
 
+					size_t count = m_pending.size();
 					m_pending.clear();
+					return count;
 				}
 
 				void

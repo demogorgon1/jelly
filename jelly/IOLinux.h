@@ -75,6 +75,25 @@ namespace jelly
 
 		private:
 
+			struct FileReadBuffer
+			{
+				static const size_t SIZE = 128 * 1024;
+
+				FileReadBuffer()
+					: m_readOffset(0)
+					, m_bytes(0)
+				{
+
+				}
+
+				// Public data
+				size_t							m_bytes;
+				size_t							m_readOffset;
+				uint8_t							m_buffer[SIZE];
+			};
+
+			std::unique_ptr<FileReadBuffer>		m_pendingReadBuffer;
+
 			Handle								m_handle;
 			size_t								m_size;
 		};

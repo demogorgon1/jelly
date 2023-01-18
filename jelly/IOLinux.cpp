@@ -157,6 +157,52 @@ namespace jelly
 			return (size_t)bytes;
 		}
 
+		size_t		
+		FileReadStream::Read(
+			void*				aBuffer,
+			size_t				aBufferSize) 
+		{
+			JELLY_ASSERT(m_handle.IsSet());
+
+			size_t remaining = aBufferSize;
+			uint8_t* p = (uint8_t*)aBuffer;
+			size_t readBytes = 0;
+
+			while(remaining > 0)
+			{
+				if(!m_pendingReadBuffer || m_pendingReadBuffer->m_readOffset == m_pendingReadBuffer->m_bytes)
+					m_pendingReadBuffer.reset(_ReadBuffer());
+
+				size_t bytesLeftInReadBuffer = m_pendingReadBuffer->m_bytes - m_pendingReadBuffer->m_readOffset;
+				if(bytesLeftInReadBuffer == 0)
+					break;
+
+				size_t toCopy = std::min<size_t>(remaining, bytesLeftInReadBuffer);
+
+				memcpy(p, m_pendingReadBuffer->m_buffer + m_pendingReadBuffer->m_readOffset, toCopy);
+
+				m_pendingReadBuffer->m_readOffset += toCopy;
+				p += toCopy;
+				readBytes += toCopy;
+				remaining -= toCopy;
+			}
+
+			return readBytes;
+		}
+
+		FileReadStream::FileReadBuffer* 
+		FileReadStream::_ReadBuffer()
+		{
+			std::unique_ptr<FileReadBuffer> readBuffer = std::make_unique<FileReadBuffer>();
+			
+			ssize_t bytes = read(m_handle, readBuffer->m_buffer, FileReadBuffer::SIZE);
+			JELLY_CHECK(bytes >= 0, "read() failed: %u", errno);
+
+			readBuffer->m_bytes = (size_t)bytes;
+
+			return readBuffer.release();
+		}
+
 		//-----------------------------------------------------------------------------------
 
 		FileWriteStream::FileWriteStream(

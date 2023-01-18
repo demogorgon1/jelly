@@ -117,7 +117,7 @@ namespace jelly
 			void
 			RestartLockNode()
 			{
-				_AddStep(0, 0, [&]()
+				_AddStep(__FUNCTION__, 0, 0, [&]()
 				{
 					typename _LockNodeType::Config config;
 						
@@ -140,7 +140,7 @@ namespace jelly
 			RestartBlobNode(
 				size_t			aMaxResidentBlobSize)
 			{
-				_AddStep(0, 0, [&, aMaxResidentBlobSize]()
+				_AddStep(__FUNCTION__, 0, 0, [&, aMaxResidentBlobSize]()
 				{
 					typename _BlobNodeType::Config config;
 					config.m_maxResidentBlobSize = aMaxResidentBlobSize;
@@ -163,7 +163,7 @@ namespace jelly
 			void
 			ProcessLockNodeRequests()
 			{
-				_AddStep(0, 0, [&]()
+				_AddStep(__FUNCTION__, 0, 0, [&]()
 				{
 					_Message("Process lock node requests");
 
@@ -177,7 +177,7 @@ namespace jelly
 			void
 			FlushPendingLockNodeWAL()
 			{
-				_AddStep(0, 10, [&]()
+				_AddStep(__FUNCTION__, 0, 10, [&]()
 				{
 					_Message("Flush pending lock node WAL");
 
@@ -189,7 +189,7 @@ namespace jelly
 			void
 			FlushPendingLockNodeStore()
 			{
-				_AddStep(0, 2, [&]()
+				_AddStep(__FUNCTION__, 0, 2, [&]()
 				{
 					_Message("Flush pending lock node store");
 
@@ -201,7 +201,7 @@ namespace jelly
 			void
 			CleanupLockNodeWALs()
 			{
-				_AddStep(0, 2, [&]()
+				_AddStep(__FUNCTION__, 0, 2, [&]()
 				{
 					_Message("Cleanup lock node WALs");
 
@@ -213,7 +213,7 @@ namespace jelly
 			void
 			ProcessBlobNodeRequests()
 			{
-				_AddStep(0, 0, [&]()
+				_AddStep(__FUNCTION__, 0, 0, [&]()
 				{
 					_Message("Process blob node requests");
 
@@ -227,7 +227,7 @@ namespace jelly
 			void
 			FlushPendingBlobNodeWAL()
 			{
-				_AddStep(0, 10, [&]()
+				_AddStep(__FUNCTION__, 0, 10, [&]()
 				{
 					_Message("Flush pending blob node WAL");
 
@@ -239,7 +239,7 @@ namespace jelly
 			void
 			FlushPendingBlobNodeStore()
 			{
-				_AddStep(0, 2, [&]()
+				_AddStep(__FUNCTION__, 0, 2, [&]()
 				{
 					_Message("Flush pending blob node store");
 
@@ -251,7 +251,7 @@ namespace jelly
 			void
 			CleanupBlobNodeWALs()
 			{
-				_AddStep(0, 2, [&]()
+				_AddStep(__FUNCTION__, 0, 2, [&]()
 				{
 					_Message("Cleanup blob node WALs");
 
@@ -264,7 +264,7 @@ namespace jelly
 			SetLockId(
 				uint32_t		aLockId)
 			{
-				_AddStep(0, 0, [&, aLockId]()
+				_AddStep(__FUNCTION__, 0, 0, [&, aLockId]()
 				{
 					m_lockId = aLockId;
 				});
@@ -274,7 +274,7 @@ namespace jelly
 			SetKey(
 				uint32_t		aKey)
 			{
-				_AddStep(0, 0, [&, aKey]()
+				_AddStep(__FUNCTION__, 0, 0, [&, aKey]()
 				{
 					m_key = aKey;
 				});
@@ -283,7 +283,7 @@ namespace jelly
 			void
 			Lock()
 			{
-				_AddStep(Entry::FLAG_REQUIRE_LOCK_NODE, 0, [&]()
+				_AddStep(__FUNCTION__, Entry::FLAG_REQUIRE_LOCK_NODE, 0, [&]()
 				{
 					_Message("Lock: key=%u lock id=%u", m_key, m_lockId);
 
@@ -300,7 +300,7 @@ namespace jelly
 			void
 			Unlock()
 			{
-				_AddStep(Entry::FLAG_REQUIRE_LOCK_NODE, 0, [&]()
+				_AddStep(__FUNCTION__, Entry::FLAG_REQUIRE_LOCK_NODE, 0, [&]()
 				{
 					_Message("Unlock: key=%u lock id=%u", m_key, m_lockId);
 
@@ -318,7 +318,7 @@ namespace jelly
 			void
 			Get()
 			{
-				_AddStep(Entry::FLAG_REQUIRE_BLOB_NODE, 0, [&]()
+				_AddStep(__FUNCTION__, Entry::FLAG_REQUIRE_BLOB_NODE, 0, [&]()
 				{
 					_Message("Get: key=%u", m_key);
 
@@ -338,7 +338,7 @@ namespace jelly
 			void
 			Set()
 			{
-				_AddStep(Entry::FLAG_REQUIRE_BLOB_NODE, 0, [&]() 
+				_AddStep(__FUNCTION__, Entry::FLAG_REQUIRE_BLOB_NODE, 0, [&]()
 				{
 					_Message("Set: key=%u blob_seq=%u", m_key, m_blobSeq);
 
@@ -372,6 +372,7 @@ namespace jelly
 					FLAG_REQUIRE_BLOB_NODE = 0x00000001
 				};
 
+				std::string							m_description;
 				std::function<void()>				m_function;
 				uint32_t							m_flags;
 				uint32_t							m_propability;
@@ -393,11 +394,12 @@ namespace jelly
 
 			void
 			_AddStep(
+				const char*					aDescription,
 				uint32_t					aFlags,
 				uint32_t					aPropability,
 				std::function<void()>		aFunction)
 			{			
-				m_steps.push_back(Entry{aFunction, aFlags, aPropability});
+				m_steps.push_back(Entry{aDescription, aFunction, aFlags, aPropability});
 			}
 
 			bool

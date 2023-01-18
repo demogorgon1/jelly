@@ -88,15 +88,8 @@ namespace jelly
 		{
 			JELLY_ASSERT(m_handle.IsSet());
 
-			{
-				off_t result = lseek(m_handle, (off_t)aOffset, SEEK_SET);
-				JELLY_CHECK(result == (off_t)aOffset, "lseek() failed (offset %u)", (uint32_t)aOffset);
-			}
-
-			{
-				ssize_t bytes = read(m_handle, aBuffer, aBufferSize);
-				JELLY_CHECK((size_t)bytes == aBufferSize, "read() failed (offset %u, buffer size %u)", (uint32_t)aOffset, (uint32_t)aBufferSize);
-			}
+			ssize_t bytes = pread(m_handle, aBuffer, aBufferSize, (off_t)aOffset);
+			JELLY_CHECK((size_t)bytes == aBufferSize, "pread() failed (offset %u, buffer size %u)", (uint32_t)aOffset, (uint32_t)aBufferSize);
 		}
 
 		//-----------------------------------------------------------------------------------

@@ -30,7 +30,7 @@ namespace jelly
 			#if defined(JELLY_ZSTD)
 				m_compressionProvider = std::make_unique<ZstdCompression>(aBufferCompressionLevel); 				
 			#else
-				(aBufferCompressionLevel);
+				JELLY_UNUSED(aBufferCompressionLevel);
 				JELLY_ASSERT(false);
 			#endif
 			break;

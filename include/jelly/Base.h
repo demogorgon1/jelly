@@ -26,3 +26,4 @@
 #include <unordered_set>
 #include <vector>
 
+#define JELLY_UNUSED(_X) ((void)_X)

@@ -1582,9 +1582,9 @@ namespace jelly
 				std::filesystem::create_directories(aWorkingDirectory);
 
 				#if defined(JELLY_ZSTD)
-					TestDefaultHost host(aWorkingDirectory, DefaultHost::COMPRESSION_MODE_ZSTD);
+					TestDefaultHost host(aWorkingDirectory, Compression::ID_ZSTD);
 				#else 
-					TestDefaultHost host(aWorkingDirectory, DefaultHost::COMPRESSION_MODE_NONE);
+					TestDefaultHost host(aWorkingDirectory, Compression::ID_NO_COMPRESSION);
 				#endif
 
 				// Test basic operation of BlobNode

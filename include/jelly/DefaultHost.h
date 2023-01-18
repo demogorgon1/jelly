@@ -10,15 +10,10 @@ namespace jelly
 		: public IHost
 	{
 	public:
-		enum CompressionMode
-		{
-			COMPRESSION_MODE_NONE,
-			COMPRESSION_MODE_ZSTD
-		};
 								DefaultHost(	
 									const char*					aRoot,
 									const char*					aFilePrefix,
-									CompressionMode				aCompressionMode,
+									Compression::Id				aCompressionId,
 									uint32_t					aBufferCompressionLevel = 0);
 		virtual					~DefaultHost();
 

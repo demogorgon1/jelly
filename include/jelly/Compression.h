@@ -9,6 +9,12 @@ namespace jelly
 	namespace Compression
 	{
 
+		enum Id : uint8_t
+		{
+			ID_NO_COMPRESSION,
+			ID_ZSTD	
+		};
+
 		typedef std::function<void(const void*, size_t)> OutputCallback;
 
 		class IStreamCompressor
@@ -42,6 +48,7 @@ namespace jelly
 			virtual							~IProvider() {}
 
 			// Virtual interface
+			virtual Id						GetId() const = 0;
 			virtual IStreamCompressor*		CreateStreamCompressor() const = 0;
 			virtual IStreamDecompressor*	CreateStreamDecompressor() const = 0;
 			virtual void					CompressBuffer(

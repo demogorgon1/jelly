@@ -12,8 +12,8 @@ namespace jelly
 		public:
 			TestDefaultHost(
 				const char*						aRoot,
-				DefaultHost::CompressionMode	aCompressionMode)
-				: DefaultHost(aRoot, "test", aCompressionMode)
+				Compression::Id					aCompressionId)
+				: DefaultHost(aRoot, "test", aCompressionId)
 			{
 
 			}

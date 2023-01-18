@@ -12,7 +12,7 @@ namespace jelly::Test::Sim
 	Network::Network(
 		const char*		aWorkingDirectory,
 		const Config*	aConfig)
-		: m_host(aWorkingDirectory, "simtest", DefaultHost::COMPRESSION_MODE_ZSTD)
+		: m_host(aWorkingDirectory, "simtest", Compression::ID_ZSTD)
 		, m_config(aConfig)
 	{
 		for(uint32_t i = 0; i < aConfig->m_simNumClients; i++)

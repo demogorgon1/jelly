@@ -27,6 +27,12 @@ namespace jelly
 
 	//---------------------------------------------------------------------------------------------
 
+	Compression::Id			
+	ZstdCompression::GetId() const 
+	{
+		return Compression::ID_ZSTD;
+	}
+
 	Compression::IStreamCompressor*
 	ZstdCompression::CreateStreamCompressor() const 
 	{

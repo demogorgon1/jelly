@@ -16,6 +16,7 @@ namespace jelly
 		virtual								~ZstdCompression();
 
 		// Compression::IProvider implementation
+		Compression::Id						GetId() const override;
 		Compression::IStreamCompressor*		CreateStreamCompressor() const override;
 		Compression::IStreamDecompressor*	CreateStreamDecompressor() const override;
 		void								CompressBuffer(

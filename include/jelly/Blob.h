@@ -31,11 +31,12 @@ namespace jelly
 			JELLY_ASSERT(aOut.GetSize() == 0);
 
 			BufferWriter writer(aOut);
-
-			// FIXME: some kind of compression method fingerprint
-			
+						
 			if(aCompression != NULL)
 			{
+				if(!writer.WritePOD<Compression::Id>(aCompression->GetId()))
+					JELLY_ASSERT(false);
+
 				if(!writer.WriteUInt<size_t>(m_buffer.GetSize())) // Uncompressed size (compressed size is implied by total buffer size)
 					JELLY_ASSERT(false);
 
@@ -49,6 +50,8 @@ namespace jelly
 			}
 			else
 			{
+				writer.WritePOD<Compression::Id>(Compression::ID_NO_COMPRESSION);
+
 				if(writer.Write(m_buffer.GetPointer(), m_buffer.GetSize()) != m_buffer.GetSize())
 					JELLY_ASSERT(false);
 			}
@@ -64,10 +67,14 @@ namespace jelly
 			BufferReader reader(aBuffer.GetPointer(), aBuffer.GetSize());
 			BufferWriter writer(m_buffer);
 
-			// FIXME: verify some kind of compression method fingerprint
+			Compression::Id blobCompression;
+			if(!reader.ReadPOD<Compression::Id>(blobCompression))
+				JELLY_ASSERT(false);
 
-			if(aCompression != NULL)
+			if(aCompression != NULL && blobCompression != Compression::ID_NO_COMPRESSION)
 			{
+				JELLY_CHECK(blobCompression == aCompression->GetId(), "Compression algorithm mismatch.");
+
 				size_t uncompressedSize;
 				if(!reader.ReadUInt<size_t>(uncompressedSize))
 					JELLY_ASSERT(false);
@@ -82,7 +89,10 @@ namespace jelly
 			}
 			else
 			{
-				if(writer.Write(aBuffer.GetPointer(), aBuffer.GetSize()) != aBuffer.GetSize())
+				JELLY_CHECK(blobCompression == Compression::ID_NO_COMPRESSION, "Unable to decompress blob.");
+
+				size_t remainingSize = reader.GetRemainingSize();
+				if(writer.Write(reader.GetCurrentPointer(), remainingSize) != remainingSize)
 					JELLY_ASSERT(false);
 			}
 		}

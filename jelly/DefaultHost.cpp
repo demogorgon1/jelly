@@ -17,7 +17,8 @@ namespace jelly
 	DefaultHost::DefaultHost(
 		const char*					aRoot,
 		const char*					aFilePrefix,
-		CompressionMode				aCompressionMode)
+		CompressionMode				aCompressionMode,
+		uint32_t					aBufferCompressionLevel)
 		: m_root(aRoot)
 		, m_filePrefix(aFilePrefix)
 	{
@@ -27,7 +28,7 @@ namespace jelly
 		{
 		case COMPRESSION_MODE_ZSTD:		
 			#if defined(JELLY_ZSTD)
-				m_compressionProvider = std::make_unique<ZstdCompression>(); 
+				m_compressionProvider = std::make_unique<ZstdCompression>(aBufferCompressionLevel); 				
 			#else
 				JELLY_ASSERT(false);
 			#endif

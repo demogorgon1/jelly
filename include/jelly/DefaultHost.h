@@ -18,7 +18,8 @@ namespace jelly
 								DefaultHost(	
 									const char*					aRoot,
 									const char*					aFilePrefix,
-									CompressionMode				aCompressionMode);
+									CompressionMode				aCompressionMode,
+									uint32_t					aBufferCompressionLevel = 0);
 		virtual					~DefaultHost();
 
 		void					DeleteAllFiles(

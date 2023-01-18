@@ -13,7 +13,9 @@
 namespace jelly
 {
 
-	ZstdCompression::ZstdCompression()
+	ZstdCompression::ZstdCompression(
+		uint32_t					aBufferCompressionLevel)
+		: m_bufferCompressionLevel(aBufferCompressionLevel != 0 ? aBufferCompressionLevel : (uint32_t)ZSTD_CLEVEL_DEFAULT)
 	{
 
 	}
@@ -62,7 +64,7 @@ namespace jelly
 			uint8_t* compressOutputPtr = outputBuffer + sizeof(uint32_t);
 			size_t compressOutputSize = outputBufferSize - sizeof(uint32_t);
 
-			size_t result = ZSTD_compress(compressOutputPtr, compressOutputSize, aBuffer, aBufferSize, ZSTD_CLEVEL_DEFAULT);
+			size_t result = ZSTD_compress(compressOutputPtr, compressOutputSize, aBuffer, aBufferSize, (int)m_bufferCompressionLevel);
 			JELLY_CHECK(!ZSTD_isError(result), "ZSTD_compress() failed.");
 
 			*((uint32_t*)outputBuffer) = (uint32_t)aBufferSize; // Store uncompressed size

@@ -53,6 +53,12 @@ namespace jelly
 						m_writeTestBlobSize = (uint32_t)atoi(aArgs[i + 1]);
 						i++;
 					}
+					else if (strcmp(arg, "-writetestbuffercompressionlevel") == 0)
+					{
+						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
+						m_writeTestBufferCompressionLevel = (uint32_t)atoi(aArgs[i + 1]);
+						i++;
+					}					
 					else if(strcmp(arg, "-steptestseed") == 0)
 					{
 						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
@@ -180,6 +186,7 @@ namespace jelly
 			bool						m_writeTest = false;
 			uint32_t					m_writeTestBlobCount = 10000;
 			uint32_t					m_writeTestBlobSize = 1024;
+			uint32_t					m_writeTestBufferCompressionLevel = 0;
 
 			// ReadTest
 			bool						m_readTest = false;

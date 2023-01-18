@@ -41,7 +41,7 @@ namespace jelly
 					typedef BlobNode<UIntKey<uint32_t>, Blob<1>, UIntKey<uint32_t>::Hasher> BlobNodeType;
 
 					#if defined(JELLY_ZSTD)
-						DefaultHost host(".", "wrtest", DefaultHost::COMPRESSION_MODE_ZSTD);
+						DefaultHost host(".", "wrtest", DefaultHost::COMPRESSION_MODE_ZSTD, aConfig->m_writeTestBufferCompressionLevel);
 					#else
 						DefaultHost host(".", "wrtest", DefaultHost::COMPRESSION_MODE_NONE);
 					#endif

@@ -95,8 +95,8 @@ namespace jelly
 			// Public data
 			MemoryBuffer*						m_head;
 			MemoryBuffer*						m_tail;
-			size_t						m_totalBytes;
-			std::atomic_bool			m_writeGuard;
+			size_t								m_totalBytes;
+			std::atomic_bool					m_writeGuard;
 			std::vector<const MemoryBuffer*>	m_array;
 		};
 
@@ -342,13 +342,14 @@ namespace jelly
 					BufferList*	aBufferList)
 					: m_bufferList(aBufferList)
 				{
-					JELLY_ASSERT(!m_bufferList->m_writeGuard.exchange(true));
+					JELLY_ASSERT(!m_bufferList->m_writeGuard);
+					m_bufferList->m_writeGuard = true;
 				}
 
 				virtual 
 				~StoreWriter()
 				{
-					JELLY_ASSERT(m_bufferList->m_writeGuard.exchange(false));
+					m_bufferList->m_writeGuard = false;
 				}
 
 				// IStoreWriter implementation
@@ -444,13 +445,14 @@ namespace jelly
 					BufferList*		aBufferList)
 					: m_bufferList(aBufferList)
 				{
-					JELLY_ASSERT(!m_bufferList->m_writeGuard.exchange(true));
+					JELLY_ASSERT(!m_bufferList->m_writeGuard);
+					m_bufferList->m_writeGuard = true;
 				}
 
 				virtual
 				~WALWriter()
 				{
-					JELLY_ASSERT(m_bufferList->m_writeGuard.exchange(false));
+					m_bufferList->m_writeGuard = false;
 				}
 
 				// IWALWriter implementation

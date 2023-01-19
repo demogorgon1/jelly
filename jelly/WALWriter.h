@@ -12,13 +12,16 @@ namespace jelly
 		class IStreamCompressor;
 	}
 
+	class IStats;
+
 	class WALWriter
 		: public IWALWriter
 	{
 	public:
 					WALWriter(
 						const char*						aPath,
-						Compression::IStreamCompressor*	aCompressor);
+						Compression::IStreamCompressor*	aCompressor,
+						IStats*							aStats);
 		virtual		~WALWriter();
 
 		bool		IsValid() const;
@@ -45,6 +48,7 @@ namespace jelly
 		std::vector<PendingItemWrite>							m_pendingItemWrites;
 		File													m_file;
 		std::unique_ptr<Compression::IStreamCompressor>			m_compressor;
+		IStats*													m_stats;
 	};		
 
 }

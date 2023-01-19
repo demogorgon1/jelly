@@ -12,6 +12,7 @@ namespace jelly
 	{
 	public:			
 					StoreWriter(
+						IStats*							aStats,
 						const char*						aPath);
 		virtual		~StoreWriter();
 
@@ -20,9 +21,11 @@ namespace jelly
 		// IStoreWriter implementation
 		size_t		WriteItem(
 						const IItem*					aItem) override;
+		void		Flush() override;
 
 	private:
 
+		IStats*		m_stats;
 		File		m_file;
 	};
 

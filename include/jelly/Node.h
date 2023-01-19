@@ -6,8 +6,10 @@
 #include "IStoreWriter.h"
 #include "NodeConfig.h"
 #include "PerfTimer.h"
-#include "Result.h"
 #include "Queue.h"
+#include "Result.h"
+#include "ScopedTimeSampler.h"
+#include "Stat.h"
 #include "WAL.h"
 
 namespace jelly
@@ -151,7 +153,11 @@ namespace jelly
 
 			WAL* pendingWAL = m_pendingWALs[aWALConcurrentIndex];
 			if(pendingWAL != NULL)
+			{
+				ScopedTimeSampler timeSampler(m_host->GetStats(), Stat::TIME_SAMPLER_FLUSH_PENDING_WAL);
+
 				return pendingWAL->GetWriter()->Flush();
+			}
 
 			return 0;
 		}
@@ -186,6 +192,8 @@ namespace jelly
 
 				JELLY_ASSERT(m_flushPendingStoreCallback);
 				m_flushPendingStoreCallback(storeId, writer.get(), &m_pendingStore);
+
+				writer->Flush();
 			}
 
 			size_t count = m_pendingStore.size();

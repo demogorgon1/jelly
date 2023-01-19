@@ -188,6 +188,7 @@ namespace jelly
 		FileWriteStream::FileWriteStream(
 			const char*			aPath)
 			: m_size(0)
+			, m_nonFlushedBytes(0)
 		{
 			int flags = O_CREAT | O_WRONLY;
 			int mode = S_IRUSR | S_IWUSR;
@@ -201,7 +202,7 @@ namespace jelly
 			Flush();
 		}
 
-		void		
+		size_t		
 		FileWriteStream::Flush()
 		{
 			JELLY_ASSERT(m_handle.IsSet());
@@ -215,6 +216,10 @@ namespace jelly
 
 			int result = fsync(m_handle);
 			JELLY_CHECK(result != -1, "fsync() failed: %u", errno);
+
+			size_t flushedBytes = m_nonFlushedBytes;
+			m_nonFlushedBytes = 0;
+			return flushedBytes;
 		}
 
 		size_t		
@@ -266,6 +271,8 @@ namespace jelly
 		{
 			ssize_t bytes = write(m_handle, aWriteBuffer->m_buffer, aWriteBuffer->m_bytes);
 			JELLY_CHECK((size_t)bytes == aWriteBuffer->m_bytes, "write() failed");
+
+			m_nonFlushedBytes += aWriteBuffer->m_bytes;
 		}
 
 	}

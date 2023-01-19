@@ -111,7 +111,7 @@ namespace jelly
 								const char*			aPath);
 							~FileWriteStream();
 
-			void			Flush();
+			size_t			Flush();
 			size_t			GetSize() const;
 
 			// IWriter implementation
@@ -142,6 +142,7 @@ namespace jelly
 
 			Handle								m_handle;
 			size_t								m_size;
+			size_t								m_nonFlushedBytes;
 
 			void			_WriteBuffer(
 								FileWriteBuffer*	 aWriteBuffer);

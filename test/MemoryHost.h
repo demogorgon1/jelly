@@ -17,6 +17,7 @@ namespace jelly
 										uint32_t					aNodeId);
 
 			// IHost implementation
+			IStats*					GetStats() override;
 			Compression::IProvider* GetCompressionProvider() override;
 			uint64_t				GetTimeStamp() override;
 			void					EnumerateFiles(

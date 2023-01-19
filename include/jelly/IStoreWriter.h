@@ -14,6 +14,7 @@ namespace jelly
 		// Virtual interface
 		virtual size_t	WriteItem(
 							const IItem*					aItem) = 0;	
+		virtual void	Flush() = 0;
 	};
 
 }

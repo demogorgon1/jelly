@@ -1,12 +1,14 @@
 #include <jelly/Base.h>
 
 #include <jelly/Compression.h>
-#include <jelly/ErrorUtils.h>
 #include <jelly/DefaultHost.h>
+#include <jelly/ErrorUtils.h>
+#include <jelly/IStats.h>
 #include <jelly/ZstdCompression.h>
 
 #include "FileStreamReader.h"
 #include "PathUtils.h"
+#include "Stats.h"
 #include "StoreBlobReader.h"
 #include "StoreWriter.h"
 #include "WALWriter.h"
@@ -23,6 +25,7 @@ namespace jelly
 		, m_filePrefix(aFilePrefix)
 	{
 		m_storeManager = std::make_unique<StoreManager>(aRoot, aFilePrefix);
+		m_stats = std::make_unique<Stats>();
 
 		switch(aCompressionId)
 		{
@@ -65,6 +68,12 @@ namespace jelly
 	}
 
 	//---------------------------------------------------------------
+
+	IStats* 
+	DefaultHost::GetStats() 
+	{
+		return m_stats.get();
+	}
 
 	Compression::IProvider* 
 	DefaultHost::GetCompressionProvider() 
@@ -169,7 +178,8 @@ namespace jelly
 	{
 		std::unique_ptr<WALWriter> f(new WALWriter(
 			PathUtils::MakePath(m_root.c_str(), m_filePrefix.c_str(), PathUtils::FILE_TYPE_WAL, aNodeId, aId).c_str(),
-			m_compressionProvider && aUseStreamingCompression ? m_compressionProvider->CreateStreamCompressor() : NULL));
+			m_compressionProvider && aUseStreamingCompression ? m_compressionProvider->CreateStreamCompressor() : NULL,
+			m_stats.get()));
 
 		if (!f->IsValid())
 			return NULL;
@@ -235,6 +245,7 @@ namespace jelly
 		uint32_t					aId) 
 	{
 		std::unique_ptr<StoreWriter> f(new StoreWriter(
+			m_stats.get(),
 			PathUtils::MakePath(m_root.c_str(), m_filePrefix.c_str(), PathUtils::FILE_TYPE_STORE, aNodeId, aId).c_str()));
 
 		if (!f->IsValid())

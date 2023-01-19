@@ -1,6 +1,7 @@
 #pragma once
 
 #include <jelly/IReader.h>
+#include <jelly/IStats.h>
 #include <jelly/IWriter.h>
 
 namespace jelly
@@ -21,35 +22,35 @@ namespace jelly
 		};
 
 					File(
-						const char*		aPath,
-						Mode			aMode);
+						const char*			aPath,
+						Mode				aMode);
 					~File();
 
 		bool		IsValid() const;
 		size_t		GetSize() const;
-		void		Flush();
+		size_t		Flush();
 		void		ReadAtOffset(
-						size_t			aOffset,
-						void*			aBuffer,
-						size_t			aBufferSize);
+						size_t				aOffset,
+						void*				aBuffer,
+						size_t				aBufferSize);
 
 		// IWriter implementation
 		size_t		Write(
-						const void*		aBuffer,
-						size_t			aBufferSize) override;
+						const void*			aBuffer,
+						size_t				aBufferSize) override;
 
 		// IReader implementation
 		size_t		Read(
-						void*			aBuffer,
-						size_t			aBufferSize) override;
+						void*				aBuffer,
+						size_t				aBufferSize) override;
 
 		// Data access
 		const char*	GetPath() const { return m_path.c_str(); }
 
 	private:
 
-		Internal*	m_internal;
-		std::string	m_path;
+		Internal*		m_internal;
+		std::string		m_path;
 	};
 
 }

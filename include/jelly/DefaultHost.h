@@ -1,6 +1,7 @@
 #pragma once
 
 #include "IHost.h"
+#include "IStats.h"
 #include "StoreManager.h"
 
 namespace jelly
@@ -21,6 +22,7 @@ namespace jelly
 									uint32_t					aNodeId);
 
 		// IHost implementation
+		IStats*					GetStats() override;
 		Compression::IProvider* GetCompressionProvider() override;
 		uint64_t				GetTimeStamp() override;
 		void					EnumerateFiles(
@@ -63,6 +65,7 @@ namespace jelly
 		std::string								m_filePrefix;
 		std::unique_ptr<Compression::IProvider>	m_compressionProvider;
 		std::unique_ptr<StoreManager>			m_storeManager;
+		std::unique_ptr<IStats>					m_stats;
 	};
 
 }

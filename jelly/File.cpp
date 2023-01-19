@@ -60,8 +60,8 @@ namespace jelly
 	//---------------------------------------------------------------------
 		
 	File::File(
-		const char*		aPath,
-		Mode			aMode)
+		const char*			aPath,
+		Mode				aMode)
 		: m_path(aPath)
 	{
 		m_internal = new Internal(aPath, aMode);
@@ -98,12 +98,12 @@ namespace jelly
 		return 0;
 	}
 
-	void
+	size_t
 	File::Flush()
 	{
 		JELLY_ASSERT(m_internal->m_mode == MODE_WRITE_STREAM);
 		JELLY_ASSERT(m_internal->m_fileWriteStream);
-		m_internal->m_fileWriteStream->Flush();
+		return m_internal->m_fileWriteStream->Flush();
 	}
 
 	void	

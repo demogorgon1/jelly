@@ -7,6 +7,12 @@ namespace jelly
 
 	namespace
 	{
+
+		struct DummyStats
+			: public IStats
+		{
+			virtual ~DummyStats() {}
+		};
 		
 		struct MemoryBuffer
 		{
@@ -355,7 +361,7 @@ namespace jelly
 				// IStoreWriter implementation
 				size_t	
 				WriteItem(
-					const IItem*					aItem)
+					const IItem*					aItem) override
 				{
 					JELLY_ASSERT(m_bufferList->m_writeGuard);
 
@@ -365,6 +371,12 @@ namespace jelly
 					aItem->Write(&writer);
 
 					return offset;
+				}
+
+				void
+				Flush() override
+				{
+					// Do nothing
 				}
 
 				// Public data
@@ -542,6 +554,13 @@ namespace jelly
 		}
 
 		//------------------------------------------------------------------------------
+
+		IStats* 
+		MemoryHost::GetStats()
+		{
+			static DummyStats dummyStats;
+			return &dummyStats;
+		}
 
 		Compression::IProvider* 
 		MemoryHost::GetCompressionProvider() 

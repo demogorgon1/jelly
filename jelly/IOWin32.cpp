@@ -198,6 +198,7 @@ namespace jelly
 		FileWriteStream::FileWriteStream(
 			const char*			aPath)
 			: m_size(0)
+			, m_nonFlushedBytes(0)
 		{
 			// I've tried different kinds of shenanigans (overlapped io, pre-allocating space with volume management privilege),
 			// but nothing seems to be faster than just plain (big) synchronous writes. It's a basic property of NTFS and windows that
@@ -218,7 +219,7 @@ namespace jelly
 			Flush();
 		}
 
-		void		
+		size_t		
 		FileWriteStream::Flush()
 		{
 			JELLY_ASSERT(m_handle.IsSet());
@@ -232,6 +233,10 @@ namespace jelly
 
 			BOOL result = FlushFileBuffers(m_handle);
 			JELLY_CHECK(result != 0, "FlushFileBuffers() failed: %u", GetLastError());
+			
+			size_t flushedBytes = m_nonFlushedBytes;
+			m_nonFlushedBytes = 0;
+			return flushedBytes;
 		}
 
 		size_t		
@@ -284,7 +289,9 @@ namespace jelly
 			DWORD bytes;
 			BOOL result = WriteFile(m_handle, aWriteBuffer->m_buffer, (DWORD)aWriteBuffer->m_bytes, &bytes, NULL);
 			JELLY_CHECK(result != 0, "WriteFile() failed: %u", GetLastError());
-			JELLY_CHECK(bytes == aWriteBuffer->m_bytes, "WriteFile() only wrote %u out of %u bytes.", (uint32_t)bytes, (uint32_t)aWriteBuffer->m_bytes);
+			JELLY_CHECK((size_t)bytes == aWriteBuffer->m_bytes, "WriteFile() only wrote %u out of %u bytes.", (uint32_t)bytes, (uint32_t)aWriteBuffer->m_bytes);
+
+			m_nonFlushedBytes += aWriteBuffer->m_bytes;
 		}
 
 	}

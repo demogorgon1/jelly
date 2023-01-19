@@ -4,6 +4,7 @@
 #include <jelly/Compression.h>
 #include <jelly/ErrorUtils.h>
 #include <jelly/IItem.h>
+#include <jelly/Stat.h>
 
 #include "WALWriter.h"
 
@@ -12,9 +13,11 @@ namespace jelly
 
 	WALWriter::WALWriter(
 		const char*						aPath,
-		Compression::IStreamCompressor* aCompressor)
+		Compression::IStreamCompressor* aCompressor,
+		IStats*							aStats)
 		: m_file(aPath, File::MODE_WRITE_STREAM)
 		, m_compressor(aCompressor)
+		, m_stats(aStats)
 	{
 		if(m_compressor)
 		{
@@ -75,7 +78,8 @@ namespace jelly
 		if(m_compressor)
 			m_compressor->Flush();
 
-		m_file.Flush();
+		size_t flushedBytes = m_file.Flush();
+		m_stats->AddCounter(Stat::COUNTER_DISK_WRITE_WAL_BYTES, flushedBytes);
 
 		for (PendingItemWrite& t : m_pendingItemWrites)
 			t.m_completionEvent->Signal();

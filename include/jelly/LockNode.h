@@ -455,6 +455,8 @@ namespace jelly
 						}
 					}
 				}
+
+				fOut->Flush();
 			}
 
 			aOut->AddCompactedStore(aCompactionJob.m_storeId1, NULL);

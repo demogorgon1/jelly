@@ -27,3 +27,9 @@
 #include <vector>
 
 #define JELLY_UNUSED(_X) ((void)_X)
+
+#if defined(_MSC_VER)
+	#define JELLY_THREAD_LOCAL(_Type) __declspec(thread) _Type
+#else
+	#define JELLY_THREAD_LOCAL(_Type) thread_local _Type
+#endif

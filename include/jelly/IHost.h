@@ -9,6 +9,7 @@ namespace jelly
 	}
 
 	class IFileStreamReader;
+	class IStats;
 	class IStoreBlobReader;
 	class IStoreWriter;
 	class IWALWriter;
@@ -28,6 +29,7 @@ namespace jelly
 		};
 
 		// Virtual interface
+		virtual IStats*					GetStats() = 0;
 		virtual Compression::IProvider*	GetCompressionProvider() = 0;
 		virtual uint64_t				GetTimeStamp() = 0;
 		virtual void					EnumerateFiles(

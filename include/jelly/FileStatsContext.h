@@ -1,0 +1,25 @@
+#pragma once
+
+namespace jelly
+{
+
+	class IStats;
+
+	struct FileStatsContext
+	{
+		FileStatsContext(
+			IStats* aStats)
+			: m_stats(aStats)
+			, m_idRead(UINT32_MAX)
+			, m_idWrite(UINT32_MAX)
+		{
+
+		}
+
+		IStats*		m_stats;
+		uint32_t	m_idWrite;
+		uint32_t	m_idRead;
+	};
+
+
+}

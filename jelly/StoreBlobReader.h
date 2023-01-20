@@ -13,7 +13,8 @@ namespace jelly
 	{
 	public:
 					StoreBlobReader(
-						const char*			aPath);
+						const char*			aPath,
+						FileStatsContext*	aFileStatsContext);
 		virtual		~StoreBlobReader();
 
 		bool		IsValid() const;
@@ -27,7 +28,8 @@ namespace jelly
 	private:
 
 		std::string					m_path;
-		std::unique_ptr<File>		m_file;			
+		std::unique_ptr<File>		m_file;	
+		FileStatsContext*			m_fileStatsContext;
 	};
 
 }

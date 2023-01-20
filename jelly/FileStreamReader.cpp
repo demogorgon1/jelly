@@ -30,8 +30,9 @@ namespace jelly
 
 	FileStreamReader::FileStreamReader(
 		const char*							aPath,
-		Compression::IStreamDecompressor*	aDecompressor)
-		: m_file(aPath, File::MODE_READ_STREAM)
+		Compression::IStreamDecompressor*	aDecompressor,
+		FileStatsContext*					aFileStatsContext)
+		: m_file(aFileStatsContext, aPath, File::MODE_READ_STREAM)
 		, m_offset(0)
 		, m_head(NULL)
 		, m_tail(NULL)

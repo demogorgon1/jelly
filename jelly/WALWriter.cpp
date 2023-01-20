@@ -14,10 +14,9 @@ namespace jelly
 	WALWriter::WALWriter(
 		const char*						aPath,
 		Compression::IStreamCompressor* aCompressor,
-		IStats*							aStats)
-		: m_file(aPath, File::MODE_WRITE_STREAM)
+		FileStatsContext*				aFileStatsContext)
+		: m_file(aFileStatsContext, aPath, File::MODE_WRITE_STREAM)
 		, m_compressor(aCompressor)
-		, m_stats(aStats)
 	{
 		if(m_compressor)
 		{
@@ -78,8 +77,7 @@ namespace jelly
 		if(m_compressor)
 			m_compressor->Flush();
 
-		size_t flushedBytes = m_file.Flush();
-		m_stats->Emit(Stat::ID_DISK_WRITE_WAL_BYTES, flushedBytes);
+		m_file.Flush();
 
 		for (PendingItemWrite& t : m_pendingItemWrites)
 			t.m_completionEvent->Signal();

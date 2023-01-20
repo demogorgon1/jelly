@@ -18,7 +18,8 @@ namespace jelly
 	public:
 					FileStreamReader(
 						const char*							aPath,
-						Compression::IStreamDecompressor*	aDecompressor);
+						Compression::IStreamDecompressor*	aDecompressor,
+						FileStatsContext*					aFileStatsContext);
 		virtual		~FileStreamReader();
 
 		bool		IsValid() const;

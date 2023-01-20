@@ -1,5 +1,6 @@
 #pragma once
 
+#include <jelly/FileStatsContext.h>
 #include <jelly/IReader.h>
 #include <jelly/IStats.h>
 #include <jelly/IWriter.h>
@@ -22,6 +23,7 @@ namespace jelly
 		};
 
 					File(
+						FileStatsContext*	aStatsContext,
 						const char*			aPath,
 						Mode				aMode);
 					~File();
@@ -49,8 +51,9 @@ namespace jelly
 
 	private:
 
-		Internal*		m_internal;
-		std::string		m_path;
+		Internal*			m_internal;
+		FileStatsContext*	m_statsContext;
+		std::string			m_path;
 	};
 
 }

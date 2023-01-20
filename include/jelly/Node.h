@@ -2,6 +2,7 @@
 
 #include "CompactionJob.h"
 #include "CompactionResult.h"
+#include "FileStatsContext.h"
 #include "IHost.h"
 #include "IStoreWriter.h"
 #include "NodeConfig.h"
@@ -34,7 +35,9 @@ namespace jelly
 			IHost*				aHost,
 			uint32_t			aNodeId,
 			const NodeConfig&	aConfig)
-			: m_requestsWriteIndex(0)
+			: m_storeFileStatsContext(aHost->GetStats())
+			, m_walFileStatsContext(aHost->GetStats())
+			, m_requestsWriteIndex(0)
 			, m_nextWALId(0)
 			, m_nextStoreId(0)
 			, m_host(aHost)
@@ -190,7 +193,7 @@ namespace jelly
 			{
 				uint32_t storeId = CreateStoreId();
 
-				std::unique_ptr<IStoreWriter> writer(m_host->CreateStore(m_nodeId, storeId));
+				std::unique_ptr<IStoreWriter> writer(m_host->CreateStore(m_nodeId, storeId, &m_storeFileStatsContext));
 
 				JELLY_ASSERT(m_flushPendingStoreCallback);
 				m_flushPendingStoreCallback(storeId, writer.get(), &m_pendingStore);
@@ -480,6 +483,8 @@ namespace jelly
 		CompactionRedirectMap										m_compactionRedirectMap;
 		bool														m_stopped;
 		uint32_t													m_pendingStoreWALItemCount;
+		FileStatsContext											m_walFileStatsContext;
+		FileStatsContext											m_storeFileStatsContext;
 
 	private:
 
@@ -519,7 +524,7 @@ namespace jelly
 			{
 				uint32_t id = m_nextWALId++;
 
-				pendingWAL = AddWAL(id, m_host->CreateWAL(m_nodeId, id, _CompressWAL));
+				pendingWAL = AddWAL(id, m_host->CreateWAL(m_nodeId, id, _CompressWAL, &m_walFileStatsContext));
 			}
 
 			return pendingWAL;

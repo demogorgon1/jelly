@@ -10,10 +10,9 @@ namespace jelly
 {
 
 	StoreWriter::StoreWriter(
-		IStats*							aStats,
-		const char*						aPath)
-		: m_file(aPath, File::MODE_WRITE_STREAM)
-		, m_stats(aStats)
+		const char*						aPath,
+		FileStatsContext*				aFileStatsContext)
+		: m_file(aFileStatsContext, aPath, File::MODE_WRITE_STREAM)
 	{
 	}
 
@@ -41,9 +40,7 @@ namespace jelly
 	void
 	StoreWriter::Flush() 
 	{
-		size_t flushedBytes = m_file.Flush();
-
-		m_stats->Emit(Stat::ID_DISK_WRITE_STORE_BYTES, flushedBytes);
+		m_file.Flush();
 	}
 
 }

@@ -158,11 +158,13 @@ namespace jelly
 	DefaultHost::ReadWALStream(
 		uint32_t					aNodeId,
 		uint32_t					aId,
-		bool						aUseStreamingCompression)
+		bool						aUseStreamingCompression,
+		FileStatsContext*			aFileStatsContext)
 	{
 		std::unique_ptr<FileStreamReader> f(new FileStreamReader(
 			PathUtils::MakePath(m_root.c_str(), m_filePrefix.c_str(), PathUtils::FILE_TYPE_WAL, aNodeId, aId).c_str(),
-			m_compressionProvider && aUseStreamingCompression ? m_compressionProvider->CreateStreamDecompressor() : NULL));
+			m_compressionProvider && aUseStreamingCompression ? m_compressionProvider->CreateStreamDecompressor() : NULL,
+			aFileStatsContext));
 
 		if(!f->IsValid())
 			return NULL;
@@ -174,12 +176,13 @@ namespace jelly
 	DefaultHost::CreateWAL(
 		uint32_t					aNodeId,
 		uint32_t					aId,
-		bool						aUseStreamingCompression) 
+		bool						aUseStreamingCompression,
+		FileStatsContext*			aFileStatsContext) 
 	{
 		std::unique_ptr<WALWriter> f(new WALWriter(
 			PathUtils::MakePath(m_root.c_str(), m_filePrefix.c_str(), PathUtils::FILE_TYPE_WAL, aNodeId, aId).c_str(),
 			m_compressionProvider && aUseStreamingCompression ? m_compressionProvider->CreateStreamCompressor() : NULL,
-			m_stats.get()));
+			aFileStatsContext));
 
 		if (!f->IsValid())
 			return NULL;
@@ -205,14 +208,17 @@ namespace jelly
 	IFileStreamReader*
 	DefaultHost::ReadStoreStream(
 		uint32_t					aNodeId,
-		uint32_t					aId) 
+		uint32_t					aId,
+		FileStatsContext*			aFileStatsContext) 
 	{
 		// If blob reader is open, close it, otherwise we can't stream it
+		// FIXME: uhm, this doesn't work if main thread is currently trying to load a blob from it... need shared access
 		CloseStoreBlobReader(aNodeId, aId);
 
 		std::unique_ptr<FileStreamReader> f(new FileStreamReader(
 			PathUtils::MakePath(m_root.c_str(), m_filePrefix.c_str(), PathUtils::FILE_TYPE_STORE, aNodeId, aId).c_str(),
-			NULL));
+			NULL,
+			aFileStatsContext));
 
 		if (!f->IsValid())
 			return NULL;
@@ -223,9 +229,10 @@ namespace jelly
 	IStoreBlobReader* 
 	DefaultHost::GetStoreBlobReader(
 		uint32_t					aNodeId,
-		uint32_t					aId) 
+		uint32_t					aId,
+		FileStatsContext*			aFileStatsContext)
 	{
-		return m_storeManager->GetStoreBlobReader(aNodeId, aId);
+		return m_storeManager->GetStoreBlobReader(aNodeId, aId, aFileStatsContext);
 	}
 
 	void					
@@ -242,11 +249,11 @@ namespace jelly
 	IStoreWriter*
 	DefaultHost::CreateStore(
 		uint32_t					aNodeId,
-		uint32_t					aId) 
+		uint32_t					aId,
+		FileStatsContext*			aFileStatsContext)
 	{
 		std::unique_ptr<StoreWriter> f(new StoreWriter(
-			m_stats.get(),
-			PathUtils::MakePath(m_root.c_str(), m_filePrefix.c_str(), PathUtils::FILE_TYPE_STORE, aNodeId, aId).c_str()));
+			PathUtils::MakePath(m_root.c_str(), m_filePrefix.c_str(), PathUtils::FILE_TYPE_STORE, aNodeId, aId).c_str(), aFileStatsContext));
 
 		if (!f->IsValid())
 			return NULL;

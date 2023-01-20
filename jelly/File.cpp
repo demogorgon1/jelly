@@ -60,9 +60,11 @@ namespace jelly
 	//---------------------------------------------------------------------
 		
 	File::File(
+		FileStatsContext*	aStatsContext,
 		const char*			aPath,
 		Mode				aMode)
 		: m_path(aPath)
+		, m_statsContext(aStatsContext)
 	{
 		m_internal = new Internal(aPath, aMode);
 	}
@@ -103,6 +105,7 @@ namespace jelly
 	{
 		JELLY_ASSERT(m_internal->m_mode == MODE_WRITE_STREAM);
 		JELLY_ASSERT(m_internal->m_fileWriteStream);
+
 		return m_internal->m_fileWriteStream->Flush();
 	}
 
@@ -114,7 +117,11 @@ namespace jelly
 	{
 		JELLY_ASSERT(m_internal->m_mode == MODE_READ_RANDOM);
 		JELLY_ASSERT(m_internal->m_fileReadRandom);
+
 		m_internal->m_fileReadRandom->ReadAtOffset(aOffset, aBuffer, aBufferSize);
+
+		if (m_statsContext != NULL && m_statsContext->m_idRead != UINT32_MAX)
+			m_statsContext->m_stats->Emit(m_statsContext->m_idRead, aBufferSize, Stat::TYPE_COUNTER);
 	}
 
 	//---------------------------------------------------------------------
@@ -126,7 +133,13 @@ namespace jelly
 	{
 		JELLY_ASSERT(m_internal->m_mode == MODE_WRITE_STREAM);
 		JELLY_ASSERT(m_internal->m_fileWriteStream);
-		return m_internal->m_fileWriteStream->Write(aBuffer, aBufferSize);
+
+		size_t bytes = m_internal->m_fileWriteStream->Write(aBuffer, aBufferSize);
+
+		if(m_statsContext != NULL && m_statsContext->m_idWrite != UINT32_MAX)
+			m_statsContext->m_stats->Emit(m_statsContext->m_idWrite, bytes, Stat::TYPE_COUNTER);
+
+		return bytes;
 	}
 
 	//---------------------------------------------------------------------
@@ -138,7 +151,13 @@ namespace jelly
 	{
 		JELLY_ASSERT(m_internal->m_mode == MODE_READ_STREAM);
 		JELLY_ASSERT(m_internal->m_fileReadStream);
-		return m_internal->m_fileReadStream->Read(aBuffer, aBufferSize);
+
+		size_t bytes = m_internal->m_fileReadStream->Read(aBuffer, aBufferSize);
+
+		if (m_statsContext != NULL && m_statsContext->m_idRead != UINT32_MAX)
+			m_statsContext->m_stats->Emit(m_statsContext->m_idRead, bytes, Stat::TYPE_COUNTER);
+
+		return bytes;
 	}
 
 }

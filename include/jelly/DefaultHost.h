@@ -35,26 +35,31 @@ namespace jelly
 		IFileStreamReader*		ReadWALStream(
 									uint32_t					aNodeId,
 									uint32_t					aId,
-									bool						aUseStreamingCompression) override;
+									bool						aUseStreamingCompression,
+									FileStatsContext*			aFileStatsContext) override;
 		IWALWriter*				CreateWAL(
 									uint32_t					aNodeId,
 									uint32_t					aId,
-									bool						aUseStreamingCompression) override;
+									bool						aUseStreamingCompression,
+									FileStatsContext*			aFileStatsContext) override;
 		void					DeleteWAL(
 									uint32_t					aNodeId,
 									uint32_t					aId) override;
 		IFileStreamReader*		ReadStoreStream(
 									uint32_t					aNodeId,
-									uint32_t					aId) override;
+									uint32_t					aId,
+									FileStatsContext*			aFileStatsContext) override;
 		IStoreBlobReader*		GetStoreBlobReader(
 									uint32_t					aNodeId,
-									uint32_t					aId) override;
+									uint32_t					aId,
+									FileStatsContext*			aFileStatsContext) override;
 		void					CloseStoreBlobReader(
 									uint32_t					aNodeId,
 									uint32_t					aId) override;
 		IStoreWriter*			CreateStore(
 									uint32_t					aNodeId,
-									uint32_t					aId) override;
+									uint32_t					aId,
+									FileStatsContext*			aFileStatsContext) override;
 		void					DeleteStore(
 									uint32_t					aNodeId,
 									uint32_t					aId) override;

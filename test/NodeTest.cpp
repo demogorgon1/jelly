@@ -113,7 +113,7 @@ namespace jelly
 				uint32_t													aId,
 				const std::vector<_ItemType>&								aExpected)
 			{
-				_VerifyLockNodeFileStreamReader<_ItemType>(NULL, aHost->ReadWALStream(aNodeId, aId, true), aExpected);
+				_VerifyLockNodeFileStreamReader<_ItemType>(NULL, aHost->ReadWALStream(aNodeId, aId, true, NULL), aExpected);
 			}
 
 			template <typename _ItemType>
@@ -124,7 +124,7 @@ namespace jelly
 				uint32_t													aId,
 				const std::vector<BlobNodeItemData>&						aExpected)
 			{
-				_VerifyBlobNodeFileStreamReader<_ItemType>(NULL, aHost->ReadWALStream(aNodeId, aId, false), aExpected);
+				_VerifyBlobNodeFileStreamReader<_ItemType>(NULL, aHost->ReadWALStream(aNodeId, aId, false, NULL), aExpected);
 			}
 
 			template <typename _ItemType>
@@ -135,7 +135,7 @@ namespace jelly
 				uint32_t													aId,
 				const std::vector<_ItemType>&								aExpected)
 			{
-				_VerifyLockNodeFileStreamReader<_ItemType>(aHost->GetCompressionProvider(), aHost->ReadStoreStream(aNodeId, aId), aExpected);
+				_VerifyLockNodeFileStreamReader<_ItemType>(aHost->GetCompressionProvider(), aHost->ReadStoreStream(aNodeId, aId, NULL), aExpected);
 			}
 
 			template <typename _ItemType>
@@ -146,7 +146,7 @@ namespace jelly
 				uint32_t													aId,
 				const std::vector<BlobNodeItemData>&						aExpected)
 			{
-				_VerifyBlobNodeFileStreamReader<_ItemType>(aHost->GetCompressionProvider(), aHost->ReadStoreStream(aNodeId, aId), aExpected);
+				_VerifyBlobNodeFileStreamReader<_ItemType>(aHost->GetCompressionProvider(), aHost->ReadStoreStream(aNodeId, aId, NULL), aExpected);
 			}
 
 			void
@@ -155,7 +155,7 @@ namespace jelly
 				uint32_t													aNodeId,
 				uint32_t													aId)
 			{
-				std::unique_ptr<IFileStreamReader> f(aHost->ReadWALStream(aNodeId, aId, false));
+				std::unique_ptr<IFileStreamReader> f(aHost->ReadWALStream(aNodeId, aId, false, NULL));
 				JELLY_ASSERT(!f);
 			}
 
@@ -165,7 +165,7 @@ namespace jelly
 				uint32_t													aNodeId,
 				uint32_t													aId)
 			{
-				std::unique_ptr<IFileStreamReader> f(aHost->ReadStoreStream(aNodeId, aId));
+				std::unique_ptr<IFileStreamReader> f(aHost->ReadStoreStream(aNodeId, aId, NULL));
 				JELLY_ASSERT(!f);
 			}
 

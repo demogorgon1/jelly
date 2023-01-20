@@ -3,25 +3,28 @@
 namespace jelly
 {
 	
+	struct FileStatsContext;
+
 	class IStoreBlobReader;
 
 	class StoreManager
 	{
 	public:
 							StoreManager(
-								const char*		aRoot,
-								const char*		aFilePrefix);
+								const char*			aRoot,
+								const char*			aFilePrefix);
 							~StoreManager();
 
 		IStoreBlobReader*	GetStoreBlobReader(
-								uint32_t		aNodeId,
-								uint32_t		aStoreId);
+								uint32_t			aNodeId,
+								uint32_t			aStoreId,
+								FileStatsContext*	aFileStatsContext);
 		IStoreBlobReader*	GetStoreBlobReaderIfExists(
-								uint32_t		aNodeId,
-								uint32_t		aStoreId);
+								uint32_t			aNodeId,
+								uint32_t			aStoreId);
 		void				DeleteStore(
-								uint32_t		aNodeId,
-								uint32_t		aStoreId);
+								uint32_t			aNodeId,
+								uint32_t			aStoreId);
 		void				CloseAll();
 
 	private:

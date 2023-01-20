@@ -610,7 +610,8 @@ namespace jelly
 		MemoryHost::ReadWALStream(
 			uint32_t					aNodeId,
 			uint32_t					aId,
-			bool						/*aUseStreamingCompression*/)
+			bool						/*aUseStreamingCompression*/,
+			FileStatsContext*			/*aFileStatsContext*/)
 		{
 			WALMap::iterator i = m_walMap.find(std::make_pair(aNodeId, aId));
 			JELLY_ASSERT(i != m_walMap.end());
@@ -621,7 +622,8 @@ namespace jelly
 		MemoryHost::CreateWAL(
 			uint32_t					aNodeId,
 			uint32_t					aId,
-			bool						/*aUseStreamingCompression*/)
+			bool						/*aUseStreamingCompression*/,
+			FileStatsContext*			/*aFileStatsContext*/)
 		{
 			WALMap::iterator i = m_walMap.find(std::make_pair(aNodeId, aId));
 			JELLY_ASSERT(i == m_walMap.end());
@@ -650,7 +652,8 @@ namespace jelly
 		IFileStreamReader*		
 		MemoryHost::ReadStoreStream(
 			uint32_t					aNodeId,
-			uint32_t					aId) 
+			uint32_t					aId,
+			FileStatsContext*			/*aFileStatsContext*/)
 		{
 			StoreMap::iterator i = m_storeMap.find(std::make_pair(aNodeId, aId));
 			JELLY_ASSERT(i != m_storeMap.end());
@@ -660,7 +663,8 @@ namespace jelly
 		IStoreBlobReader*		
 		MemoryHost::GetStoreBlobReader(
 			uint32_t					aNodeId,
-			uint32_t					aId) 
+			uint32_t					aId,
+			FileStatsContext*			/*aFileStatsContext*/)
 		{
 			StoreMap::iterator i = m_storeMap.find(std::make_pair(aNodeId, aId));
 			JELLY_ASSERT(i != m_storeMap.end());
@@ -678,7 +682,8 @@ namespace jelly
 		IStoreWriter*			
 		MemoryHost::CreateStore(
 			uint32_t					aNodeId,
-			uint32_t					aId) 
+			uint32_t					aId,
+			FileStatsContext*			/*aFileStatsContext*/)
 		{
 			StoreMap::iterator i = m_storeMap.find(std::make_pair(aNodeId, aId));
 			JELLY_ASSERT(i == m_storeMap.end());

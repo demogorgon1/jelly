@@ -8,6 +8,8 @@ namespace jelly
 		class IProvider;
 	}
 
+	struct FileStatsContext;
+
 	class IFileStreamReader;
 	class IStats;
 	class IStoreBlobReader;
@@ -42,26 +44,31 @@ namespace jelly
 		virtual IFileStreamReader*		ReadWALStream(
 											uint32_t				aNodeId,
 											uint32_t				aId,
-											bool					aUseStreamingCompression) = 0;
+											bool					aUseStreamingCompression,
+											FileStatsContext*		aFileStatsContext) = 0;
 		virtual IWALWriter*				CreateWAL(
 											uint32_t				aNodeId,
 											uint32_t				aId,
-											bool					aUseStreamingCompression) = 0;
+											bool					aUseStreamingCompression,
+											FileStatsContext*		aFileStatsContext) = 0;
 		virtual void					DeleteWAL(
 											uint32_t				aNodeId,
 											uint32_t				aId) = 0;
 		virtual IFileStreamReader*		ReadStoreStream(
 											uint32_t				aNodeId,
-											uint32_t				aId) = 0;
+											uint32_t				aId,
+											FileStatsContext*		aFileStatsContext) = 0;
 		virtual IStoreBlobReader*		GetStoreBlobReader(
 											uint32_t				aNodeId,
-											uint32_t				aId) = 0;
+											uint32_t				aId,
+											FileStatsContext*		aFileStatsContext) = 0;
 		virtual void					CloseStoreBlobReader(
 											uint32_t				aNodeId,
 											uint32_t				aId) = 0;
 		virtual IStoreWriter*			CreateStore(
 											uint32_t				aNodeId,
-											uint32_t				aId) = 0;
+											uint32_t				aId,
+											FileStatsContext*		aFileStatsContext) = 0;
 		virtual void					DeleteStore(
 											uint32_t				aNodeId,
 											uint32_t				aId) = 0;

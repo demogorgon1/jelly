@@ -12,8 +12,8 @@ namespace jelly
 	{
 	public:			
 					StoreWriter(
-						IStats*							aStats,
-						const char*						aPath);
+						const char*						aPath,
+						FileStatsContext*				aFileStatsContext);
 		virtual		~StoreWriter();
 
 		bool		IsValid() const;
@@ -25,7 +25,6 @@ namespace jelly
 
 	private:
 
-		IStats*		m_stats;
 		File		m_file;
 	};
 

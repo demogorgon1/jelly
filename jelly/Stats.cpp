@@ -38,6 +38,9 @@ namespace jelly
 						typeIndex));
 				}
 				break;
+
+			default:
+				break;
 			}
 
 			m_typeCount[info->m_type]++;

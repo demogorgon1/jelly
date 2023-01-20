@@ -17,15 +17,10 @@ namespace jelly
 		virtual				~Stats();
 
 		// Virtual interface
-		void				AddCounter_UInt64(
-								uint32_t		aId,
-								uint64_t		aValue) override;
-		void				Sample_UInt64(
-								uint32_t		aId,
-								uint64_t		aValue) override;
-		void				SetGauge_UInt64(
-								uint32_t		aId,
-								uint64_t		aValue) override;
+		void				Emit_UInt64(
+								uint32_t							aId,
+								uint64_t							aValue,
+								const std::optional<Stat::Type>&	aExpectedType) override;
 		void				Update() override;
 		Counter				GetCounter(
 								uint32_t		aId) override;
@@ -125,34 +120,54 @@ namespace jelly
 		{
 			Data()
 			{
+
+			}
+
+			void
+			Init(
+				size_t							aNumCounters,
+				size_t							aNumSamplers,
+				size_t							aNumGauges)
+			{
+				JELLY_ASSERT(m_counterData.size() == 0);
+				JELLY_ASSERT(m_samplerData.size() == 0);
+				JELLY_ASSERT(m_gaugeData.size() == 0);
+
+				m_counterData.resize(aNumCounters);
+				m_samplerData.resize(aNumSamplers);
+				m_gaugeData.resize(aNumGauges);
 			}
 
 			void
 			Reset()
 			{
-				memset(m_counterData, 0, sizeof(m_counterData));
-				memset(m_samplerData, 0, sizeof(m_samplerData));
-				memset(m_gaugeData, 0, sizeof(m_gaugeData));
+				std::fill(m_counterData.begin(), m_counterData.end(), CounterData());
+				std::fill(m_samplerData.begin(), m_samplerData.end(), SamplerData());
+				std::fill(m_gaugeData.begin(), m_gaugeData.end(), GaugeData());
 			}
 
 			void
 			Add(
 				const Data&						aOther)
 			{
-				for(uint32_t i = 0; i < (uint32_t)Stat::NUM_COUNTERS; i++)
+				JELLY_ASSERT(m_counterData.size() == aOther.m_counterData.size());
+				JELLY_ASSERT(m_samplerData.size() == aOther.m_samplerData.size());
+				JELLY_ASSERT(m_gaugeData.size() == aOther.m_gaugeData.size());
+
+				for(size_t i = 0; i < m_counterData.size(); i++)
 					m_counterData[i].Add(aOther.m_counterData[i]);
 
-				for(uint32_t i = 0; i < (uint32_t)Stat::NUM_SAMPLERS; i++)
+				for(size_t i = 0; i < m_samplerData.size(); i++)
 					m_samplerData[i].Add(aOther.m_samplerData[i]);
 
-				for (uint32_t i = 0; i < (uint32_t)Stat::NUM_GAUGES; i++)
+				for (size_t i = 0; i < m_gaugeData.size(); i++)
 					m_gaugeData[i].Add(aOther.m_gaugeData[i]);
 			}
 
 			// Public data
-			CounterData										m_counterData[Stat::NUM_COUNTERS];
-			SamplerData										m_samplerData[Stat::NUM_SAMPLERS];
-			GaugeData										m_gaugeData[Stat::NUM_GAUGES];
+			std::vector<CounterData>									m_counterData;
+			std::vector<SamplerData>									m_samplerData;
+			std::vector<GaugeData>										m_gaugeData;
 		};
 
 		struct Thread
@@ -160,23 +175,32 @@ namespace jelly
 						Thread();
 						~Thread();
 
-			void		AddCounter(
-							uint32_t			aId,
-							uint64_t			aValue);
-			void		Sample(
-							uint32_t			aId,
-							uint64_t			aValue);
-			void		SetGauge(
-							uint32_t			aId,
-							uint64_t			aValue);
+			void		Emit(
+							uint64_t			aValue,
+							const Stat::Info*	aInfo,
+							size_t				aTypeIndex);
 			Data*		SwapAndGetReadData();
 
 			// Public data
 			bool													m_initialized;
-
 			std::mutex												m_lock;
 			std::unique_ptr<Data>									m_readData;
 			std::unique_ptr<Data>									m_writeData;
+		};
+
+		struct CounterMovingAverage
+		{
+			CounterMovingAverage(
+				size_t							aSize,
+				size_t							aIndex)
+				: m_movingAverage(aSize)
+				, m_index(aIndex)				
+			{
+			
+			}
+
+			MovingAverage<uint64_t>									m_movingAverage;
+			size_t													m_index;
 		};
 
 		Thread														m_threads[ThreadIndex::MAX_THREADS];
@@ -184,16 +208,30 @@ namespace jelly
 		std::mutex													m_threadCountLock;
 		uint32_t													m_threadCount;
 
-		Counter														m_counters[Stat::NUM_COUNTERS];
-		Sampler														m_samplers[Stat::NUM_SAMPLERS];
-		Gauge														m_gauges[Stat::NUM_GAUGES];
+		std::vector<Counter>										m_counters;
+		std::vector<Sampler>										m_samplers;
+		std::vector<Gauge>											m_gauges;
 
-		std::unique_ptr<MovingAverage<uint64_t>>					m_counterMovingAverages[Stat::NUM_COUNTERS];
+		size_t														m_typeIndices[Stat::NUM_IDS];
+		size_t														m_typeCount[Stat::NUM_TYPES];
+		
+		std::vector<std::unique_ptr<CounterMovingAverage>>			m_counterMovingAverages;
 
 		std::chrono::time_point<std::chrono::steady_clock>			m_lastUpdateTime;
 		size_t														m_updateCount;
 
+		Data														m_collectedData;
+
+		void		_InitData(
+						Data&												aData);
 		Thread*		_GetCurrentThread();
+		void		_CollectDataFromThreads();
+		void		_UpdateCounters(
+						std::chrono::time_point<std::chrono::steady_clock>	aCurrentTime);
+		void		_UpdateSamplers(
+						std::chrono::time_point<std::chrono::steady_clock>	aCurrentTime);
+		void		_UpdateGauges(
+						std::chrono::time_point<std::chrono::steady_clock>	aCurrentTime);
 	};
 
 }

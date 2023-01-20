@@ -20,7 +20,7 @@ namespace jelly
 
 		~ScopedTimeSampler()
 		{
-			m_stats->Sample(m_id, m_perfTimer.GetElapsedMicroseconds());
+			m_stats->Emit(m_id, m_perfTimer.GetElapsedMicroseconds(), Stat::TYPE_SAMPLER);
 		}
 
 	private:

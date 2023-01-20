@@ -139,7 +139,7 @@ namespace jelly
 
 			queue->Reset();
 
-			m_host->GetStats()->SetGauge(Stat::GAUGE_WAL_COUNT, m_wals.size());
+			m_host->GetStats()->Emit(Stat::ID_WAL_COUNT, m_wals.size());
 
 			return count;
 		}
@@ -156,7 +156,7 @@ namespace jelly
 			WAL* pendingWAL = m_pendingWALs[aWALConcurrentIndex];
 			if(pendingWAL != NULL)
 			{
-				ScopedTimeSampler timeSampler(m_host->GetStats(), Stat::SAMPLER_FLUSH_PENDING_WAL_TIME);
+				ScopedTimeSampler timeSampler(m_host->GetStats(), Stat::ID_FLUSH_PENDING_WAL_TIME);
 
 				return pendingWAL->GetWriter()->Flush();
 			}

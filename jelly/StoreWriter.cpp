@@ -43,7 +43,7 @@ namespace jelly
 	{
 		size_t flushedBytes = m_file.Flush();
 
-		m_stats->AddCounter(Stat::COUNTER_DISK_WRITE_STORE_BYTES, flushedBytes);
+		m_stats->Emit(Stat::ID_DISK_WRITE_STORE_BYTES, flushedBytes);
 	}
 
 }

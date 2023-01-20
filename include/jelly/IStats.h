@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Stat.h"
+
 namespace jelly
 {
 
@@ -61,47 +63,21 @@ namespace jelly
 
 		template <typename _T>
 		void
-		AddCounter(
-			uint32_t						aId,
-			const _T&						aValue)
+		Emit(
+			uint32_t							aId,
+			const _T&							aValue,
+			const std::optional<Stat::Type>&	aExpectedType = std::optional<Stat::Type>())
 		{
 			static_assert(std::is_unsigned<_T>::value);
 
-			AddCounter_UInt64(aId, (uint64_t)aValue);
-		}
-
-		template <typename _T>
-		void
-		Sample(
-			uint32_t						aId,
-			const _T&						aValue)
-		{
-			static_assert(std::is_unsigned<_T>::value);
-
-			Sample_UInt64(aId, (uint64_t)aValue);
-		}
-
-		template <typename _T>
-		void
-		SetGauge(
-			uint32_t						aId,
-			const _T&						aValue)
-		{
-			static_assert(std::is_unsigned<_T>::value);
-
-			SetGauge_UInt64(aId, (uint64_t)aValue);
+			Emit_UInt64(aId, (uint64_t)aValue, aExpectedType);
 		}
 
 		// Virtual methods
-		virtual void				AddCounter_UInt64(
-										uint32_t		/*aId*/,
-										uint64_t		/*aValue*/) { }
-		virtual void				Sample_UInt64(
-										uint32_t		/*aId*/,
-										uint64_t		/*aValue*/) { }
-		virtual void				SetGauge_UInt64(
-										uint32_t		/*aId*/,
-										uint64_t		/*aValue*/) { }
+		virtual void				Emit_UInt64(
+										uint32_t							/*aId*/,
+										uint64_t							/*aValue*/,
+										const std::optional<Stat::Type>&	/*aExpectedType*/) { }
 		virtual void				Update() { }
 		virtual Counter				GetCounter(
 										uint32_t		/*aId*/) { return Counter(); }

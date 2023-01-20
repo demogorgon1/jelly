@@ -79,7 +79,7 @@ namespace jelly
 			m_compressor->Flush();
 
 		size_t flushedBytes = m_file.Flush();
-		m_stats->AddCounter(Stat::COUNTER_DISK_WRITE_WAL_BYTES, flushedBytes);
+		m_stats->Emit(Stat::ID_DISK_WRITE_WAL_BYTES, flushedBytes);
 
 		for (PendingItemWrite& t : m_pendingItemWrites)
 			t.m_completionEvent->Signal();

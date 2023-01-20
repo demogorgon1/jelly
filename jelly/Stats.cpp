@@ -1,22 +1,28 @@
 #include <jelly/Base.h>
 
 #include <jelly/ErrorUtils.h>
+#include <jelly/ScopedTimeSampler.h>
 
 #include "Stats.h"
 
 namespace jelly
 {
 
-	Stats::Stats()
+	Stats::Stats(
+		const ExtraApplicationStats& aExtraApplicationStats)
 		: m_threadCount(0)
 		, m_updateCount(0)
+		, m_extraApplicationStats(aExtraApplicationStats)
 	{
 		for(uint32_t i = 0; i < (uint32_t)Stat::NUM_TYPES; i++)
 			m_typeCount[i] = 0;
 
-		for(uint32_t i = 0; i < (uint32_t)Stat::NUM_IDS; i++)
+		m_totalStatCount = (size_t)aExtraApplicationStats.m_infoCount + (size_t)Stat::NUM_IDS;
+		m_typeIndices.resize(m_totalStatCount);
+
+		for(uint32_t i = 0; i < (uint32_t)m_totalStatCount; i++)
 		{
-			const Stat::Info* info = Stat::GetInfo(i);
+			const Stat::Info* info = _GetStatInfo(i);
 
 			JELLY_ASSERT((uint32_t)info->m_type < (uint32_t)Stat::NUM_TYPES);
 			size_t typeIndex = m_typeCount[info->m_type];
@@ -57,7 +63,7 @@ namespace jelly
 		uint64_t							aValue,
 		const std::optional<Stat::Type>&	aExpectedType) 
 	{
-		const Stat::Info* info = Stat::GetInfo(aId);
+		const Stat::Info* info = _GetStatInfo(aId);
 		JELLY_ASSERT(!aExpectedType.has_value() || aExpectedType == info->m_type);
 		size_t typeIndex = m_typeIndices[aId];
 
@@ -67,6 +73,8 @@ namespace jelly
 	void				
 	Stats::Update() 
 	{
+		ScopedTimeSampler timer(this, Stat::ID_STATS_UPDATE_TIME);
+
 		std::chrono::time_point<std::chrono::steady_clock> currentTime = std::chrono::steady_clock::now();
 
 		_CollectDataFromThreads();
@@ -84,7 +92,7 @@ namespace jelly
 	Stats::GetCounter(
 		uint32_t		aId)
 	{
-		const Stat::Info* info = Stat::GetInfo(aId);
+		const Stat::Info* info = _GetStatInfo(aId);
 		JELLY_ASSERT(info->m_type == Stat::TYPE_COUNTER);
 		size_t typeIndex = m_typeIndices[aId];
 		JELLY_ASSERT(typeIndex < (size_t)m_counters.size());
@@ -95,7 +103,7 @@ namespace jelly
 	Stats::GetSampler(
 		uint32_t		aId)
 	{
-		const Stat::Info* info = Stat::GetInfo(aId);
+		const Stat::Info* info = _GetStatInfo(aId);
 		JELLY_ASSERT(info->m_type == Stat::TYPE_SAMPLER);
 		size_t typeIndex = m_typeIndices[aId];
 		JELLY_ASSERT(typeIndex < (size_t)m_samplers.size());
@@ -106,11 +114,26 @@ namespace jelly
 	Stats::GetGauge(
 		uint32_t		aId)
 	{
-		const Stat::Info* info = Stat::GetInfo(aId);
+		const Stat::Info* info = _GetStatInfo(aId);
 		JELLY_ASSERT(info->m_type == Stat::TYPE_GAUGE);
 		size_t typeIndex = m_typeIndices[aId];
 		JELLY_ASSERT(typeIndex < (size_t)m_gauges.size());
 		return m_gauges[typeIndex];
+	}
+
+	uint32_t			
+	Stats::GetIdByString(
+		const char*		aString) 
+	{
+		for(uint32_t i = 0; i < m_totalStatCount; i++)
+		{
+			const Stat::Info* info = _GetStatInfo(i);
+
+			if(strcmp(info->m_id, aString) == 0)
+				return i;
+		}
+
+		return UINT32_MAX;
 	}
 
 	//----------------------------------------------------------------------------------
@@ -334,5 +357,18 @@ namespace jelly
 				gauge.m_value = collected.m_value;
 		}
 	}
+
+	const Stat::Info* 
+	Stats::_GetStatInfo(
+		uint32_t											aId)
+	{
+		if(aId < (uint32_t)Stat::NUM_IDS)
+			return Stat::GetInfo(aId);
+
+		uint32_t extraApplicationStatIndex = aId - (uint32_t)Stat::NUM_IDS;
+		JELLY_ASSERT(extraApplicationStatIndex < m_extraApplicationStats.m_infoCount);
+		return &m_extraApplicationStats.m_info[extraApplicationStatIndex];
+	}
+
 
 }

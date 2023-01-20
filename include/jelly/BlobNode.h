@@ -54,10 +54,7 @@ namespace jelly
 			, m_blobNodeConfig(aConfig)
 			, m_totalResidentBlobSize(0)
 		{
-			this->m_walFileStatsContext.m_idRead = Stat::ID_DISK_READ_BLOB_WAL_BYTES;
-			this->m_walFileStatsContext.m_idWrite = Stat::ID_DISK_WRITE_BLOB_WAL_BYTES;
-			this->m_storeFileStatsContext.m_idRead = Stat::ID_DISK_READ_BLOB_STORE_BYTES;
-			this->m_storeFileStatsContext.m_idWrite = Stat::ID_DISK_WRITE_BLOB_STORE_BYTES;
+			_InitStatsContext(&this->m_statsContext);
 
 			_Restore();
 
@@ -327,7 +324,7 @@ namespace jelly
 				
 				for(;;)
 				{
-					storeBlobReader = this->m_host->GetStoreBlobReader(this->m_nodeId, storeId, &this->m_storeFileStatsContext);
+					storeBlobReader = this->m_host->GetStoreBlobReader(this->m_nodeId, storeId, &this->m_statsContext.m_fileStore);
 					if(storeBlobReader != NULL)
 						break;
 
@@ -365,6 +362,20 @@ namespace jelly
 		}
 
 		void
+		_InitStatsContext(
+			NodeBase::StatsContext*		aStatsContext)
+		{
+			aStatsContext->m_fileWAL.m_idRead = Stat::ID_DISK_READ_BLOB_WAL_BYTES;
+			aStatsContext->m_fileWAL.m_idWrite = Stat::ID_DISK_WRITE_BLOB_WAL_BYTES;
+
+			aStatsContext->m_fileStore.m_idRead = Stat::ID_DISK_READ_BLOB_STORE_BYTES;
+			aStatsContext->m_fileStore.m_idWrite = Stat::ID_DISK_WRITE_BLOB_STORE_BYTES;
+
+			aStatsContext->m_idWALCount = Stat::ID_BLOB_WAL_COUNT;
+			aStatsContext->m_idFlushPendingWALTime = Stat::ID_FLUSH_PENDING_BLOB_WAL_TIME;
+		}
+
+		void
 		_Restore()
 		{
 			std::vector<uint32_t> walIds;
@@ -382,7 +393,7 @@ namespace jelly
 			{
 				uint32_t id = *i;
 
-				std::unique_ptr<IFileStreamReader> f(this->m_host->ReadStoreStream(this->m_nodeId, id, &this->m_storeFileStatsContext));
+				std::unique_ptr<IFileStreamReader> f(this->m_host->ReadStoreStream(this->m_nodeId, id, &this->m_statsContext.m_fileStore));
 				if (f)
 					_LoadStore(f.get(), id);
 			}
@@ -434,7 +445,7 @@ namespace jelly
 			{
 				WAL* wal = this->AddWAL(id, NULL);
 
-				std::unique_ptr<IFileStreamReader> f(this->m_host->ReadWALStream(this->m_nodeId, id, false, &this->m_walFileStatsContext));
+				std::unique_ptr<IFileStreamReader> f(this->m_host->ReadWALStream(this->m_nodeId, id, false, &this->m_statsContext.m_fileWAL));
 				if (f)
 					_LoadWAL(f.get(), wal);
 
@@ -595,8 +606,8 @@ namespace jelly
 			CompactionResult<_KeyType, _STLKeyHasher>*	aOut)
 		{
 			// Stores are always written in ascendening key order, so merging them is easy
-			std::unique_ptr<IFileStreamReader> f1(this->m_host->ReadStoreStream(this->m_nodeId, aCompactionJob.m_storeId1, &this->m_storeFileStatsContext));
-			std::unique_ptr<IFileStreamReader> f2(this->m_host->ReadStoreStream(this->m_nodeId, aCompactionJob.m_storeId2, &this->m_storeFileStatsContext));
+			std::unique_ptr<IFileStreamReader> f1(this->m_host->ReadStoreStream(this->m_nodeId, aCompactionJob.m_storeId1, &this->m_statsContext.m_fileStore));
+			std::unique_ptr<IFileStreamReader> f2(this->m_host->ReadStoreStream(this->m_nodeId, aCompactionJob.m_storeId2, &this->m_statsContext.m_fileStore));
 
 			std::unique_ptr<typename NodeBase::CompactionRedirectType> compactionRedirect1(new NodeBase::CompactionRedirectType());
 			std::unique_ptr<typename NodeBase::CompactionRedirectType> compactionRedirect2(new NodeBase::CompactionRedirectType());
@@ -604,7 +615,7 @@ namespace jelly
 			{
 				uint32_t newStoreId = this->CreateStoreId();
 
-				std::unique_ptr<IStoreWriter> fOut(this->m_host->CreateStore(this->m_nodeId, newStoreId, &this->m_storeFileStatsContext));
+				std::unique_ptr<IStoreWriter> fOut(this->m_host->CreateStore(this->m_nodeId, newStoreId, &this->m_statsContext.m_fileStore));
 
 				JELLY_ASSERT(f1 && f2 && fOut);
 

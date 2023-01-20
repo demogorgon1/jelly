@@ -13,21 +13,39 @@ namespace jelly
 		: public IStats
 	{
 	public:
-							Stats();
+		struct ExtraApplicationStats
+		{
+			ExtraApplicationStats(
+				const Stat::Info*	aInfo = NULL,
+				uint32_t			aInfoCount = 0)
+				: m_info(aInfo)
+				, m_infoCount(aInfoCount)
+			{
+
+			}
+
+			const Stat::Info*		m_info;
+			uint32_t				m_infoCount;
+		};
+
+							Stats(
+								const ExtraApplicationStats& aExtraApplicationStats = ExtraApplicationStats());
 		virtual				~Stats();
 
-		// Virtual interface
+		// IStats implementation
 		void				Emit_UInt64(
 								uint32_t							aId,
 								uint64_t							aValue,
 								const std::optional<Stat::Type>&	aExpectedType) override;
 		void				Update() override;
 		Counter				GetCounter(
-								uint32_t		aId) override;
+								uint32_t							aId) override;
 		Sampler				GetSampler(
-								uint32_t		aId) override;
+								uint32_t							aId) override;
 		Gauge				GetGauge(
-								uint32_t		aId) override;
+								uint32_t							aId) override;
+		uint32_t			GetIdByString(
+								const char*							aString) override;
 
 	private:
 
@@ -203,6 +221,8 @@ namespace jelly
 			size_t													m_index;
 		};
 
+		ExtraApplicationStats										m_extraApplicationStats;
+
 		Thread														m_threads[ThreadIndex::MAX_THREADS];
 
 		std::mutex													m_threadCountLock;
@@ -212,7 +232,9 @@ namespace jelly
 		std::vector<Sampler>										m_samplers;
 		std::vector<Gauge>											m_gauges;
 
-		size_t														m_typeIndices[Stat::NUM_IDS];
+		size_t														m_totalStatCount;
+
+		std::vector<size_t>											m_typeIndices;
 		size_t														m_typeCount[Stat::NUM_TYPES];
 		
 		std::vector<std::unique_ptr<CounterMovingAverage>>			m_counterMovingAverages;
@@ -222,16 +244,18 @@ namespace jelly
 
 		Data														m_collectedData;
 
-		void		_InitData(
-						Data&												aData);
-		Thread*		_GetCurrentThread();
-		void		_CollectDataFromThreads();
-		void		_UpdateCounters(
-						std::chrono::time_point<std::chrono::steady_clock>	aCurrentTime);
-		void		_UpdateSamplers(
-						std::chrono::time_point<std::chrono::steady_clock>	aCurrentTime);
-		void		_UpdateGauges(
-						std::chrono::time_point<std::chrono::steady_clock>	aCurrentTime);
+		void				_InitData(
+								Data&												aData);
+		Thread*				_GetCurrentThread();
+		void				_CollectDataFromThreads();
+		void				_UpdateCounters(
+								std::chrono::time_point<std::chrono::steady_clock>	aCurrentTime);
+		void				_UpdateSamplers(
+								std::chrono::time_point<std::chrono::steady_clock>	aCurrentTime);
+		void				_UpdateGauges(
+								std::chrono::time_point<std::chrono::steady_clock>	aCurrentTime);
+		const Stat::Info*	_GetStatInfo(
+								uint32_t											aId);
 	};
 
 }

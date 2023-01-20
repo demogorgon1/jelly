@@ -9,51 +9,43 @@ namespace jelly::Test::Sim
 	{
 	public:
 				CSVOutput(
-					const char*			aPath);
+					const char*			aPath,
+					IStats*				aStats);
 				~CSVOutput();
 
 		void	AddColumn(
 					const char*			aColumn);
-		void	StartNewRow();
-		void	Flush();
-		void	ShowColumn(
-					const char*			aColumn);
-
-		template <typename _T>
-		void	
-		SetColumn(
-			const char*					aColumn,
-			_T							aValue)
-		{
-			uint32_t i = _GetColumnIndex(aColumn);
-			if(i == UINT32_MAX)
-				return;
-
-			Row* row = _GetCurrentRow();
-			JELLY_ASSERT(row->m_columns.size() == m_columnNames.size());
-			JELLY_ASSERT((size_t)i < m_columnNames.size());
-			row->m_columns[i] = (float)aValue;
-		}
+		void	WriteRow();
 
 	private:
 
-		std::unordered_set<std::string>				m_showColumns;
-		std::vector<std::string>					m_columnNames;
-		std::unordered_map<std::string, uint32_t>	m_columnNameTable;
+		IStats*										m_stats;
 		char										m_decimalPointCharacter;
 
-		struct Row
+		enum ColumnType
 		{
-			std::vector<float>						m_columns;
+			COLUMN_TYPE_UNDEFINED,
+
+			COLUMN_TYPE_SAMPLE_AVG,
+			COLUMN_TYPE_SAMPLE_MIN,
+			COLUMN_TYPE_SAMPLE_MAX,
+			COLUMN_TYPE_GAUGE,
+			COLUMN_TYPE_COUNTER,
+			COLUMN_TYPE_COUNTER_RATE,
+			COLUMN_TYPE_COUNTER_RATE_MA
 		};
 
-		std::vector<Row*>							m_rows;
+		struct Column
+		{
+			ColumnType								m_type;
+			std::string								m_string;
+			std::string								m_headerSuffix;
+			uint32_t								m_id;
+		};
+		
+		std::vector<Column>							m_columns;
 		FILE*										m_f;
 		bool										m_started;
-
-		uint32_t	_GetColumnIndex(
-						const char*		aColumn);
-		Row*		_GetCurrentRow();
 	};
 
 }

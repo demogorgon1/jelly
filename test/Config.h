@@ -137,6 +137,12 @@ namespace jelly
 						m_simSetIntervalMS = (uint32_t)atoi(aArgs[i + 1]);
 						i++;
 					}
+					else if (strcmp(arg, "-simbuffercompressionlevel") == 0)
+					{
+						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
+						m_simBufferCompressionLevel = (uint32_t)atoi(aArgs[i + 1]);
+						i++;
+					}
 					else if (strcmp(arg, "-simcsvoutput") == 0)
 					{
 						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
@@ -181,6 +187,7 @@ namespace jelly
 			std::string					m_simCSVOutput;
 			std::vector<std::string>	m_simCSVOutputColumns;
 			bool						m_simTestStdOut = true;
+			uint32_t					m_simBufferCompressionLevel = 0;
 
 			// WriteTest
 			bool						m_writeTest = false;

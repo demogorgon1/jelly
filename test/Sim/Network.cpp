@@ -5,6 +5,7 @@
 #include "Client.h"
 #include "GameServer.h"
 #include "Network.h"
+#include "Stats.h"
 
 namespace jelly::Test::Sim
 {
@@ -12,7 +13,13 @@ namespace jelly::Test::Sim
 	Network::Network(
 		const char*		aWorkingDirectory,
 		const Config*	aConfig)
-		: m_host(aWorkingDirectory, "simtest", Compression::ID_ZSTD)
+		: m_host(
+			aWorkingDirectory, 
+			"simtest", 
+			Compression::ID_ZSTD, 
+			aConfig->m_simBufferCompressionLevel, 
+			Stats::GetExtraApplicationStats(),
+			Stats::GetExtraApplicationStatsCount())
 		, m_config(aConfig)
 	{
 		for(uint32_t i = 0; i < aConfig->m_simNumClients; i++)

@@ -15,8 +15,13 @@ namespace jelly::Test::Sim
 		: m_network(aNetwork)
 		, m_id(aId)
 		, m_state(STATE_INIT)
+		, m_stateTimeSampler(NUM_STATES)
 	{
-		m_stateTimeStamp = std::chrono::steady_clock::now();
+		m_stateTimeSampler.DefineState(STATE_INIT, Stats::ID_C_INIT_TIME, Stats::ID_C_INIT_CUR_TIME);
+		m_stateTimeSampler.DefineState(STATE_WAITING_TO_CONNECT, Stats::ID_C_WAITING_TO_CONNECT_TIME, Stats::ID_C_WAITING_TO_CONNECT_CUR_TIME);
+		m_stateTimeSampler.DefineState(STATE_WAITING_FOR_CONNECTION, Stats::ID_C_WAITING_FOR_CONNECTION_TIME, Stats::ID_C_WAITING_FOR_CONNECTION_CUR_TIME);
+		m_stateTimeSampler.DefineState(STATE_CONNECTED, Stats::ID_C_CONNECTED_TIME, Stats::ID_C_CONNECTED_CUR_TIME);
+		m_stateTimeSampler.DefineState(STATE_DISCONNECTED, Stats::ID_C_DISCONNECTED_TIME, Stats::ID_C_DISCONNECTED_CUR_TIME);
 	}
 
 	Client::~Client()
@@ -25,9 +30,7 @@ namespace jelly::Test::Sim
 	}
 
 	void
-	Client::Update(
-		IHost*		/*aHost*/,
-		Stats&		/*aStats*/)
+	Client::Update()
 	{
 		switch(m_state)
 		{
@@ -87,18 +90,14 @@ namespace jelly::Test::Sim
 	}
 
 	void		
-	Client::UpdateStateInfo(
-		Stats&									aStats,
-		std::vector<Stats::Entry>&				aOut)
+	Client::UpdateStateStatistics(
+		std::vector<uint32_t>&					aStateCounters)
 	{
-		aStats.AddAndResetEntry(STAT_INIT_TIME, m_stateTimes[STATE_INIT]);
-		aStats.AddAndResetEntry(STAT_WAITING_TO_CONNECT_TIME, m_stateTimes[STATE_WAITING_TO_CONNECT]);
-		aStats.AddAndResetEntry(STAT_WAITING_FOR_CONNECTION_TIME, m_stateTimes[STATE_WAITING_FOR_CONNECTION]);
-		aStats.AddAndResetEntry(STAT_CONNECTED_TIME, m_stateTimes[STATE_CONNECTED]);
-		aStats.AddAndResetEntry(STAT_DISCONNECTED_TIME, m_stateTimes[STATE_DISCONNECTED]);
+		JELLY_ASSERT((size_t)m_state < aStateCounters.size());
 
-		JELLY_ASSERT((size_t)m_state < aOut.size());
-		aOut[m_state].Sample((uint32_t)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - m_stateTimeStamp).count());
+		aStateCounters[m_state]++;
+
+		m_stateTimeSampler.EmitCurrentStateTime(m_network->m_host.GetStats(), std::chrono::steady_clock::now());
 	}
 
 	//-----------------------------------------------------------------------------------------
@@ -108,15 +107,7 @@ namespace jelly::Test::Sim
 		State									aState)
 	{	
 		JELLY_ASSERT(m_state != aState);
-		JELLY_ASSERT(m_state < NUM_STATES);
-
-		std::chrono::time_point<std::chrono::steady_clock> currentTime = std::chrono::steady_clock::now();
-
-		uint32_t millisecondsSpentInState = (uint32_t)std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - m_stateTimeStamp).count();
-
-		m_stateTimes[m_state].Sample(millisecondsSpentInState);
-
-		m_stateTimeStamp = currentTime;
+		m_stateTimeSampler.ChangeState(m_network->m_host.GetStats(), aState);
 		m_state = aState;		
 	}
 

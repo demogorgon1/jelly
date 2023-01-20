@@ -2,6 +2,7 @@
 
 #include "CSVOutput.h"
 #include "GameServer.h"
+#include "StateTimeSampler.h"
 
 namespace jelly::Test::Sim
 {
@@ -11,55 +12,28 @@ namespace jelly::Test::Sim
 	class Client
 	{
 	public:
-		enum Stat : uint32_t
-		{
-			STAT_INIT_TIME,
-			STAT_WAITING_TO_CONNECT_TIME,
-			STAT_WAITING_FOR_CONNECTION_TIME,
-			STAT_CONNECTED_TIME,
-			STAT_DISCONNECTED_TIME,
-
-			NUM_STATS
-		};
-
-		static void
-		InitCSV(
-			const char*											aColumnPrefix,
-			CSVOutput*											aCSV)
-		{
-			Stats::InitStateInfoCSV(aColumnPrefix, "INIT", aCSV);
-			Stats::InitStateInfoCSV(aColumnPrefix, "WAITING_TO_CONNECT", aCSV);
-			Stats::InitStateInfoCSV(aColumnPrefix, "WAITING_FOR_CONNECTION", aCSV);
-			Stats::InitStateInfoCSV(aColumnPrefix, "CONNECTED", aCSV);
-			Stats::InitStateInfoCSV(aColumnPrefix, "DISCONNECTED", aCSV);
-		}
-
-		static void
-		InitStats(
-			Stats&												aStats)
-		{
-			aStats.Init(NUM_STATS);
-		}
-
-		static void
-		PrintStats(
-			const Stats&										aStats,
-			const std::vector<Stats::Entry>&					aStateInfo,
-			CSVOutput*											aCSV,
-			const char*											aCSVColumnPrefix,
-			const Config*										aConfig)
-		{
-			Stats::PrintStateInfo("INIT", STATE_INIT, aStateInfo, aStats, STAT_INIT_TIME, aCSVColumnPrefix, aCSV, aConfig);
-			Stats::PrintStateInfo("WAITING_TO_CONNECT", STATE_WAITING_TO_CONNECT, aStateInfo, aStats, STAT_WAITING_TO_CONNECT_TIME, aCSVColumnPrefix, aCSV, aConfig);
-			Stats::PrintStateInfo("WAITING_FOR_CONNECTION", STATE_WAITING_FOR_CONNECTION, aStateInfo, aStats, STAT_WAITING_FOR_CONNECTION_TIME, aCSVColumnPrefix, aCSV, aConfig);
-			Stats::PrintStateInfo("CONNECTED", STATE_CONNECTED, aStateInfo, aStats, STAT_CONNECTED_TIME, aCSVColumnPrefix, aCSV, aConfig);
-			Stats::PrintStateInfo("DISCONNECTED", STATE_DISCONNECTED, aStateInfo, aStats, STAT_DISCONNECTED_TIME, aCSVColumnPrefix, aCSV, aConfig);
-		}
-
 		static uint32_t
 		GetNumStates()
 		{
 			return NUM_STATES;
+		}
+
+		static uint32_t
+		GetStateNumStatsId(
+			uint32_t											aState)
+		{
+			// IMPORTANT: must match State enum
+			static const uint32_t IDS[] =
+			{
+				Stats::ID_C_INIT_NUM,
+				Stats::ID_C_WAITING_TO_CONNECT_NUM, 
+				Stats::ID_C_WAITING_FOR_CONNECTION_NUM, 
+				Stats::ID_C_CONNECTED_NUM, 
+				Stats::ID_C_DISCONNECTED_NUM
+			};
+			static_assert(sizeof(IDS) == sizeof(uint32_t) * (size_t)NUM_STATES);
+			JELLY_ASSERT(aState < (uint32_t)NUM_STATES);
+			return IDS[aState];
 		}
 
 					Client(
@@ -67,12 +41,9 @@ namespace jelly::Test::Sim
 						uint32_t								aId);
 					~Client();
 
-		void		Update(
-						IHost*									aHost,
-						Stats&									aStats);
-		void		UpdateStateInfo(
-						Stats&									aStats,
-						std::vector<Stats::Entry>&				aOut);
+		void		Update();
+		void		UpdateStateStatistics(
+						std::vector<uint32_t>&					aStateCounters);
 
 	private:
 
@@ -91,8 +62,7 @@ namespace jelly::Test::Sim
 		};
 
 		State												m_state;
-		std::chrono::time_point<std::chrono::steady_clock>	m_stateTimeStamp;
-		Stats::Entry										m_stateTimes[NUM_STATES];
+		StateTimeSampler									m_stateTimeSampler;
 
 		std::unique_ptr<GameServer::ConnectRequest>			m_gameServerConnectRequest;
 

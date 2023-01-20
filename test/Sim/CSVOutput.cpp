@@ -8,8 +8,10 @@ namespace jelly::Test::Sim
 {
 
 	CSVOutput::CSVOutput(
-		const char*			aPath)
+		const char*			aPath,
+		IStats*				aStats)
 		: m_started(false)
+		, m_stats(aStats)
 	{
 		// Figure out decimal point character in current locale
 		{
@@ -26,119 +28,139 @@ namespace jelly::Test::Sim
 
 	CSVOutput::~CSVOutput()
 	{
-		Flush();
-
 		fclose(m_f);
-
-		for(Row* t : m_rows)
-			delete t;
 	}
 
-	void	
+	void
 	CSVOutput::AddColumn(
 		const char*			aColumn)
-	{
-		if(m_showColumns.find(aColumn) == m_showColumns.end())
-			return;
+	{	
+		std::stringstream tokenizer(aColumn);
+		std::string token;
+		std::vector<std::string> tokens;
+		while (std::getline(tokenizer, token, ':'))
+			tokens.push_back(token);
 
-		JELLY_ASSERT(m_rows.size() == 0);
-		JELLY_ASSERT(_GetColumnIndex(aColumn) == UINT32_MAX);
-		m_columnNames.push_back(aColumn);
-		m_columnNameTable[aColumn] = (uint32_t)m_columnNames.size() - 1;
+		ColumnType columnType = COLUMN_TYPE_UNDEFINED;
+
+		JELLY_CHECK(tokens.size() > 0, "CSV column syntax error: %s", aColumn);
+		std::string statsString;
+		
+		char headerSuffix[256];
+
+		if(tokens[0] == "s")
+		{
+			JELLY_CHECK(tokens.size() == 3, "CSV column syntax error: %s", aColumn);
+
+			if(tokens[1] == "avg")
+				columnType = COLUMN_TYPE_SAMPLE_AVG;
+			else if (tokens[1] == "max")
+				columnType = COLUMN_TYPE_SAMPLE_MAX;
+			else if (tokens[1] == "min")
+				columnType = COLUMN_TYPE_SAMPLE_MIN;
+
+			snprintf(headerSuffix, sizeof(headerSuffix), " (%s)", tokens[1].c_str());
+
+			statsString = tokens[2];
+		}
+		else if(tokens[0] == "g")
+		{
+			JELLY_CHECK(tokens.size() == 2, "CSV column syntax error: %s", aColumn);
+			
+			statsString = tokens[1];
+			columnType = COLUMN_TYPE_GAUGE;
+
+			headerSuffix[0] = '\0';
+		}
+		else if (tokens[0] == "c")
+		{
+			JELLY_CHECK(tokens.size() == 3, "CSV column syntax error: %s", aColumn);
+
+			if (tokens[1] == "total")
+				columnType = COLUMN_TYPE_COUNTER;
+			else if (tokens[1] == "rate")
+				columnType = COLUMN_TYPE_COUNTER_RATE;
+			else if (tokens[1] == "rate_ma")
+				columnType = COLUMN_TYPE_COUNTER_RATE_MA;
+
+			snprintf(headerSuffix, sizeof(headerSuffix), " (%s)", tokens[1].c_str());
+
+			statsString = tokens[2];
+		}
+
+		JELLY_CHECK(columnType != COLUMN_TYPE_UNDEFINED, "CSV column syntax error %s", aColumn);
+
+		uint32_t id = m_stats->GetIdByString(statsString.c_str());
+		JELLY_CHECK(id != UINT32_MAX, "Invalid statistics: %s", aColumn);
+		m_columns.push_back({ columnType, statsString, headerSuffix, id });
 	}
-	
-	void	
-	CSVOutput::StartNewRow()
-	{
-		m_rows.push_back(new Row());
-
-		_GetCurrentRow()->m_columns.resize(m_columnNames.size(), 0.0f);
-	}
 
 	void	
-	CSVOutput::Flush()
+	CSVOutput::WriteRow()
 	{
 		if(!m_started)
 		{
 			// Write header with column names
-			for(size_t i = 0; i < m_columnNames.size(); i++)
-				fprintf(m_f, i == 0 ? "%s" : ";%s", m_columnNames[i].c_str());			
+			for(size_t i = 0; i < m_columns.size(); i++)
+				fprintf(m_f, i == 0 ? "%s%s" : ";%s%s", m_columns[i].m_string.c_str(), m_columns[i].m_headerSuffix.c_str());
 
 			fprintf(m_f, "\r\n");
 
 			m_started = true;
 		}
 		
-		for(Row* t : m_rows)
+		for (size_t i = 0; i < m_columns.size(); i++)
 		{
-			JELLY_ASSERT(t->m_columns.size() == m_columnNames.size());
+			float value = 0.0f;
 
-			for (size_t i = 0; i < t->m_columns.size(); i++)
+			// Get value
+			switch(m_columns[i].m_type)
 			{
-				// Turn number into string - no trailing zeroes
-				char buf[64];
-				size_t len = (size_t)snprintf(buf, sizeof(buf), "%f", t->m_columns[i]);
-				JELLY_ASSERT(len > 0 && len <= sizeof(buf));
-				char* tail = &buf[len - 1];
-				while(*tail == '0')
-				{
-					*tail = '\0';
-					tail--;
-				}
+			case COLUMN_TYPE_SAMPLE_AVG:		value = (float)m_stats->GetSampler(m_columns[i].m_id).m_avg; break;
+			case COLUMN_TYPE_SAMPLE_MIN:		value = (float)m_stats->GetSampler(m_columns[i].m_id).m_min; break;
+			case COLUMN_TYPE_SAMPLE_MAX:		value = (float)m_stats->GetSampler(m_columns[i].m_id).m_max; break;
+			case COLUMN_TYPE_GAUGE:				value = (float)m_stats->GetGauge(m_columns[i].m_id).m_value; break;
+			case COLUMN_TYPE_COUNTER:			value = (float)m_stats->GetCounter(m_columns[i].m_id).m_value; break;
+			case COLUMN_TYPE_COUNTER_RATE:		value = (float)m_stats->GetCounter(m_columns[i].m_id).m_rate; break;
+			case COLUMN_TYPE_COUNTER_RATE_MA:	value = (float)m_stats->GetCounter(m_columns[i].m_id).m_rateMA; break;
 
-				if(*tail == '.')
-					*tail = '\0';
-
-				// Localized decimal point
-				{
-					len = strlen(buf);
-					for(size_t j = 0; j < len; j++)
-					{
-						if(buf[j] == '.')
-						{
-							buf[j] = m_decimalPointCharacter;
-							break;
-						}
-					}
-				}
-
-				fprintf(m_f, i == 0 ? "%s" : ";%s", buf);
+			default:
+				JELLY_ASSERT(false);
 			}
 
-			fprintf(m_f, "\r\n");
+			// Turn number into string - no trailing zeroes
+			char buf[64];
+			size_t len = (size_t)snprintf(buf, sizeof(buf), "%f", value);
+			JELLY_ASSERT(len > 0 && len <= sizeof(buf));
+			char* tail = &buf[len - 1];
+			while(*tail == '0')
+			{
+				*tail = '\0';
+				tail--;
+			}
 
-			delete t;
+			if(*tail == '.')
+				*tail = '\0';
+
+			// Localized decimal point
+			{
+				len = strlen(buf);
+				for(size_t j = 0; j < len; j++)
+				{
+					if(buf[j] == '.')
+					{
+						buf[j] = m_decimalPointCharacter;
+						break;
+					}
+				}
+			}
+
+			fprintf(m_f, i == 0 ? "%s" : ";%s", buf);
 		}
 
-		m_rows.clear();
+		fprintf(m_f, "\r\n");
 
 		fflush(m_f);
-	}
-
-	void	
-	CSVOutput::ShowColumn(
-		const char*			aColumn)
-	{
-		m_showColumns.insert(aColumn);
-	}
-
-	//---------------------------------------------------------------------------------------
-
-	uint32_t	
-	CSVOutput::_GetColumnIndex(
-		const char*			aColumn)
-	{
-		std::unordered_map<std::string, uint32_t>::iterator i = m_columnNameTable.find(aColumn);
-		if(i == m_columnNameTable.end())
-			return UINT32_MAX;
-		return i->second;
-	}
-
-	CSVOutput::Row* 
-	CSVOutput::_GetCurrentRow()
-	{
-		JELLY_ASSERT(m_rows.size() > 0);
-		return m_rows[m_rows.size() - 1];
 	}
 
 }

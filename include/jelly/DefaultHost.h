@@ -15,7 +15,9 @@ namespace jelly
 									const char*					aRoot,
 									const char*					aFilePrefix,
 									Compression::Id				aCompressionId,
-									uint32_t					aBufferCompressionLevel = 0);
+									uint32_t					aBufferCompressionLevel = 0,
+									const Stat::Info*			aExtraApplicationStats = NULL,
+									uint32_t					aExtraApplicationStatsCount = 0);
 		virtual					~DefaultHost();
 
 		void					DeleteAllFiles(

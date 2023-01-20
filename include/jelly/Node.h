@@ -35,8 +35,7 @@ namespace jelly
 			IHost*				aHost,
 			uint32_t			aNodeId,
 			const NodeConfig&	aConfig)
-			: m_storeFileStatsContext(aHost->GetStats())
-			, m_walFileStatsContext(aHost->GetStats())
+			: m_statsContext(aHost->GetStats())
 			, m_requestsWriteIndex(0)
 			, m_nextWALId(0)
 			, m_nextStoreId(0)
@@ -142,7 +141,8 @@ namespace jelly
 
 			queue->Reset();
 
-			m_host->GetStats()->Emit(Stat::ID_WAL_COUNT, m_wals.size());
+			if(m_statsContext.m_idWALCount != UINT32_MAX)
+				m_host->GetStats()->Emit(m_statsContext.m_idWALCount, m_wals.size());
 
 			return count;
 		}
@@ -159,7 +159,7 @@ namespace jelly
 			WAL* pendingWAL = m_pendingWALs[aWALConcurrentIndex];
 			if(pendingWAL != NULL)
 			{
-				ScopedTimeSampler timeSampler(m_host->GetStats(), Stat::ID_FLUSH_PENDING_WAL_TIME);
+				ScopedTimeSampler timeSampler(m_host->GetStats(), m_statsContext.m_idFlushPendingWALTime);
 
 				return pendingWAL->GetWriter()->Flush();
 			}
@@ -193,7 +193,7 @@ namespace jelly
 			{
 				uint32_t storeId = CreateStoreId();
 
-				std::unique_ptr<IStoreWriter> writer(m_host->CreateStore(m_nodeId, storeId, &m_storeFileStatsContext));
+				std::unique_ptr<IStoreWriter> writer(m_host->CreateStore(m_nodeId, storeId, &m_statsContext.m_fileStore));
 
 				JELLY_ASSERT(m_flushPendingStoreCallback);
 				m_flushPendingStoreCallback(storeId, writer.get(), &m_pendingStore);
@@ -340,6 +340,25 @@ namespace jelly
 		typedef CompactionRedirect<_KeyType, _STLKeyHasher> CompactionRedirectType;
 		typedef std::unordered_map<uint32_t, CompactionRedirectType*> CompactionRedirectMap;
 
+		struct StatsContext
+		{
+			StatsContext(
+				IStats*						aStats)
+				: m_fileStore(aStats)
+				, m_fileWAL(aStats)
+				, m_idWALCount(UINT32_MAX)
+				, m_idFlushPendingWALTime(UINT32_MAX)
+			{
+
+			}
+
+			FileStatsContext		m_fileStore;
+			FileStatsContext		m_fileWAL;
+
+			uint32_t				m_idWALCount;
+			uint32_t				m_idFlushPendingWALTime;
+		};
+
 		WAL*
 		AddWAL(
 			uint32_t						aId,
@@ -483,8 +502,7 @@ namespace jelly
 		CompactionRedirectMap										m_compactionRedirectMap;
 		bool														m_stopped;
 		uint32_t													m_pendingStoreWALItemCount;
-		FileStatsContext											m_walFileStatsContext;
-		FileStatsContext											m_storeFileStatsContext;
+		StatsContext												m_statsContext;
 
 	private:
 
@@ -524,7 +542,7 @@ namespace jelly
 			{
 				uint32_t id = m_nextWALId++;
 
-				pendingWAL = AddWAL(id, m_host->CreateWAL(m_nodeId, id, _CompressWAL, &m_walFileStatsContext));
+				pendingWAL = AddWAL(id, m_host->CreateWAL(m_nodeId, id, _CompressWAL, &m_statsContext.m_fileWAL));
 			}
 
 			return pendingWAL;

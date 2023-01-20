@@ -20,12 +20,14 @@ namespace jelly
 		const char*					aRoot,
 		const char*					aFilePrefix,
 		Compression::Id				aCompressionId,
-		uint32_t					aBufferCompressionLevel)
+		uint32_t					aBufferCompressionLevel,
+		const Stat::Info*			aExtraApplicationStats,
+		uint32_t					aExtraApplicationStatsCount)
 		: m_root(aRoot)
 		, m_filePrefix(aFilePrefix)
 	{
 		m_storeManager = std::make_unique<StoreManager>(aRoot, aFilePrefix);
-		m_stats = std::make_unique<Stats>();
+		m_stats = std::make_unique<Stats>(Stats::ExtraApplicationStats(aExtraApplicationStats, aExtraApplicationStatsCount));
 
 		switch(aCompressionId)
 		{

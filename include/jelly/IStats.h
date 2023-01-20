@@ -85,6 +85,9 @@ namespace jelly
 										uint32_t		/*aId*/) { return Sampler(); }
 		virtual Gauge				GetGauge(
 										uint32_t		/*aId*/) { return Gauge(); }
+		virtual uint32_t			GetIdByString(
+										const char*							/*aString*/) { return UINT32_MAX; }
+
 	};
 
 }

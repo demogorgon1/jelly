@@ -25,34 +25,29 @@ namespace jelly::Test::Sim
 	}
 
 	void
-	GameServer::Update(
-		IHost*					/*aHost*/,
-		Stats&					aStats)
+	GameServer::Update()
 	{
-		_ProcessRequests();
-		_UpdateClients(aStats);
+		ScopedTimeSampler timer(m_network->m_host.GetStats(), Stats::ID_GS_UPDATE_TIME);
 
-		aStats.Sample(STAT_NUM_CLIENTS, (uint32_t)m_clients.size());
+		_ProcessRequests();
+		_UpdateClients();
+
+		m_network->m_host.GetStats()->Emit(Stats::ID_GS_NUM_CLIENTS, m_clients.size());
 	}
 
 	void	
-	GameServer::UpdateStateInfo(
-		Stats&						aStats,
-		std::vector<Stats::Entry>&	aOut)
+	GameServer::UpdateStateStatistics(
+		std::vector<uint32_t>&	aStateCounters)
 	{
-		aStats.AddAndResetEntry(STAT_INIT_TIME, m_clientStateTimes[Client::STATE_INIT]);
-		aStats.AddAndResetEntry(STAT_NEED_LOCK_TIME, m_clientStateTimes[Client::STATE_NEED_LOCK]);
-		aStats.AddAndResetEntry(STAT_WAITING_FOR_LOCK_TIME, m_clientStateTimes[Client::STATE_WAITING_FOR_LOCK]);
-		aStats.AddAndResetEntry(STAT_NEED_BLOB_TIME, m_clientStateTimes[Client::STATE_NEED_BLOB]);
-		aStats.AddAndResetEntry(STAT_WAITING_FOR_BLOB_GET_TIME, m_clientStateTimes[Client::STATE_WAITING_FOR_BLOB_GET]);
-		aStats.AddAndResetEntry(STAT_CONNECTED_TIME, m_clientStateTimes[Client::STATE_CONNECTED]);
-		aStats.AddAndResetEntry(STAT_WAITING_FOR_BLOB_SET_TIME, m_clientStateTimes[Client::STATE_WAITING_FOR_BLOB_SET]);
-
+		std::chrono::time_point<std::chrono::steady_clock> currentTime = std::chrono::steady_clock::now();
+		
 		for (std::pair<uint32_t, Client*> i : m_clients)
 		{
-			JELLY_ASSERT((size_t)i.second->m_state < aOut.size());
+			JELLY_ASSERT((size_t)i.second->m_state < aStateCounters.size());
 
-			aOut[i.second->m_state].Sample((uint32_t)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - i.second->m_stateTimeStamp).count());
+			aStateCounters[i.second->m_state]++;
+
+			i.second->m_stateTimeSampler.EmitCurrentStateTime(m_network->m_host.GetStats(), currentTime);
 		}
 	}
 
@@ -86,12 +81,11 @@ namespace jelly::Test::Sim
 	}
 	
 	void	
-	GameServer::_UpdateClients(
-		Stats&			aStats)
+	GameServer::_UpdateClients()
 	{
 		for (std::pair<uint32_t, Client*> i : m_clients)
 		{
-			if (!_UpdateClient(aStats, i.second))
+			if (!_UpdateClient(i.second))
 			{
 				i.second->m_disconnectEvent->Signal();
 				delete i.second;
@@ -102,7 +96,6 @@ namespace jelly::Test::Sim
 
 	bool	
 	GameServer::_UpdateClient(
-		Stats&			aStats,
 		Client*			aClient)
 	{
 		switch(aClient->m_state)
@@ -122,8 +115,6 @@ namespace jelly::Test::Sim
 					aClient->m_lockRequest->m_key = aClient->m_id;
 					aClient->m_lockRequest->m_lock = m_id;
 					lockNode->Lock(aClient->m_lockRequest.get());
-
-					aStats.Sample(STAT_LOCK_REQUESTS, 1);
 					
 					_SetClientState(aClient, Client::STATE_WAITING_FOR_LOCK);
 				}
@@ -185,8 +176,6 @@ namespace jelly::Test::Sim
 						aClient->m_getRequest->m_seq = aClient->m_blobSeq;
 						blobNode->Get(aClient->m_getRequest.get());
 
-						aStats.Sample(STAT_GET_REQUESTS, 1);
-
 						_SetClientState(aClient, Client::STATE_WAITING_FOR_BLOB_GET);
 
 						aClient->m_nextBlobNodeIdIndex++;
@@ -229,8 +218,6 @@ namespace jelly::Test::Sim
 				if(blobNode != NULL)
 				{
 					blobNode->Set(aClient->m_setRequest.get());
-
-					aStats.Sample(STAT_SET_REQUESTS, 1);
 
 					aClient->m_lastBlobNodeId = blobNodeId;
 
@@ -293,15 +280,7 @@ namespace jelly::Test::Sim
 		Client::State	aState)
 	{
 		JELLY_ASSERT(aClient->m_state != aState);
-		JELLY_ASSERT(aClient->m_state < Client::NUM_STATES);
-
-		std::chrono::time_point<std::chrono::steady_clock> currentTime = std::chrono::steady_clock::now();
-
-		uint32_t millisecondsSpentInState = (uint32_t)std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - aClient->m_stateTimeStamp).count();
-
-		m_clientStateTimes[aClient->m_state].Sample(millisecondsSpentInState);
-
-		aClient->m_stateTimeStamp = currentTime;
+		aClient->m_stateTimeSampler.ChangeState(m_network->m_host.GetStats(), aState);
 		aClient->m_state = aState;
 	}
 

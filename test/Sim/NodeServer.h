@@ -106,18 +106,20 @@ namespace jelly::Test::Sim
 						case HousekeepingAdvisor<_NodeType>::Event::TYPE_FLUSH_PENDING_STORE:
 							{
 								size_t itemCount = m_node->FlushPendingStore();
+								JELLY_UNUSED(itemCount);
 
-								if (itemCount > 0)
-									printf("[%u] FlushPendingStore: %llu\n", m_id, itemCount);
+								//if (itemCount > 0)
+								//	printf("[%u] FlushPendingStore: %llu\n", m_id, itemCount);
 							}
 							break;
 
 						case HousekeepingAdvisor<_NodeType>::Event::TYPE_CLEANUP_WALS:
 							{
 								size_t walCount = m_node->CleanupWALs();
+								JELLY_UNUSED(walCount);
 
-								if (walCount > 0)
-									printf("[%u] CleanupWALs: %llu\n", m_id, walCount);
+								//if (walCount > 0)
+								//	printf("[%u] CleanupWALs: %llu\n", m_id, walCount);
 							}
 							break;
 
@@ -126,7 +128,7 @@ namespace jelly::Test::Sim
 								std::unique_ptr<typename _NodeType::CompactionResultType> compactionResult(m_node->PerformCompaction(aEvent.m_compactionJob));
 								m_node->ApplyCompactionResult(compactionResult.get());
 
-								printf("[%u] PerformCompaction\n", m_id);
+								//printf("[%u] PerformCompaction\n", m_id);
 							}
 							break;
 

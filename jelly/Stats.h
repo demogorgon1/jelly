@@ -20,13 +20,18 @@ namespace jelly
 		void				AddCounter_UInt64(
 								uint32_t		aId,
 								uint64_t		aValue) override;
-		void				SampleTime_UInt64(
+		void				Sample_UInt64(
 								uint32_t		aId,
-								uint64_t		aTime) override;
+								uint64_t		aValue) override;
+		void				SetGauge_UInt64(
+								uint32_t		aId,
+								uint64_t		aValue) override;
 		void				Update() override;
 		Counter				GetCounter(
 								uint32_t		aId) override;
-		TimeSampler			GetTimeSampler(
+		Sampler				GetSampler(
+								uint32_t		aId) override;
+		Gauge				GetGauge(
 								uint32_t		aId) override;
 
 	private:
@@ -49,13 +54,13 @@ namespace jelly
 			}
 
 			// Public data
-			size_t											m_value;
-			size_t											m_count;
+			uint64_t										m_value;
+			uint64_t										m_count;
 		};
 
-		struct TimeSamplerData
+		struct SamplerData
 		{
-			TimeSamplerData()
+			SamplerData()
 				: m_sum(0)
 				, m_count(0)
 				, m_min(0)
@@ -66,14 +71,14 @@ namespace jelly
 
 			void
 			Add(
-				const TimeSamplerData&			aOther)
+				const SamplerData&				aOther)
 			{
 				if(aOther.m_count > 0)
 				{
 					if(m_count > 0)
 					{
-						m_min = std::min<size_t>(m_min, aOther.m_min);
-						m_max = std::max<size_t>(m_max, aOther.m_max);
+						m_min = std::min<uint64_t>(m_min, aOther.m_min);
+						m_max = std::max<uint64_t>(m_max, aOther.m_max);
 					}
 					else
 					{
@@ -87,10 +92,33 @@ namespace jelly
 			}
 
 			// Public data
-			size_t											m_sum;
-			size_t											m_count;
-			size_t											m_min;
-			size_t											m_max;
+			uint64_t										m_sum;
+			uint64_t										m_count;
+			uint64_t										m_min;
+			uint64_t										m_max;
+		};
+
+		struct GaugeData
+		{
+			GaugeData()
+				: m_value(0)
+				, m_isSet(false)
+			{
+
+			}
+
+			void
+			Add(
+				const GaugeData&				aOther)
+			{
+				m_value += aOther.m_value;
+
+				m_isSet = m_isSet || aOther.m_isSet;
+			}
+
+			// Public data
+			uint64_t										m_value;
+			bool											m_isSet;
 		};
 
 		struct Data
@@ -103,7 +131,8 @@ namespace jelly
 			Reset()
 			{
 				memset(m_counterData, 0, sizeof(m_counterData));
-				memset(m_timeSamplerData, 0, sizeof(m_timeSamplerData));
+				memset(m_samplerData, 0, sizeof(m_samplerData));
+				memset(m_gaugeData, 0, sizeof(m_gaugeData));
 			}
 
 			void
@@ -113,13 +142,17 @@ namespace jelly
 				for(uint32_t i = 0; i < (uint32_t)Stat::NUM_COUNTERS; i++)
 					m_counterData[i].Add(aOther.m_counterData[i]);
 
-				for(uint32_t i = 0; i < (uint32_t)Stat::NUM_TIME_SAMPLERS; i++)
-					m_timeSamplerData[i].Add(aOther.m_timeSamplerData[i]);
+				for(uint32_t i = 0; i < (uint32_t)Stat::NUM_SAMPLERS; i++)
+					m_samplerData[i].Add(aOther.m_samplerData[i]);
+
+				for (uint32_t i = 0; i < (uint32_t)Stat::NUM_GAUGES; i++)
+					m_gaugeData[i].Add(aOther.m_gaugeData[i]);
 			}
 
 			// Public data
 			CounterData										m_counterData[Stat::NUM_COUNTERS];
-			TimeSamplerData									m_timeSamplerData[Stat::NUM_TIME_SAMPLERS];
+			SamplerData										m_samplerData[Stat::NUM_SAMPLERS];
+			GaugeData										m_gaugeData[Stat::NUM_GAUGES];
 		};
 
 		struct Thread
@@ -130,9 +163,12 @@ namespace jelly
 			void		AddCounter(
 							uint32_t			aId,
 							uint64_t			aValue);
-			void		SampleTime(
+			void		Sample(
 							uint32_t			aId,
-							uint64_t			aTime);
+							uint64_t			aValue);
+			void		SetGauge(
+							uint32_t			aId,
+							uint64_t			aValue);
 			Data*		SwapAndGetReadData();
 
 			// Public data
@@ -149,7 +185,8 @@ namespace jelly
 		uint32_t													m_threadCount;
 
 		Counter														m_counters[Stat::NUM_COUNTERS];
-		TimeSampler													m_timeSamplers[Stat::NUM_TIME_SAMPLERS];
+		Sampler														m_samplers[Stat::NUM_SAMPLERS];
+		Gauge														m_gauges[Stat::NUM_GAUGES];
 
 		std::unique_ptr<MovingAverage<uint64_t>>					m_counterMovingAverages[Stat::NUM_COUNTERS];
 

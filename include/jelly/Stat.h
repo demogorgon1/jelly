@@ -16,11 +16,18 @@ namespace jelly
 			NUM_COUNTERS
 		};
 
-		enum TimeSampler : uint32_t
+		enum Sampler : uint32_t
 		{
-			TIME_SAMPLER_FLUSH_PENDING_WAL,
+			SAMPLER_FLUSH_PENDING_WAL_TIME,
 
-			NUM_TIME_SAMPLERS
+			NUM_SAMPLERS
+		};
+
+		enum Gauge : uint32_t
+		{
+			GAUGE_WAL_COUNT,
+
+			NUM_GAUGES
 		};
 
 		struct CounterInfo
@@ -29,7 +36,12 @@ namespace jelly
 			uint32_t		m_rateMovingAverage;
 		};
 
-		struct TimeSamplerInfo
+		struct SamplerInfo
+		{
+			const char*		m_id;
+		};
+
+		struct GaugeInfo
 		{
 			const char*		m_id;
 		};
@@ -43,16 +55,25 @@ namespace jelly
 			/* COUNTER_DISK_WRITE_STORE_BYTES */	{ "disk_write_store_bytes",	 10 }
 		};
 
-		// IMPORTANT: Order must match the TimeSampler enum
-		static constexpr TimeSamplerInfo TIME_SAMPLER_INFO[] =
+		// IMPORTANT: Order must match the Sampler enum
+		static constexpr SamplerInfo SAMPLER_INFO[] =
 		{
-			//                                     | Id                     
-			//-------------------------------------+-------------------------------------
-			/* TIME_SAMPLER_FLUSH_PENDING_WALS */	{ "flush_pending_wal" },
+			//                                      | Id                     
+			//--------------------------------------+-------------------------------------
+			/* SAMPLER_FLUSH_PENDING_WAL_TIME */    { "flush_pending_wal_time" },
+		};
+
+		// IMPORTANT: Order must match the Gauge enum
+		static constexpr GaugeInfo GAUGE_INFO[] =
+		{
+			//                                      | Id                     
+			//--------------------------------------+-------------------------------------
+			/* GAUGE_WAL_COUNT */                   { "wal_count" },
 		};
 
 		static_assert(sizeof(COUNTER_INFO) == sizeof(CounterInfo) * (size_t)NUM_COUNTERS);
-		static_assert(sizeof(TIME_SAMPLER_INFO) == sizeof(TimeSamplerInfo) * (size_t)NUM_TIME_SAMPLERS);
+		static_assert(sizeof(SAMPLER_INFO) == sizeof(SamplerInfo) * (size_t)NUM_SAMPLERS);
+		static_assert(sizeof(GAUGE_INFO) == sizeof(GaugeInfo) * (size_t)NUM_GAUGES);
 
 		inline const CounterInfo*
 		GetCounterInfo(
@@ -62,13 +83,22 @@ namespace jelly
 			return &COUNTER_INFO[aId];
 		}
 
-		inline const TimeSamplerInfo*
-		GetTimeSamplerInfo(
+		inline const SamplerInfo*
+		GetSamplerInfo(
 			uint32_t		aId)
 		{
-			JELLY_ASSERT(aId < (uint32_t)NUM_TIME_SAMPLERS);
-			return &TIME_SAMPLER_INFO[aId];
+			JELLY_ASSERT(aId < (uint32_t)NUM_SAMPLERS);
+			return &SAMPLER_INFO[aId];
 		}
+
+		inline const GaugeInfo*
+		GetGaugeInfo(
+			uint32_t		aId)
+		{
+			JELLY_ASSERT(aId < (uint32_t)NUM_GAUGES);
+			return &GAUGE_INFO[aId];
+		}
+
 	}
 
 }

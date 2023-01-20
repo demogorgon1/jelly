@@ -31,9 +31,9 @@ namespace jelly
 			uint64_t		m_rateMA;
 		};
 
-		struct TimeSampler
+		struct Sampler
 		{
-			TimeSampler()
+			Sampler()
 				: m_avg(0)
 				, m_min(0)
 				, m_max(0)
@@ -46,6 +46,17 @@ namespace jelly
 			uint64_t		m_min;
 			uint64_t		m_max;
 			uint64_t		m_count;
+		};
+
+		struct Gauge
+		{
+			Gauge()
+				: m_value(0)
+			{
+
+			}
+
+			uint64_t		m_value;
 		};
 
 		template <typename _T>
@@ -61,27 +72,43 @@ namespace jelly
 
 		template <typename _T>
 		void
-		SampleTime(
+		Sample(
 			uint32_t						aId,
 			const _T&						aValue)
 		{
 			static_assert(std::is_unsigned<_T>::value);
 
-			SampleTime_UInt64(aId, (uint64_t)aValue);
+			Sample_UInt64(aId, (uint64_t)aValue);
+		}
+
+		template <typename _T>
+		void
+		SetGauge(
+			uint32_t						aId,
+			const _T&						aValue)
+		{
+			static_assert(std::is_unsigned<_T>::value);
+
+			SetGauge_UInt64(aId, (uint64_t)aValue);
 		}
 
 		// Virtual methods
 		virtual void				AddCounter_UInt64(
 										uint32_t		/*aId*/,
 										uint64_t		/*aValue*/) { }
-		virtual void				SampleTime_UInt64(
+		virtual void				Sample_UInt64(
 										uint32_t		/*aId*/,
-										uint64_t		/*aTime*/) { }
+										uint64_t		/*aValue*/) { }
+		virtual void				SetGauge_UInt64(
+										uint32_t		/*aId*/,
+										uint64_t		/*aValue*/) { }
 		virtual void				Update() { }
 		virtual Counter				GetCounter(
 										uint32_t		/*aId*/) { return Counter(); }
-		virtual TimeSampler			GetTimeSampler(
-										uint32_t		/*aId*/) { return TimeSampler(); }
+		virtual Sampler				GetSampler(
+										uint32_t		/*aId*/) { return Sampler(); }
+		virtual Gauge				GetGauge(
+										uint32_t		/*aId*/) { return Gauge(); }
 	};
 
 }

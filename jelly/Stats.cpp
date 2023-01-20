@@ -12,7 +12,8 @@ namespace jelly
 		, m_updateCount(0)
 	{
 		memset(m_counters, 0, sizeof(m_counters));
-		memset(m_timeSamplers, 0, sizeof(m_timeSamplers));
+		memset(m_samplers, 0, sizeof(m_samplers));
+		memset(m_gauges, 0, sizeof(m_gauges));
 
 		// Initialize moving average filters for counters that need them
 		for(uint32_t i = 0; i < (uint32_t)Stat::NUM_COUNTERS; i++)
@@ -40,11 +41,19 @@ namespace jelly
 	}
 
 	void				
-	Stats::SampleTime_UInt64(
+	Stats::Sample_UInt64(
 		uint32_t		aId,
-		uint64_t		aTime) 
+		uint64_t		aValue) 
 	{
-		_GetCurrentThread()->SampleTime(aId, aTime);
+		_GetCurrentThread()->Sample(aId, aValue);
+	}
+
+	void				
+	Stats::SetGauge_UInt64(
+		uint32_t		aId,
+		uint64_t		aValue) 
+	{
+		_GetCurrentThread()->SetGauge(aId, aValue);
 	}
 
 	void				
@@ -93,25 +102,34 @@ namespace jelly
 		for (uint32_t i = 0; i < (uint32_t)Stat::NUM_COUNTERS; i++)
 			m_counters[i].m_value += collectedData.m_counterData[i].m_value;
 
-		for (uint32_t i = 0; i < (uint32_t)Stat::NUM_TIME_SAMPLERS; i++)
+		for (uint32_t i = 0; i < (uint32_t)Stat::NUM_SAMPLERS; i++)
 		{
-			TimeSampler& timeSampler = m_timeSamplers[i];
-			const TimeSamplerData& collected = collectedData.m_timeSamplerData[i];
+			Sampler& sampler = m_samplers[i];
+			const SamplerData& collected = collectedData.m_samplerData[i];
 
-			timeSampler.m_count = collected.m_count;
+			sampler.m_count = collected.m_count;
 			
-			if(timeSampler.m_count > 0)
+			if(sampler.m_count > 0)
 			{
-				timeSampler.m_avg = collected.m_sum / collected.m_count;
-				timeSampler.m_max = collected.m_max;
-				timeSampler.m_min = collected.m_min;
+				sampler.m_avg = collected.m_sum / collected.m_count;
+				sampler.m_max = collected.m_max;
+				sampler.m_min = collected.m_min;
 			}
 			else
 			{
-				timeSampler.m_avg = 0;
-				timeSampler.m_max = 0;
-				timeSampler.m_min = 0;
+				sampler.m_avg = 0;
+				sampler.m_max = 0;
+				sampler.m_min = 0;
 			}
+		}
+
+		for(uint32_t i = 0; i < (uint32_t)Stat::NUM_GAUGES; i++)
+		{
+			Gauge& gauge = m_gauges[i];
+			const GaugeData& collected = collectedData.m_gaugeData[i];
+
+			if(collected.m_isSet)
+				gauge.m_value = collected.m_value;
 		}
 
 		m_lastUpdateTime = currentTime;
@@ -126,12 +144,20 @@ namespace jelly
 		return m_counters[aId];
 	}
 	
-	Stats::TimeSampler
-	Stats::GetTimeSampler(
+	Stats::Sampler
+	Stats::GetSampler(
 		uint32_t		aId)
 	{
-		JELLY_ASSERT(aId < (uint32_t)Stat::NUM_TIME_SAMPLERS);
-		return m_timeSamplers[aId];
+		JELLY_ASSERT(aId < (uint32_t)Stat::NUM_SAMPLERS);
+		return m_samplers[aId];
+	}
+
+	Stats::Gauge
+	Stats::GetGauge(
+		uint32_t		aId)
+	{
+		JELLY_ASSERT(aId < (uint32_t)Stat::NUM_GAUGES);
+		return m_gauges[aId];
 	}
 
 	//----------------------------------------------------------------------------------
@@ -162,28 +188,42 @@ namespace jelly
 	}
 
 	void		
-	Stats::Thread::SampleTime(
+	Stats::Thread::Sample(
 		uint32_t		aId,
-		uint64_t		aTime)
+		uint64_t		aSample)
 	{
 		std::lock_guard lock(m_lock);
 
-		JELLY_ASSERT(aId < Stat::NUM_TIME_SAMPLERS);
-		TimeSamplerData* timeSampler = &m_writeData->m_timeSamplerData[aId];
+		JELLY_ASSERT(aId < Stat::NUM_SAMPLERS);
+		SamplerData* sampler = &m_writeData->m_samplerData[aId];
 
-		if(timeSampler->m_count > 0)
+		if(sampler->m_count > 0)
 		{
-			timeSampler->m_min = std::min<uint64_t>(timeSampler->m_min, aTime);
-			timeSampler->m_max = std::max<uint64_t>(timeSampler->m_max, aTime);
+			sampler->m_min = std::min<uint64_t>(sampler->m_min, aSample);
+			sampler->m_max = std::max<uint64_t>(sampler->m_max, aSample);
 		}
 		else
 		{
-			timeSampler->m_min = aTime;
-			timeSampler->m_max = aTime;
+			sampler->m_min = aSample;
+			sampler->m_max = aSample;
 		}
 
-		timeSampler->m_sum += aTime;
-		timeSampler->m_count++;
+		sampler->m_sum += aSample;
+		sampler->m_count++;
+	}
+
+	void		
+	Stats::Thread::SetGauge(
+		uint32_t		aId,
+		uint64_t		aValue)
+	{
+		std::lock_guard lock(m_lock);
+
+		JELLY_ASSERT(aId < Stat::NUM_GAUGES);
+		GaugeData* gauge = &m_writeData->m_gaugeData[aId];
+
+		gauge->m_value = aValue;
+		gauge->m_isSet = true;
 	}
 
 	Stats::Data*

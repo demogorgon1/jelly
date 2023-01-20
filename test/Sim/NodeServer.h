@@ -41,8 +41,10 @@ namespace jelly::Test::Sim
 
 		NodeServer(
 			Network*						aNetwork,
+			IHost*							aHost,
 			uint32_t						aId)
 			: m_network(aNetwork)
+			, m_host(aHost)
 			, m_id(aId)
 			, m_state(STATE_INIT)
 			, m_hasNode(false)
@@ -74,12 +76,12 @@ namespace jelly::Test::Sim
 				{
 					typename _NodeType::Config config;
 
-					m_node = std::make_unique<_NodeType>(&m_network->m_host, m_id, config);
+					m_node = std::make_unique<_NodeType>(m_host, m_id, config);
 					m_hasNode = true;
 
 					typename HousekeepingAdvisor<_NodeType>::Config housekeepingAdvisorConfig;
 
-					m_housekeepingAdvisor = std::make_unique<HousekeepingAdvisor<_NodeType>>(&m_network->m_host, m_node.get(), housekeepingAdvisorConfig);
+					m_housekeepingAdvisor = std::make_unique<HousekeepingAdvisor<_NodeType>>(m_host, m_node.get(), housekeepingAdvisorConfig);
 
 					m_state = STATE_RUNNING;
 				}
@@ -149,7 +151,7 @@ namespace jelly::Test::Sim
 			
 			aStateCounters[m_state]++;
 
-			m_stateTimeSampler.EmitCurrentStateTime(m_network->m_host.GetStats(), std::chrono::steady_clock::now());
+			m_stateTimeSampler.EmitCurrentStateTime(m_host->GetStats(), std::chrono::steady_clock::now());
 		}
 
 		// Data access
@@ -158,6 +160,7 @@ namespace jelly::Test::Sim
 	private:
 
 		Network*											m_network;
+		IHost*												m_host;
 		uint32_t											m_id;
 
 		std::atomic_bool									m_hasNode;
@@ -180,7 +183,7 @@ namespace jelly::Test::Sim
 			State									aState)
 		{
 			JELLY_ASSERT(m_state != aState);
-			m_stateTimeSampler.ChangeState(m_network->m_host.GetStats(), aState);
+			m_stateTimeSampler.ChangeState(m_host->GetStats(), aState);
 			m_state = aState;
 		}
 	};

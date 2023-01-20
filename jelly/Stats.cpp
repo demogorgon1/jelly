@@ -206,8 +206,10 @@ namespace jelly
 				gauge->m_isSet = true;
 			}
 			break;
-		}
 
+		default:
+			JELLY_ASSERT(false);
+		}
 	}
 
 	Stats::Data*

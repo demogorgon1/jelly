@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Compaction.h"
 #include "IFileStreamReader.h"
 #include "LockNodeItem.h"
 #include "LockNodeRequest.h"
@@ -46,10 +47,13 @@ namespace jelly
 
 			_Restore();
 
-			this->m_compactionCallback = [&](const CompactionJob& aCompactionJob, CompactionResult<_KeyType, _STLKeyHasher>* aOut) 
-			{ 
-				_PerformCompaction(aCompactionJob, aOut); 
-			};
+			//this->m_compactionCallback = [&](const CompactionJob& aCompactionJob, CompactionResult<_KeyType, _STLKeyHasher>* aOut) 
+			//{ 
+			//	if(aOut->IsMajorCompaction())
+			//		Compaction::PerformMajorCompaction<_KeyType, Item, _STLKeyHasher, NodeBase>(this, aOut);
+			//	else
+			//		Compaction::Perform<_KeyType, Item, _STLKeyHasher, NodeBase>(this, aCompactionJob, aOut);					
+			//};
 
 			this->m_flushPendingStoreCallback = [&](
 				uint32_t										/*aStoreId*/,
@@ -384,99 +388,6 @@ namespace jelly
 					this->SetItem(key, item.release());
 				}
 			}
-		}
-
-
-		void
-		_PerformCompaction(
-			const CompactionJob&						aCompactionJob,
-			CompactionResult<_KeyType, _STLKeyHasher>*	aOut)
-		{
-			// Stores are always written in ascendening key order, so merging them is easy
-			std::unique_ptr<IFileStreamReader> f1(this->m_host->ReadStoreStream(this->m_nodeId, aCompactionJob.m_storeId1, &this->m_statsContext.m_fileStore));
-			std::unique_ptr<IFileStreamReader> f2(this->m_host->ReadStoreStream(this->m_nodeId, aCompactionJob.m_storeId2, &this->m_statsContext.m_fileStore));
-
-			{
-				uint32_t newStoreId = this->CreateStoreId();
-
-				std::unique_ptr<IStoreWriter> fOut(this->m_host->CreateStore(this->m_nodeId, newStoreId, &this->m_statsContext.m_fileStore));
-
-				JELLY_ASSERT(f1 && f2 && fOut);
-
-				Item item1;
-				bool hasItem1 = false;
-
-				Item item2;
-				bool hasItem2 = false;
-
-				for (;;)
-				{
-					if (!hasItem1)
-						hasItem1 = item1.Read(f1.get(), NULL);
-
-					if (!hasItem2)
-						hasItem2 = item2.Read(f2.get(), NULL);
-
-					if (!hasItem1 && !hasItem2)
-						break;
-
-					if (hasItem1 && !hasItem2)
-					{
-						if(!item1.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
-							fOut->WriteItem(&item1);
-
-						hasItem1 = false;
-					}
-					else if (!hasItem1 && hasItem2)
-					{
-						if (!item2.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
-							fOut->WriteItem(&item2);
-
-						hasItem2 = false;
-					}
-					else
-					{
-						JELLY_ASSERT(hasItem1 && hasItem2);
-
-						if (item1.m_key < item2.m_key)
-						{	
-							if (!item1.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
-								fOut->WriteItem(&item1);
-
-							hasItem1 = false;
-						}
-						else if (item2.m_key < item1.m_key)
-						{
-							if (!item2.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
-								fOut->WriteItem(&item2);
-
-							hasItem2 = false;
-						}
-						else
-						{
-							// Items are the same - keep the one with the highest sequence number
-							if (item1.m_meta.m_seq > item2.m_meta.m_seq)
-							{
-								if (!item1.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
-									fOut->WriteItem(&item1);
-							}
-							else
-							{
-								if (!item2.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
-									fOut->WriteItem(&item2);
-							}
-
-							hasItem1 = false;
-							hasItem2 = false;
-						}
-					}
-				}
-
-				fOut->Flush();
-			}
-
-			aOut->AddCompactedStore(aCompactionJob.m_storeId1, NULL);
-			aOut->AddCompactedStore(aCompactionJob.m_storeId2, NULL);
 		}
 
 	};

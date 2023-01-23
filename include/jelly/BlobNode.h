@@ -2,6 +2,7 @@
 
 #include "BlobNodeItem.h"
 #include "BlobNodeRequest.h"
+#include "Compaction.h"
 #include "IFileStreamReader.h"
 #include "IStoreBlobReader.h"
 #include "List.h"
@@ -58,13 +59,13 @@ namespace jelly
 
 			_Restore();
 
-			this->m_compactionCallback = [&](const CompactionJob& aCompactionJob, CompactionResult<_KeyType, _STLKeyHasher>* aOut) 
-			{ 
-				if(aOut->IsMajorCompaction())
-					_PerformMajorCompaction(aOut);
-				else
-					_PerformCompaction(aCompactionJob, aOut);
-			};
+			//this->m_compactionCallback = [&](const CompactionJob& aCompactionJob, CompactionResult<_KeyType, _STLKeyHasher>* aOut) 
+			//{ 
+			//	if(aOut->IsMajorCompaction())
+			//		Compaction::PerformMajorCompaction<_KeyType, Item, _STLKeyHasher, NodeBase>(this, aOut);
+			//	else
+			//		Compaction::Perform<_KeyType, Item, _STLKeyHasher, NodeBase>(this, aCompactionJob, aOut);
+			//};
 			
 			this->m_flushPendingStoreCallback = [&](
 				uint32_t					aStoreId,
@@ -601,260 +602,6 @@ namespace jelly
 			aOutStoreId = t.m_storeId;
 			aOutOffset = t.m_offset;
 			return true;
-		}
-
-		void
-		_PerformCompaction(
-			const CompactionJob&						aCompactionJob,
-			CompactionResult<_KeyType, _STLKeyHasher>*	aOut)
-		{
-			// Stores are always written in ascendening key order, so merging them is easy
-			std::unique_ptr<IFileStreamReader> f1(this->m_host->ReadStoreStream(this->m_nodeId, aCompactionJob.m_storeId1, &this->m_statsContext.m_fileStore));
-			std::unique_ptr<IFileStreamReader> f2(this->m_host->ReadStoreStream(this->m_nodeId, aCompactionJob.m_storeId2, &this->m_statsContext.m_fileStore));
-
-			std::unique_ptr<typename NodeBase::CompactionRedirectType> compactionRedirect1(new NodeBase::CompactionRedirectType());
-			std::unique_ptr<typename NodeBase::CompactionRedirectType> compactionRedirect2(new NodeBase::CompactionRedirectType());
-
-			{
-				uint32_t newStoreId = this->CreateStoreId();
-
-				std::unique_ptr<IStoreWriter> fOut(this->m_host->CreateStore(this->m_nodeId, newStoreId, &this->m_statsContext.m_fileStore));
-
-				JELLY_ASSERT(f1 && f2 && fOut);
-
-				Item item1;
-				bool hasItem1 = false;
-
-				Item item2;
-				bool hasItem2 = false;
-
-				for (;;)
-				{
-					if (!hasItem1)
-					{
-						item1.m_storeOffset = f1->GetReadOffset();
-						hasItem1 = item1.Read(f1.get(), &item1.m_storeOffset);
-					}
-
-					if (!hasItem2)
-					{
-						item2.m_storeOffset = f2->GetReadOffset();
-						hasItem2 = item2.Read(f2.get(), &item2.m_storeOffset);
-					}
-
-					if (!hasItem1 && !hasItem2)
-						break;
-
-					if (hasItem1 && !hasItem2)
-					{
-						if(!item1.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
-						{
-							item1.m_storeOffset = fOut->WriteItem(&item1);
-							compactionRedirect1->AddEntry(item1.m_key, newStoreId, item1.m_storeOffset);
-						}
-
-						hasItem1 = false;
-					}
-					else if (!hasItem1 && hasItem2)
-					{
-						if (!item2.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
-						{
-							item2.m_storeOffset = fOut->WriteItem(&item2);
-							compactionRedirect2->AddEntry(item2.m_key, newStoreId, item2.m_storeOffset);
-						}
-
-						hasItem2 = false;
-					}
-					else
-					{
-						JELLY_ASSERT(hasItem1 && hasItem2);
-
-						if (item1.m_key < item2.m_key)
-						{								
-							if (!item1.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
-							{
-								item1.m_storeOffset = fOut->WriteItem(&item1);
-								compactionRedirect1->AddEntry(item1.m_key, newStoreId, item1.m_storeOffset);
-							}
-
-							hasItem1 = false;
-						}
-						else if (item2.m_key < item1.m_key)
-						{
-							if (!item2.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
-							{
-								item2.m_storeOffset = fOut->WriteItem(&item2);
-								compactionRedirect2->AddEntry(item2.m_key, newStoreId, item2.m_storeOffset);
-							}
-
-							hasItem2 = false;
-						}
-						else
-						{
-							// Items are the same - keep the one with the highest sequence number
-							size_t offset = UINT64_MAX;
-
-							if (item1.m_meta.m_seq > item2.m_meta.m_seq)
-							{
-								if (!item1.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
-									offset = fOut->WriteItem(&item1);
-							}
-							else
-							{
-								if (!item2.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
-									offset = fOut->WriteItem(&item2);
-							}
-
-							if(offset != UINT64_MAX)
-							{
-								compactionRedirect1->AddEntry(item1.m_key, newStoreId, offset);
-								compactionRedirect2->AddEntry(item2.m_key, newStoreId, offset);
-							}
-
-							hasItem1 = false;
-							hasItem2 = false;
-						}
-					}
-				}
-
-				fOut->Flush();
-			}
-
-			aOut->AddCompactedStore(aCompactionJob.m_storeId1, compactionRedirect1.release());
-			aOut->AddCompactedStore(aCompactionJob.m_storeId2, compactionRedirect2.release());
-		}
-
-		void
-		_PerformMajorCompaction(
-			CompactionResult<_KeyType, _STLKeyHasher>*		aOut)
-		{
-			// Enumerate all stores
-			std::vector<IHost::StoreInfo> storeInfo;
-			this->m_host->GetStoreInfo(this->m_nodeId, storeInfo);
-
-			// Need at least 3 stores for compaction (can't touch the newest one)
-			if(storeInfo.size() >= 3)
-			{
-				uint32_t oldestStoreId = storeInfo[0].m_id;
-
-				struct SourceStore
-				{
-					SourceStore(	
-						uint32_t							aStoreId,
-						IFileStreamReader*					aFileStreamReader)
-						: m_hasItem(false)
-						, m_storeId(aStoreId)
-						, m_fileStreamReader(aFileStreamReader)
-						, m_redirect(new NodeBase::CompactionRedirectType())
-					{
-					}
-
-					uint32_t													m_storeId;
-
-					std::unique_ptr<IFileStreamReader>							m_fileStreamReader;
-					std::unique_ptr<typename NodeBase::CompactionRedirectType>	m_redirect;
-
-					Item														m_item;
-					bool														m_hasItem;
-				};
-
-				std::vector<std::unique_ptr<SourceStore>> sourceStores;
-
-				// Open source stores
-				for(size_t i = 0; i < storeInfo.size() - 1; i++)
-				{
-					uint32_t storeId = storeInfo[i].m_id;
-
-					sourceStores.push_back(std::make_unique<SourceStore>(storeId, this->m_host->ReadStoreStream(this->m_nodeId, storeId, &this->m_statsContext.m_fileStore)));
-
-					JELLY_CHECK(sourceStores[sourceStores.size() - 1]->m_fileStreamReader, "Failed to open store for major compaction: %u", storeId);
-				}
-
-				// Open output store
-				uint32_t newStoreId = this->CreateStoreId();
-				std::unique_ptr<IStoreWriter> outputStore(this->m_host->CreateStore(this->m_nodeId, newStoreId, &this->m_statsContext.m_fileStore));
-				JELLY_CHECK(outputStore, "Failed to open major compaction store for output: %u", newStoreId);
-
-				// Perform the compaction
-				std::vector<SourceStore*> lowestKeySourceStores;
-
-				for(;;)
-				{
-					size_t numSourceStoresWithItemsRemaining = 0;
-
-					for(std::unique_ptr<SourceStore>& sourceStore : sourceStores)
-					{
-						if(!sourceStore->m_hasItem && !sourceStore->m_fileStreamReader->IsEnd())
-						{
-							sourceStore->m_item.m_storeOffset = sourceStore->m_fileStreamReader->GetReadOffset();
-							sourceStore->m_hasItem = sourceStore->m_item.Read(sourceStore->m_fileStreamReader.get(), &sourceStore->m_item.m_storeOffset);
-						}
-
-						if (sourceStore->m_hasItem)
-							numSourceStoresWithItemsRemaining++;
-					}
-
-					if(numSourceStoresWithItemsRemaining == 0)
-						break;
-
-					// Find lowest key
-					std::optional<_KeyType> lowestKey;
-
-					for (std::unique_ptr<SourceStore>& sourceStore : sourceStores)
-					{
-						if(sourceStore->m_hasItem && (!lowestKey.has_value() || sourceStore->m_item.m_key < lowestKey))
-							lowestKey = sourceStore->m_item.m_key;
-					}
-
-					JELLY_ASSERT(lowestKey.has_value());
-
-					// Find stores with this key (might be multiple with equal or different sequence numbers)
-					lowestKeySourceStores.clear();
-
-					for(std::unique_ptr<SourceStore>& sourceStore : sourceStores)
-					{
-						if(sourceStore->m_hasItem && sourceStore->m_item.m_key == lowestKey)
-							lowestKeySourceStores.push_back(sourceStore.get());																			
-					}
-
-					JELLY_ASSERT(lowestKeySourceStores.size() > 0);
-
-					// Sort by sequence numbers - we want to use just the latest one
-					std::sort(lowestKeySourceStores.begin(), lowestKeySourceStores.end(), [](
-						const SourceStore* aLHS,
-						const SourceStore* aRHS) -> bool
-					{
-						JELLY_ASSERT(aLHS->m_hasItem && aRHS->m_hasItem);
-						JELLY_ASSERT(aLHS->m_item.m_key == aRHS->m_item.m_key);
-						return aLHS->m_item.m_meta.m_seq > aRHS->m_item.m_meta.m_seq;
-					});
-
-					// Verify that array is ordered largest to smallest
-					JELLY_ASSERT(lowestKeySourceStores[0]->m_item.m_meta.m_seq >= lowestKeySourceStores[lowestKeySourceStores.size() - 1]->m_item.m_meta.m_seq);
-
-					{
-						const Item& sourceItem = lowestKeySourceStores[0]->m_item;
-
-						size_t offset = UINT64_MAX;
-
-						if (!sourceItem.m_tombstone.ShouldPrune(oldestStoreId))
-							offset = outputStore->WriteItem(&sourceItem);
-
-						for(SourceStore* lowestKeyStore : lowestKeySourceStores)
-						{
-							if(offset != UINT64_MAX)
-								lowestKeyStore->m_redirect->AddEntry(lowestKey.value(), newStoreId, offset);
-
-							JELLY_ASSERT(lowestKeyStore->m_hasItem);
-							lowestKeyStore->m_hasItem = false;
-						}				
-					}
-				}
-
-				// Finally add compacted store redirections to the output
-				for (std::unique_ptr<SourceStore>& sourceStore : sourceStores)
-					aOut->AddCompactedStore(sourceStore->m_storeId, sourceStore->m_redirect.release());
-			}
 		}
 
 		void

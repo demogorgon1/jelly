@@ -294,7 +294,7 @@ namespace jelly
 				m_currentCompactionStoreIds.insert(aCompactionJob.m_storeId2);
 			}
 
-			m_compactionCallback(aCompactionJob, result.get());
+			Compaction::Perform<_KeyType, _ItemType, _STLKeyHasher>(this, aCompactionJob, result.get());
 
 			return result.release();
 		}
@@ -317,7 +317,7 @@ namespace jelly
 
 			result->SetMajorCompaction(true);
 
-			m_compactionCallback(CompactionJob(), result.get());
+			Compaction::PerformMajorCompaction<_KeyType, _ItemType, _STLKeyHasher>(this, result.get());
 
 			return result.release();
 		}
@@ -361,11 +361,26 @@ namespace jelly
 			}
 		}
 
+		// Creates a new always incrementing store id. Can be called from any thread.
+		uint32_t
+		CreateStoreId()
+		{
+			uint32_t id = 0;
+
+			{
+				std::lock_guard lock(m_nextStoreIdLock);
+				id = m_nextStoreId++;
+			}
+
+			return id;
+		}
+
 		// Data access
 		uint32_t			GetNodeId() const { return m_nodeId; }
 		bool				IsStopped() const { std::lock_guard lock(m_requestsLock); return m_stopped; }
 		size_t				GetPendingWALCount() const { return m_pendingWALs.size(); }
 		IHost*				GetHost() { return m_host; }
+		FileStatsContext*	GetStoreFileStatsContext() { return &m_statsContext.m_fileStore; }
 
 	protected:
 
@@ -497,19 +512,6 @@ namespace jelly
 				// flush pending store to disk.
 				m_pendingStoreWALItemCount++;
 			}		
-		}
-
-		uint32_t
-		CreateStoreId()
-		{
-			uint32_t id = 0;
-
-			{
-				std::lock_guard lock(m_nextStoreIdLock);
-				id = m_nextStoreId++;
-			}
-
-			return id;
 		}
 
 		void

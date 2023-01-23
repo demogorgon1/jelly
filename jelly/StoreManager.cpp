@@ -56,7 +56,7 @@ namespace jelly
 		uint64_t key = (((uint64_t)aNodeId) << 32) | (uint64_t)aStoreId;
 
 		// Note that we only need to protect the map itself with a mutex, as individual
-		// store blob readers are tied to specific nodes that are bound to a single thread
+		// store blob readers are tied to specific nodes that are bound to a single thread at a time
 
 		{
 			std::lock_guard lock(m_mapLock);

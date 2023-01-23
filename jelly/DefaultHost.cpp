@@ -213,10 +213,6 @@ namespace jelly
 		uint32_t					aId,
 		FileStatsContext*			aFileStatsContext) 
 	{
-		// If blob reader is open, close it, otherwise we can't stream it
-		// FIXME: uhm, this doesn't work if main thread is currently trying to load a blob from it... need shared access
-		CloseStoreBlobReader(aNodeId, aId);
-
 		std::unique_ptr<FileStreamReader> f(new FileStreamReader(
 			PathUtils::MakePath(m_root.c_str(), m_filePrefix.c_str(), PathUtils::FILE_TYPE_STORE, aNodeId, aId).c_str(),
 			NULL,
@@ -235,17 +231,6 @@ namespace jelly
 		FileStatsContext*			aFileStatsContext)
 	{
 		return m_storeManager->GetStoreBlobReader(aNodeId, aId, aFileStatsContext);
-	}
-
-	void					
-	DefaultHost::CloseStoreBlobReader(
-		uint32_t					aNodeId,
-		uint32_t					aId) 
-	{
-		IStoreBlobReader* storeBlobReader = m_storeManager->GetStoreBlobReaderIfExists(aNodeId, aId);
-
-		if(storeBlobReader != NULL)
-			storeBlobReader->Close();
 	}
 	
 	IStoreWriter*

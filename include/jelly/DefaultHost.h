@@ -55,9 +55,6 @@ namespace jelly
 									uint32_t					aNodeId,
 									uint32_t					aId,
 									FileStatsContext*			aFileStatsContext) override;
-		void					CloseStoreBlobReader(
-									uint32_t					aNodeId,
-									uint32_t					aId) override;
 		IStoreWriter*			CreateStore(
 									uint32_t					aNodeId,
 									uint32_t					aId,

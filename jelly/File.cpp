@@ -23,8 +23,7 @@
 #endif
 
 #include <jelly/ErrorUtils.h>
-
-#include "File.h"
+#include <jelly/File.h>
 
 namespace jelly
 {

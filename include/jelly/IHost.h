@@ -62,9 +62,6 @@ namespace jelly
 											uint32_t				aNodeId,
 											uint32_t				aId,
 											FileStatsContext*		aFileStatsContext) = 0;
-		virtual void					CloseStoreBlobReader(
-											uint32_t				aNodeId,
-											uint32_t				aId) = 0;
 		virtual IStoreWriter*			CreateStore(
 											uint32_t				aNodeId,
 											uint32_t				aId,

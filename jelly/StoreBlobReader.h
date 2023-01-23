@@ -1,9 +1,8 @@
 #pragma once
 
+#include <jelly/File.h>
 #include <jelly/IItem.h>
 #include <jelly/IStoreBlobReader.h>
-
-#include "File.h"
 
 namespace jelly
 {

@@ -15,6 +15,7 @@
 #include "Compression.h"
 #include "DefaultHost.h"
 #include "ErrorUtils.h"
+#include "File.h"
 #include "HousekeepingAdvisor.h"
 #include "IFileStreamReader.h"
 #include "IHost.h"

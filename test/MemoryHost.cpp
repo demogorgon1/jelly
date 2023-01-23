@@ -670,15 +670,7 @@ namespace jelly
 			JELLY_ASSERT(i != m_storeMap.end());
 			return i->second->Read();
 		}
-		
-		void					
-		MemoryHost::CloseStoreBlobReader(
-			uint32_t					/*aNodeId*/,
-			uint32_t					/*aId*/) 
-		{
-			// No need to do anything
-		}
-		
+				
 		IStoreWriter*			
 		MemoryHost::CreateStore(
 			uint32_t					aNodeId,

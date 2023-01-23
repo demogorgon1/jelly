@@ -1,8 +1,7 @@
 #pragma once
 
+#include <jelly/File.h>
 #include <jelly/IWALWriter.h>
-
-#include "File.h"
 
 namespace jelly
 {

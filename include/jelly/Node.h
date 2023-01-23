@@ -274,7 +274,6 @@ namespace jelly
 			JELLY_ASSERT(aCompactionJob.m_storeId1 != UINT32_MAX);
 			JELLY_ASSERT(aCompactionJob.m_storeId2 != UINT32_MAX);
 			JELLY_ASSERT(aCompactionJob.m_storeId1 != aCompactionJob.m_storeId2);
-			JELLY_ASSERT(m_compactionCallback);
 
 			std::unique_ptr<CompactionResultType> result(new CompactionResultType());
 
@@ -386,7 +385,6 @@ namespace jelly
 
 		typedef std::unordered_map<_KeyType, _ItemType*, _STLKeyHasher> TableType;
 		typedef std::map<_KeyType, _ItemType*> PendingStoreType;
-		typedef std::function<void(const CompactionJob&, CompactionResult<_KeyType, _STLKeyHasher>*)> CompactionCallback;
 		typedef std::function<void(uint32_t, IStoreWriter*, PendingStoreType*)> FlushPendingStoreCallback;
 		typedef CompactionRedirect<_KeyType, _STLKeyHasher> CompactionRedirectType;
 		typedef std::unordered_map<uint32_t, CompactionRedirectType*> CompactionRedirectMap;
@@ -534,7 +532,6 @@ namespace jelly
 		NodeConfig													m_config;
 		TableType													m_table;
 		uint32_t													m_nextWALId;		
-		CompactionCallback											m_compactionCallback;
 		FlushPendingStoreCallback									m_flushPendingStoreCallback;
 		PendingStoreType											m_pendingStore;
 		CompactionRedirectMap										m_compactionRedirectMap;

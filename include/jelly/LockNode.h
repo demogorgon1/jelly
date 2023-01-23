@@ -47,14 +47,6 @@ namespace jelly
 
 			_Restore();
 
-			//this->m_compactionCallback = [&](const CompactionJob& aCompactionJob, CompactionResult<_KeyType, _STLKeyHasher>* aOut) 
-			//{ 
-			//	if(aOut->IsMajorCompaction())
-			//		Compaction::PerformMajorCompaction<_KeyType, Item, _STLKeyHasher, NodeBase>(this, aOut);
-			//	else
-			//		Compaction::Perform<_KeyType, Item, _STLKeyHasher, NodeBase>(this, aCompactionJob, aOut);					
-			//};
-
 			this->m_flushPendingStoreCallback = [&](
 				uint32_t										/*aStoreId*/,
 				IStoreWriter*									aWriter,

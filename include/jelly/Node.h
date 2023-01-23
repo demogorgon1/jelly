@@ -44,6 +44,7 @@ namespace jelly
 			, m_config(aConfig)
 			, m_stopped(false)
 			, m_pendingStoreWALItemCount(0)
+			, m_currentCompactionIsMajor(false)
 		{
 			for(uint32_t i = 0; i < m_config.m_walConcurrency; i++)
 				m_pendingWALs.push_back(NULL);
@@ -273,12 +274,14 @@ namespace jelly
 			JELLY_ASSERT(aCompactionJob.m_storeId1 != UINT32_MAX);
 			JELLY_ASSERT(aCompactionJob.m_storeId2 != UINT32_MAX);
 			JELLY_ASSERT(aCompactionJob.m_storeId1 != aCompactionJob.m_storeId2);
-			JELLY_ASSERT(m_compactionCallback);
 
 			std::unique_ptr<CompactionResultType> result(new CompactionResultType());
 
 			{
 				std::lock_guard lock(m_currentCompactionStoreIdsLock);
+
+				if(m_currentCompactionIsMajor)
+					return result.release();
 
 				if (m_currentCompactionStoreIds.find(aCompactionJob.m_storeId1) != m_currentCompactionStoreIds.end())
 					return result.release();
@@ -290,7 +293,30 @@ namespace jelly
 				m_currentCompactionStoreIds.insert(aCompactionJob.m_storeId2);
 			}
 
-			m_compactionCallback(aCompactionJob, result.get());
+			Compaction::Perform<_KeyType, _ItemType, _STLKeyHasher>(this, aCompactionJob, result.get());
+
+			return result.release();
+		}
+
+		// Perform major copmaction where all stores (except the latest, which could potentially be work in progress)
+		// will be compacted.
+		CompactionResultType*
+		PerformMajorCompaction()
+		{
+			std::unique_ptr<CompactionResultType> result(new CompactionResultType());
+
+			{
+				std::lock_guard lock(m_currentCompactionStoreIdsLock);
+
+				if(m_currentCompactionIsMajor || m_currentCompactionStoreIds.size() > 0)
+					return result.release();
+
+				m_currentCompactionIsMajor = true;
+			}
+
+			result->SetMajorCompaction(true);
+
+			Compaction::PerformMajorCompaction<_KeyType, _ItemType, _STLKeyHasher>(this, result.get());
 
 			return result.release();
 		}
@@ -307,7 +333,7 @@ namespace jelly
 			{
 				if(compactedStore->m_redirect)
 				{	
-					JELLY_ASSERT(m_compactionRedirectMap.find(compactedStore->m_storeId) == m_compactionRedirectMap.end());
+					JELLY_ASSERT(m_currentCompactionIsMajor || m_compactionRedirectMap.find(compactedStore->m_storeId) == m_compactionRedirectMap.end());
 					
 					m_compactionRedirectMap[compactedStore->m_storeId] = compactedStore->m_redirect.release();
 				}
@@ -320,9 +346,32 @@ namespace jelly
 			{
 				std::lock_guard lock(m_currentCompactionStoreIdsLock);
 
-				for(uint32_t deletedStoreId : deletedStoreIds)
-					m_currentCompactionStoreIds.erase(deletedStoreId);
+				if(m_currentCompactionIsMajor)
+				{
+					JELLY_ASSERT(m_currentCompactionStoreIds.size() == 0);
+
+					m_currentCompactionIsMajor = false;
+				}
+				else
+				{
+					for (uint32_t deletedStoreId : deletedStoreIds)
+						m_currentCompactionStoreIds.erase(deletedStoreId);
+				}
 			}
+		}
+
+		// Creates a new always incrementing store id. Can be called from any thread.
+		uint32_t
+		CreateStoreId()
+		{
+			uint32_t id = 0;
+
+			{
+				std::lock_guard lock(m_nextStoreIdLock);
+				id = m_nextStoreId++;
+			}
+
+			return id;
 		}
 
 		// Data access
@@ -330,12 +379,12 @@ namespace jelly
 		bool				IsStopped() const { std::lock_guard lock(m_requestsLock); return m_stopped; }
 		size_t				GetPendingWALCount() const { return m_pendingWALs.size(); }
 		IHost*				GetHost() { return m_host; }
+		FileStatsContext*	GetStoreFileStatsContext() { return &m_statsContext.m_fileStore; }
 
 	protected:
 
 		typedef std::unordered_map<_KeyType, _ItemType*, _STLKeyHasher> TableType;
 		typedef std::map<_KeyType, _ItemType*> PendingStoreType;
-		typedef std::function<void(const CompactionJob&, CompactionResult<_KeyType, _STLKeyHasher>*)> CompactionCallback;
 		typedef std::function<void(uint32_t, IStoreWriter*, PendingStoreType*)> FlushPendingStoreCallback;
 		typedef CompactionRedirect<_KeyType, _STLKeyHasher> CompactionRedirectType;
 		typedef std::unordered_map<uint32_t, CompactionRedirectType*> CompactionRedirectMap;
@@ -463,19 +512,6 @@ namespace jelly
 			}		
 		}
 
-		uint32_t
-		CreateStoreId()
-		{
-			uint32_t id = 0;
-
-			{
-				std::lock_guard lock(m_nextStoreIdLock);
-				id = m_nextStoreId++;
-			}
-
-			return id;
-		}
-
 		void
 		SetNextStoreId(
 			uint32_t		aNextStoreId)
@@ -496,7 +532,6 @@ namespace jelly
 		NodeConfig													m_config;
 		TableType													m_table;
 		uint32_t													m_nextWALId;		
-		CompactionCallback											m_compactionCallback;
 		FlushPendingStoreCallback									m_flushPendingStoreCallback;
 		PendingStoreType											m_pendingStore;
 		CompactionRedirectMap										m_compactionRedirectMap;
@@ -518,6 +553,7 @@ namespace jelly
 
 		std::mutex													m_currentCompactionStoreIdsLock;
 		std::unordered_set<uint32_t>								m_currentCompactionStoreIds;
+		bool														m_currentCompactionIsMajor;
 
 		WAL*
 		_GetPendingWAL(

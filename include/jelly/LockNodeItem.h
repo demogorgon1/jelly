@@ -69,6 +69,23 @@ namespace jelly
 				&& m_tombstone == aOther->m_tombstone;
 		}
 
+		bool
+		CompactionRead(
+			IFileStreamReader*								aStoreReader)
+		{
+			return Read(aStoreReader, NULL);
+		}
+
+		uint64_t
+		CompactionWrite(
+			uint32_t										aOldestStoreId,
+			IStoreWriter*									aStoreWriter)
+		{
+			if (!m_tombstone.ShouldPrune(aOldestStoreId))
+				aStoreWriter->WriteItem(this);
+
+			return UINT64_MAX;
+		}
 		// IItem implementation
 		size_t
 		Write(

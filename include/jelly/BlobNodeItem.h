@@ -3,8 +3,10 @@
 #include "BlobBuffer.h"
 #include "Compression.h"
 #include "ErrorUtils.h"
+#include "IFileStreamReader.h"
 #include "IItem.h"
 #include "IReader.h"
+#include "IStoreWriter.h"
 #include "IWriter.h"
 #include "MetaData.h"
 
@@ -77,6 +79,28 @@ namespace jelly
 
 			// Note: no comparison of timestamp
 			return m_key == aOther->m_key && *m_blob == *aOther->m_blob && m_meta.m_seq == aOther->m_meta.m_seq && m_tombstone == aOther->m_tombstone;
+		}
+
+		bool
+		CompactionRead(
+			IFileStreamReader*								aStoreReader)
+		{
+			m_storeOffset = aStoreReader->GetReadOffset();
+
+			return Read(aStoreReader, &m_storeOffset);
+		}
+
+		uint64_t
+		CompactionWrite(
+			uint32_t										aOldestStoreId,
+			IStoreWriter*									aStoreWriter)
+		{
+			m_storeOffset = UINT64_MAX;
+
+			if (!m_tombstone.ShouldPrune(aOldestStoreId))
+				m_storeOffset = aStoreWriter->WriteItem(this);
+
+			return m_storeOffset;
 		}
 
 		// IItem implementation

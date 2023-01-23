@@ -2,6 +2,7 @@
 
 #include "BlobNodeItem.h"
 #include "BlobNodeRequest.h"
+#include "Compaction.h"
 #include "IFileStreamReader.h"
 #include "IStoreBlobReader.h"
 #include "List.h"
@@ -57,11 +58,6 @@ namespace jelly
 			_InitStatsContext(&this->m_statsContext);
 
 			_Restore();
-
-			this->m_compactionCallback = [&](const CompactionJob& aCompactionJob, CompactionResult<_KeyType, _STLKeyHasher>* aOut) 
-			{ 
-				_PerformCompaction(aCompactionJob, aOut);
-			};
 			
 			this->m_flushPendingStoreCallback = [&](
 				uint32_t					aStoreId,
@@ -598,127 +594,6 @@ namespace jelly
 			aOutStoreId = t.m_storeId;
 			aOutOffset = t.m_offset;
 			return true;
-		}
-
-		void
-		_PerformCompaction(
-			const CompactionJob&						aCompactionJob,
-			CompactionResult<_KeyType, _STLKeyHasher>*	aOut)
-		{
-			// Stores are always written in ascendening key order, so merging them is easy
-			std::unique_ptr<IFileStreamReader> f1(this->m_host->ReadStoreStream(this->m_nodeId, aCompactionJob.m_storeId1, &this->m_statsContext.m_fileStore));
-			std::unique_ptr<IFileStreamReader> f2(this->m_host->ReadStoreStream(this->m_nodeId, aCompactionJob.m_storeId2, &this->m_statsContext.m_fileStore));
-
-			std::unique_ptr<typename NodeBase::CompactionRedirectType> compactionRedirect1(new NodeBase::CompactionRedirectType());
-			std::unique_ptr<typename NodeBase::CompactionRedirectType> compactionRedirect2(new NodeBase::CompactionRedirectType());
-
-			{
-				uint32_t newStoreId = this->CreateStoreId();
-
-				std::unique_ptr<IStoreWriter> fOut(this->m_host->CreateStore(this->m_nodeId, newStoreId, &this->m_statsContext.m_fileStore));
-
-				JELLY_ASSERT(f1 && f2 && fOut);
-
-				Item item1;
-				bool hasItem1 = false;
-
-				Item item2;
-				bool hasItem2 = false;
-
-				for (;;)
-				{
-					if (!hasItem1)
-					{
-						item1.m_storeOffset = f1->GetReadOffset();
-						hasItem1 = item1.Read(f1.get(), &item1.m_storeOffset);
-					}
-
-					if (!hasItem2)
-					{
-						item2.m_storeOffset = f2->GetReadOffset();
-						hasItem2 = item2.Read(f2.get(), &item2.m_storeOffset);
-					}
-
-					if (!hasItem1 && !hasItem2)
-						break;
-
-					if (hasItem1 && !hasItem2)
-					{
-						if(!item1.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
-						{
-							item1.m_storeOffset = fOut->WriteItem(&item1);
-							compactionRedirect1->AddEntry(item1.m_key, newStoreId, item1.m_storeOffset);
-						}
-
-						hasItem1 = false;
-					}
-					else if (!hasItem1 && hasItem2)
-					{
-						if (!item2.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
-						{
-							item2.m_storeOffset = fOut->WriteItem(&item2);
-							compactionRedirect2->AddEntry(item2.m_key, newStoreId, item2.m_storeOffset);
-						}
-
-						hasItem2 = false;
-					}
-					else
-					{
-						JELLY_ASSERT(hasItem1 && hasItem2);
-
-						if (item1.m_key < item2.m_key)
-						{								
-							if (!item1.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
-							{
-								item1.m_storeOffset = fOut->WriteItem(&item1);
-								compactionRedirect1->AddEntry(item1.m_key, newStoreId, item1.m_storeOffset);
-							}
-
-							hasItem1 = false;
-						}
-						else if (item2.m_key < item1.m_key)
-						{
-							if (!item2.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
-							{
-								item2.m_storeOffset = fOut->WriteItem(&item2);
-								compactionRedirect2->AddEntry(item2.m_key, newStoreId, item2.m_storeOffset);
-							}
-
-							hasItem2 = false;
-						}
-						else
-						{
-							// Items are the same - keep the one with the highest sequence number
-							size_t offset = UINT64_MAX;
-
-							if (item1.m_meta.m_seq > item2.m_meta.m_seq)
-							{
-								if (!item1.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
-									offset = fOut->WriteItem(&item1);
-							}
-							else
-							{
-								if (!item2.m_tombstone.ShouldPrune(aCompactionJob.m_oldestStoreId))
-									offset = fOut->WriteItem(&item2);
-							}
-
-							if(offset != UINT64_MAX)
-							{
-								compactionRedirect1->AddEntry(item1.m_key, newStoreId, offset);
-								compactionRedirect2->AddEntry(item2.m_key, newStoreId, offset);
-							}
-
-							hasItem1 = false;
-							hasItem2 = false;
-						}
-					}
-				}
-
-				fOut->Flush();
-			}
-
-			aOut->AddCompactedStore(aCompactionJob.m_storeId1, compactionRedirect1.release());
-			aOut->AddCompactedStore(aCompactionJob.m_storeId2, compactionRedirect2.release());
 		}
 
 		void

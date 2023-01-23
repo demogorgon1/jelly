@@ -28,6 +28,7 @@ namespace jelly
 		};
 
 		CompactionResult()
+			: m_isMajorCompaction(false)
 		{
 
 		}
@@ -46,12 +47,21 @@ namespace jelly
 			m_compactedStores.push_back(new CompactedStore(aStoreId, aRedirect));
 		}
 
+		void
+		SetMajorCompaction(
+			bool												aMajorCompaction)
+		{
+			m_isMajorCompaction = aMajorCompaction;
+		}
+
 		// Data access
 		std::vector<CompactedStore*>&		GetCompactedStores() { return m_compactedStores; }
+		bool								IsMajorCompaction() const { return m_isMajorCompaction; }
 		
 	private:
 		
 		std::vector<CompactedStore*>										m_compactedStores;
+		bool																m_isMajorCompaction;
 	};
 
 }

@@ -885,6 +885,56 @@ namespace jelly
 				_VerifyNoStore(aHost, 0, 1);
 				_VerifyBlobNodeStore<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 0, 2, { { 1, 4, 1001 } });
 				_VerifyBlobNodeStore<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 0, 3, { { 1, 3, 1000 }, { 2, 1, 1234 } });
+
+				// Make a bunch of stores for major compaction
+				{
+					BlobNodeType::Config config;
+					BlobNodeType blobNode(aHost, 0, config);
+
+					for(uint32_t i = 0; i < 5; i++)
+					{
+						BlobNodeType::Request req;
+						req.m_key = 1000 + i;
+						req.m_seq = 0;
+						req.m_blob = 10000 + i;
+						blobNode.Set(&req);
+						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
+						blobNode.FlushPendingWAL(0);
+						JELLY_ASSERT(req.m_completed.Poll());
+						JELLY_ASSERT(req.m_result == RESULT_OK);
+						blobNode.FlushPendingStore();
+					}
+				}
+
+				_VerifyBlobNodeStore<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 0, 2, { { 1, 4, 1001 } });
+				_VerifyBlobNodeStore<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 0, 3, { { 1, 3, 1000 }, { 2, 1, 1234 } });
+				_VerifyBlobNodeStore<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 0, 4, { { 1000, 0, 10000 } });
+				_VerifyBlobNodeStore<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 0, 5, { { 1001, 0, 10001 } });
+				_VerifyBlobNodeStore<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 0, 6, { { 1002, 0, 10002 } });
+				_VerifyBlobNodeStore<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 0, 7, { { 1003, 0, 10003 } });
+				_VerifyBlobNodeStore<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 0, 8, { { 1004, 0, 10004 } });
+
+				// Perform major compaction - this should turn all stores (except latest) into a single new store
+				{
+					BlobNodeType::Config config;
+					BlobNodeType blobNode(aHost, 0, config);
+
+					{
+						std::unique_ptr<CompactionResultType> compactionResult(blobNode.PerformMajorCompaction());
+						blobNode.ApplyCompactionResult(compactionResult.get());
+					}
+				}
+
+				_VerifyBlobNodeStore<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 0, 8, { { 1004, 0, 10004 } });
+				_VerifyBlobNodeStore<BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>>(aHost, 0, 9, 
+				{ 
+					{ 1, 4, 1001 },
+					{ 2, 1,	1234},
+					{ 1000, 0, 10000 },
+					{ 1001, 0, 10001 },
+					{ 1002, 0, 10002 },
+					{ 1003, 0, 10003 }
+				});
 			}
 
 			void

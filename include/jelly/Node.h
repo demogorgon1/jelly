@@ -44,6 +44,7 @@ namespace jelly
 			, m_config(aConfig)
 			, m_stopped(false)
 			, m_pendingStoreWALItemCount(0)
+			, m_currentCompactionIsMajor(false)
 		{
 			for(uint32_t i = 0; i < m_config.m_walConcurrency; i++)
 				m_pendingWALs.push_back(NULL);
@@ -280,6 +281,9 @@ namespace jelly
 			{
 				std::lock_guard lock(m_currentCompactionStoreIdsLock);
 
+				if(m_currentCompactionIsMajor)
+					return result.release();
+
 				if (m_currentCompactionStoreIds.find(aCompactionJob.m_storeId1) != m_currentCompactionStoreIds.end())
 					return result.release();
 
@@ -291,6 +295,29 @@ namespace jelly
 			}
 
 			m_compactionCallback(aCompactionJob, result.get());
+
+			return result.release();
+		}
+
+		// Perform major copmaction where all stores (except the latest, which could potentially be work in progress)
+		// will be compacted.
+		CompactionResultType*
+		PerformMajorCompaction()
+		{
+			std::unique_ptr<CompactionResultType> result(new CompactionResultType());
+
+			{
+				std::lock_guard lock(m_currentCompactionStoreIdsLock);
+
+				if(m_currentCompactionIsMajor || m_currentCompactionStoreIds.size() > 0)
+					return result.release();
+
+				m_currentCompactionIsMajor = true;
+			}
+
+			result->SetMajorCompaction(true);
+
+			m_compactionCallback(CompactionJob(), result.get());
 
 			return result.release();
 		}
@@ -307,7 +334,7 @@ namespace jelly
 			{
 				if(compactedStore->m_redirect)
 				{	
-					JELLY_ASSERT(m_compactionRedirectMap.find(compactedStore->m_storeId) == m_compactionRedirectMap.end());
+					JELLY_ASSERT(m_currentCompactionIsMajor || m_compactionRedirectMap.find(compactedStore->m_storeId) == m_compactionRedirectMap.end());
 					
 					m_compactionRedirectMap[compactedStore->m_storeId] = compactedStore->m_redirect.release();
 				}
@@ -320,8 +347,17 @@ namespace jelly
 			{
 				std::lock_guard lock(m_currentCompactionStoreIdsLock);
 
-				for(uint32_t deletedStoreId : deletedStoreIds)
-					m_currentCompactionStoreIds.erase(deletedStoreId);
+				if(m_currentCompactionIsMajor)
+				{
+					JELLY_ASSERT(m_currentCompactionStoreIds.size() == 0);
+
+					m_currentCompactionIsMajor = false;
+				}
+				else
+				{
+					for (uint32_t deletedStoreId : deletedStoreIds)
+						m_currentCompactionStoreIds.erase(deletedStoreId);
+				}
 			}
 		}
 
@@ -518,6 +554,7 @@ namespace jelly
 
 		std::mutex													m_currentCompactionStoreIdsLock;
 		std::unordered_set<uint32_t>								m_currentCompactionStoreIds;
+		bool														m_currentCompactionIsMajor;
 
 		WAL*
 		_GetPendingWAL(

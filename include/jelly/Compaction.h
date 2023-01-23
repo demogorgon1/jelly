@@ -12,6 +12,7 @@ namespace jelly
 	namespace Compaction
 	{
 
+		// Do a "minor" compaction of just 2 stores
 		template <typename _KeyType, typename _ItemType, typename _STLKeyHasher, typename _NodeType>
 		void
 		Perform(			
@@ -115,6 +116,7 @@ namespace jelly
 			aOut->AddCompactedStore(aCompactionJob.m_storeId2, compactionRedirect2.release());
 		}
 		
+		// Do a "major" compaction of everything
 		template <typename _KeyType, typename _ItemType, typename _STLKeyHasher, typename _NodeType>
 		void
 		PerformMajorCompaction(

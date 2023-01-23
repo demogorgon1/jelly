@@ -1,8 +1,7 @@
 #pragma once
 
+#include <jelly/File.h>
 #include <jelly/IFileStreamReader.h>
-
-#include "File.h"
 
 namespace jelly
 {

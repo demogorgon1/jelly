@@ -57,7 +57,7 @@ namespace jelly
 			const char*			aPath)
 		{
 			DWORD desiredAccess = GENERIC_READ;
-			DWORD shareMode = 0;
+			DWORD shareMode = FILE_SHARE_READ;
 			DWORD creationDisposition = OPEN_EXISTING;
 			DWORD flags = FILE_FLAG_RANDOM_ACCESS;
 
@@ -106,7 +106,7 @@ namespace jelly
 			: m_size(0)
 		{
 			DWORD desiredAccess = GENERIC_READ;
-			DWORD shareMode = 0;
+			DWORD shareMode = FILE_SHARE_READ;
 			DWORD creationDisposition = OPEN_EXISTING;
 			DWORD flags = FILE_FLAG_SEQUENTIAL_SCAN;
 

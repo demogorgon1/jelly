@@ -51,7 +51,7 @@ namespace jelly
 	void		
 	StoreBlobReader::Close() 
 	{
-		m_file = NULL;
+		m_file.reset();
 	}
 
 }

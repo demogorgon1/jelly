@@ -1,14 +1,13 @@
 name: Documentation
 
 on: 
+    workflow_dispatch 
+
     push:
         branches: [ "master" ] 
         paths:
             - include/**
-            
-on:
-    workflow_dispatch 
-  
+              
 jobs:
   build-documentation:
     runs-on: ubuntu-latest

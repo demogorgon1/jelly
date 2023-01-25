@@ -4,7 +4,7 @@ namespace jelly
 {
 
 	/**
-	 * Template for unsigned integer locks.
+	 * \brief Template for unsigned integer locks.
 	 */
 	template <typename _T>
 	struct UIntLock

@@ -7,7 +7,9 @@ namespace jelly
 {
 
 	/**
-	 * IWriter implementation for reading into a IBuffer. The buffer will automatically grow as you add more data. 
+	 * \brief IWriter implementation for reading into a IBuffer. 
+	 * 
+	 * The buffer will automatically grow as you add more data. 
 	 *
 	 * @code
 	 * // Write something into a buffer

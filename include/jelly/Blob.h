@@ -10,9 +10,9 @@ namespace jelly
 {
 
 	/**
-	 * Generic blob type that encapsulates a binary buffer object.
+	 * \brief Generic blob type that encapsulates a binary buffer object.
 	 * 
-	 * @code
+	 * \code
 	 * Blob<8> blob; 
 	 * blob.GetBuffer().SetSize(5); // Smaller than 8 bytes, so this does not cause a memory allocation
 	 * memcpy(blob.GetBuffer().GetPointer(), "hello", 5);
@@ -21,11 +21,11 @@ namespace jelly
 	 * // This doesn't fit within the static 8-byte limit, so this will cause an allocation
 	 * blob.GetBuffer().SetSize(10); 
 	 * memcpy(blob.GetBuffer().GetPointer(), "helloworld", 10);
-	 * @endcode
+	 * \endcode
 	 * 
-	 * @tparam _StaticSize		Size of static part of the buffer. 
+	 * \tparam _StaticSize		Size of static part of the buffer. 
 	 * 
-	 * @see Buffer
+	 * \see Buffer
 	 */
 	template<size_t _StaticSize = 1>
 	class Blob

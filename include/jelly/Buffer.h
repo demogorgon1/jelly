@@ -7,13 +7,13 @@ namespace jelly
 {
 
 	/**
-	 * Binary buffer object implementing the \ref IBuffer interface.
+	 * \brief Binary buffer object implementing the IBuffer interface.
 	 *
-	 * @tparam _StaticSize		Size of static part of the buffer. Memory will only be allocated dynamically if buffer size exceeds this.
+	 * \tparam _StaticSize		Size of static part of the buffer. Memory will only be allocated dynamically if buffer size exceeds this.
 	 * 
-	 * @see Blob
-	 * @see BufferReader
-	 * @see BufferWriter
+	 * \see Blob
+	 * \see BufferReader
+	 * \see BufferWriter
 	 */
 	template <size_t _StaticSize>
 	class Buffer

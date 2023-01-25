@@ -112,8 +112,8 @@ namespace jelly::Test::Sim
 				if(lockNode != NULL)
 				{
 					aClient->m_lockRequest = std::make_unique<LockServer::LockNodeType::Request>();
-					aClient->m_lockRequest->m_key = aClient->m_id;
-					aClient->m_lockRequest->m_lock = m_id;
+					aClient->m_lockRequest->SetKey(aClient->m_id);
+					aClient->m_lockRequest->SetLock(m_id);
 					lockNode->Lock(aClient->m_lockRequest.get());
 					
 					_SetClientState(aClient, Client::STATE_WAITING_FOR_LOCK);
@@ -122,20 +122,20 @@ namespace jelly::Test::Sim
 			break;
 
 		case Client::STATE_WAITING_FOR_LOCK:
-			if(aClient->m_lockRequest->m_completed.Poll())
+			if(aClient->m_lockRequest->IsCompleted())
 			{
-				switch(aClient->m_lockRequest->m_result)
+				switch(aClient->m_lockRequest->GetResult())
 				{
 				case RESULT_OK:
 					{
 						for (uint32_t i = 0; i < 4; i++)
 						{
-							uint32_t blobNodeId = (aClient->m_lockRequest->m_blobNodeIds & (0xFF << (i * 8))) >> (i * 8);
+							uint32_t blobNodeId = (aClient->m_lockRequest->GetBlobNodeIds() & (0xFF << (i * 8))) >> (i * 8);
 							if (blobNodeId != 0xFF)
 								aClient->m_blobNodeIds.push_back(blobNodeId);
 						}
 
-						aClient->m_blobSeq = aClient->m_lockRequest->m_blobSeq;
+						aClient->m_blobSeq = aClient->m_lockRequest->GetBlobSeq();
 						aClient->m_nextBlobNodeIdIndex = 0;
 						_SetClientState(aClient, Client::STATE_NEED_BLOB);
 						aClient->m_timer.SetTimeout(0);
@@ -172,8 +172,8 @@ namespace jelly::Test::Sim
 					if(blobNode != NULL)
 					{
 						aClient->m_getRequest = std::make_unique<BlobServer::BlobNodeType::Request>();
-						aClient->m_getRequest->m_key = aClient->m_id;
-						aClient->m_getRequest->m_seq = aClient->m_blobSeq;
+						aClient->m_getRequest->SetKey(aClient->m_id);
+						aClient->m_getRequest->SetSeq(aClient->m_blobSeq);
 						blobNode->Get(aClient->m_getRequest.get());
 
 						_SetClientState(aClient, Client::STATE_WAITING_FOR_BLOB_GET);
@@ -190,9 +190,9 @@ namespace jelly::Test::Sim
 			break;
 
 		case Client::STATE_WAITING_FOR_BLOB_GET:
-			if(aClient->m_getRequest->m_completed.Poll())
+			if(aClient->m_getRequest->IsCompleted())
 			{
-				switch (aClient->m_getRequest->m_result)
+				switch (aClient->m_getRequest->GetResult())
 				{
 				case RESULT_OK:					
 					_OnClientConnected(aClient);
@@ -208,9 +208,9 @@ namespace jelly::Test::Sim
 			if(aClient->m_setTimer.HasExpired())
 			{
 				aClient->m_setRequest = std::make_unique<BlobServer::BlobNodeType::Request>();
-				aClient->m_setRequest->m_key = aClient->m_id;
-				aClient->m_setRequest->m_seq = ++aClient->m_blobSeq;				
-				aClient->m_playerBlob.ToBlob(aClient->m_setRequest->m_blob);
+				aClient->m_setRequest->SetKey(aClient->m_id);
+				aClient->m_setRequest->SetSeq(++aClient->m_blobSeq);
+				aClient->m_playerBlob.ToBlob(aClient->m_setRequest->GetBlob());
 
 				uint32_t blobNodeId = m_network->PickRandomBlobNodeId();
 				BlobServer::BlobNodeType* blobNode = m_network->GetBlobServer(blobNodeId)->GetNode();
@@ -229,9 +229,9 @@ namespace jelly::Test::Sim
 			break;
 
 		case Client::STATE_WAITING_FOR_BLOB_SET:
-			if(aClient->m_setRequest->m_completed.Poll())
+			if(aClient->m_setRequest->IsCompleted())
 			{
-				switch (aClient->m_setRequest->m_result)
+				switch (aClient->m_setRequest->GetResult())
 				{
 				case RESULT_OK:
 					_SetClientState(aClient, Client::STATE_CONNECTED);

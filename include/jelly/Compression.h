@@ -18,7 +18,7 @@ namespace jelly
 		typedef std::function<void(const void*, size_t)> OutputCallback;
 
 		/**
-		 * Abstract interface to a stream compressor implementing the IWriter interface.
+		 * \brief Abstract interface to a stream compressor implementing the IWriter interface.
 		 */
 		class IStreamCompressor
 			: public IWriter
@@ -38,7 +38,7 @@ namespace jelly
 		};
 
 		/**
-		 * Abstract interface to a stream decompressor.
+		 * \brief Abstract interface to a stream decompressor.
 		 */
 		class IStreamDecompressor
 		{
@@ -59,7 +59,7 @@ namespace jelly
 		};			
 
 		/**
-		 * Abstract interface to a compression algorithm.
+		 * \brief Abstract interface to a compression algorithm.
 		 */
 		class IProvider
 		{

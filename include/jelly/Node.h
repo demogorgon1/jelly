@@ -17,8 +17,9 @@ namespace jelly
 {
 
 	/**
-	 * Base class for LockNode and BlobNode. Contains a bunch of shared functionality as they are 
-	 * conceptually very similar. 
+	 * \brief Base class for LockNode and BlobNode. 
+	 *
+	 * Contains a bunch of shared functionality as they are conceptually very similar. 
 	 * Applications should not use this class template directly.
 	 */
 	template 
@@ -80,7 +81,7 @@ namespace jelly
 
 				for(size_t i = 0; i < 2; i++)
 				{
-					for (_RequestType* request = m_requests[i].m_first; request != NULL; request = request->m_next)
+					for (_RequestType* request = m_requests[i].m_first; request != NULL; request = request->GetNext())
 						pendingRequests.push_back(request);
 
 					m_requests[i].Reset();
@@ -90,15 +91,13 @@ namespace jelly
 			// Cancel all pending requests
 			for(_RequestType* request : pendingRequests)
 			{
-				request->m_result = RESULT_CANCELED;
-				request->m_completed.Signal();
+				request->SetResult(RESULT_CANCELED);
+				request->SignalCompletion();
 			}
 
 			// Notify WALs
 			for(WAL* wal : m_wals)
-			{
 				wal->Cancel();
-			}
 		}
 
 		/**
@@ -126,23 +125,17 @@ namespace jelly
 
 			if (queue->m_first != NULL)
 			{
-				for (_RequestType* request = queue->m_first; request != NULL; request = request->m_next)
-				{
-					JELLY_ASSERT(request->m_result == RESULT_NONE);
-					JELLY_ASSERT(!request->m_completed.Poll());
-					JELLY_ASSERT(request->m_callback);
-
-					request->m_callback();
-				}
+				for (_RequestType* request = queue->m_first; request != NULL; request = request->GetNext())
+					request->Execute();
 
 				_RequestType* request = queue->m_first;
 				while (request != NULL)
 				{
 					// We need to store 'next' before signaling completion as the waiting thread might delete the request immediately
-					_RequestType* next = request->m_next;
+					_RequestType* next = request->GetNext();
 
-					if (!request->m_hasPendingWrite)
-						request->m_completed.Signal();
+					if (!request->HasPendingWrite())
+						request->SignalCompletion();
 
 					request = next;
 				}
@@ -407,6 +400,54 @@ namespace jelly
 			return id;
 		}
 
+		/**
+		 * Write an item to a WAL.
+		 */
+		void
+		WriteToWAL(
+			_ItemType*				aItem,
+			CompletionEvent*		aCompletionEvent,
+			Result*					aResult)
+		{
+			if (aItem->m_pendingWAL != NULL)
+			{
+				aItem->m_pendingWAL->RemoveReference();
+				aItem->m_pendingWAL = NULL;
+			}
+			else
+			{
+				m_pendingStore.insert(std::pair<const _KeyType, _ItemType*>(aItem->m_key, aItem));
+			}
+
+			{
+				uint32_t walConcurrencyIndex = 0;
+
+				// Pick a pending WAL to write to, using the hash of item key
+				{
+					_STLKeyHasher hasher;
+					size_t hash = hasher(aItem->m_key);
+					walConcurrencyIndex = (uint32_t)((size_t)m_config.m_walConcurrency * (hash >> 32) / 0x100000000);
+				}
+
+				WAL* wal = _GetPendingWAL(walConcurrencyIndex);
+
+				// Append to WAL
+				wal->GetWriter()->WriteItem(aItem, aCompletionEvent, aResult);
+								
+				aItem->m_pendingWAL = wal;
+				aItem->m_pendingWAL->AddReference();
+
+				// Number of instances that this item exists in different pending WALs (if an item is written repeatedly 
+				// (which is likely), many copies of it will exist in the same WALs)
+				aItem->m_walInstanceCount++;
+
+				// Total number of item instances across all pending WALs. This is a useful metric for deciding when to 
+				// flush pending store to disk.
+				m_pendingStoreWALItemCount++;
+			}		
+		}
+
+		//--------------------------------------------------------------------------------------------
 		// Data access
 
 		uint32_t			GetNodeId() const { return m_nodeId; }											///< Returns node id.
@@ -482,7 +523,7 @@ namespace jelly
 		AddRequestToQueue(
 			_RequestType*			aRequest)
 		{
-			aRequest->m_timeStamp = m_host->GetTimeStamp();
+			aRequest->SetTimeStamp(m_host->GetTimeStamp());
 
 			bool canceled = false;
 
@@ -497,53 +538,9 @@ namespace jelly
 
 			if(canceled)
 			{
-				aRequest->m_result = RESULT_CANCELED;
-				aRequest->m_completed.Signal();
+				aRequest->SetResult(RESULT_CANCELED);
+				aRequest->SignalCompletion();
 			}
-		}
-
-		void
-		WriteToWAL(
-			_ItemType*				aItem,
-			CompletionEvent*		aCompletionEvent,
-			Result*					aResult)
-		{
-			if (aItem->m_pendingWAL != NULL)
-			{
-				aItem->m_pendingWAL->RemoveReference();
-				aItem->m_pendingWAL = NULL;
-			}
-			else
-			{
-				m_pendingStore.insert(std::pair<const _KeyType, _ItemType*>(aItem->m_key, aItem));
-			}
-
-			{
-				uint32_t walConcurrencyIndex = 0;
-
-				// Pick a pending WAL to write to, using the hash of item key
-				{
-					_STLKeyHasher hasher;
-					size_t hash = hasher(aItem->m_key);
-					walConcurrencyIndex = (uint32_t)((size_t)m_config.m_walConcurrency * (hash >> 32) / 0x100000000);
-				}
-
-				WAL* wal = _GetPendingWAL(walConcurrencyIndex);
-
-				// Append to WAL
-				wal->GetWriter()->WriteItem(aItem, aCompletionEvent, aResult);
-								
-				aItem->m_pendingWAL = wal;
-				aItem->m_pendingWAL->AddReference();
-
-				// Number of instances that this item exists in different pending WALs (if an item is written repeatedly 
-				// (which is likely), many copies of it will exist in the same WALs)
-				aItem->m_walInstanceCount++;
-
-				// Total number of item instances across all pending WALs. This is a useful metric for deciding when to 
-				// flush pending store to disk.
-				m_pendingStoreWALItemCount++;
-			}		
 		}
 
 		void

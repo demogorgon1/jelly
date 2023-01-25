@@ -4,7 +4,7 @@ namespace jelly
 {
 
 	/**
-	 * Configuration shared by LockNode and BlobNode
+	 * \brief Configuration shared by LockNode and BlobNode
 	 */
 	struct NodeConfig
 	{

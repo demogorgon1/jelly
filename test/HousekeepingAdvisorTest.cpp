@@ -43,7 +43,7 @@ namespace jelly
 			{	
 				// Note that this test doesn't really cover that much of HousekeepingAdvisor, as it's hard to
 				// exercise the parts of that rely on timers and having lots of data on disk. 
-				// I feel SimTest provides amble testing of this.
+				// I feel SimTest provides ample testing of this.
 
 				MemoryHost host;
 				BlobNodeType blobNode(&host, 0);				
@@ -59,9 +59,9 @@ namespace jelly
 				// Do a set
 				{
 					BlobNodeType::Request req;
-					req.m_key = 1;
-					req.m_seq = 1;
-					req.m_blob = 123;
+					req.SetKey(1);
+					req.SetSeq(1);
+					req.SetBlob(123);
 					blobNode.Set(&req);
 					JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 				}

@@ -4,7 +4,7 @@ namespace jelly
 {
 
 	/**
-	 * Event object that can be signaled when something has completed.
+	 * \brief Event object that can be signaled when something has completed.
 	 */
 	struct CompletionEvent
 	{
@@ -25,7 +25,7 @@ namespace jelly
 
 		//! Poll if the completion event has been signaled
 		bool
-		Poll()
+		Poll() const
 		{
 			return m_signal;
 		}

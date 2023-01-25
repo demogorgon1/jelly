@@ -6,7 +6,9 @@ namespace jelly
 {
 
 	/**
-	 * Interface for emitting and querying database statistics. Statistics come in 3 flavors:
+	 * \brief Interface for emitting and querying database statistics. 
+	 *
+	 * Statistics come in 3 flavors:
 	 * 
 	 * Statistic | <!-- -->
 	 * ----------|-----------------------------------------------------------------------------
@@ -15,6 +17,8 @@ namespace jelly
 	 * Gauge     | A number, for example current number of WAL files on disk.
 	 * 
 	 * Statistics are reset with every call to Update().
+	 * 
+	 * \see Stats.h
 	 */
 	class IStats
 	{
@@ -30,7 +34,7 @@ namespace jelly
 		}
 
 		/**
-		 * Describes the state of a counter. 
+		 * \brief Describes the state of a counter. 
 		 */
 		struct Counter
 		{
@@ -48,7 +52,7 @@ namespace jelly
 		};
 
 		/**
-		 * Describes the state of a sampler.
+		 * \brief Describes the state of a sampler.
 		 */
 		struct Sampler
 		{
@@ -68,7 +72,7 @@ namespace jelly
 		};
 
 		/**
-		 * Describes the state of a gauge.
+		 * \brief Describes the state of a gauge.
 		 */
 		struct Gauge
 		{

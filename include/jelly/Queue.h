@@ -31,7 +31,7 @@ namespace jelly
 			JELLY_ASSERT(!m_guard);
 
 			if (m_last != NULL)
-				m_last->m_next = aRequest;
+				m_last->SetNext(aRequest);
 			else
 				m_first = aRequest;
 

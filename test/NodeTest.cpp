@@ -200,18 +200,18 @@ namespace jelly
 					// Try to lock
 					{
 						LockNodeType::Request req;
-						req.m_key = aKey;
-						req.m_lock = aLockId;
+						req.SetKey(aKey);
+						req.SetLock(aLockId);
 						aLockNode->Lock(&req);
-						while(!req.m_completed.Poll())
+						while(!req.IsCompleted())
 							std::this_thread::yield();
-						if(req.m_result == RESULT_ALREADY_LOCKED)
+						if(req.GetResult() == RESULT_ALREADY_LOCKED)
 							continue;
-						JELLY_ASSERT(req.m_result == RESULT_OK);
-						blobSeq = req.m_blobSeq;
-						if(req.m_blobNodeIds != UINT32_MAX)
+						JELLY_ASSERT(req.GetResult() == RESULT_OK);
+						blobSeq = req.GetBlobSeq();
+						if(req.GetBlobNodeIds() != UINT32_MAX)
 						{	
-							blobNodeId = req.m_blobNodeIds & 0x000000FF;
+							blobNodeId = req.GetBlobNodeIds() & 0x000000FF;
 						}
 
 						(*aLockCounter)++;
@@ -223,15 +223,15 @@ namespace jelly
 						JELLY_ASSERT(blobNodeId == 1);
 
 						BlobNodeType::Request req;
-						req.m_key = aKey;
-						req.m_seq = blobSeq;
+						req.SetKey(aKey);
+						req.SetSeq(blobSeq);
 						aBlobNode->Get(&req);
-						while (!req.m_completed.Poll())
+						while (!req.IsCompleted())
 							std::this_thread::yield();
-						JELLY_ASSERT(req.m_result == RESULT_OK);
-						JELLY_ASSERT(req.m_blob == aKey);
+						JELLY_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ASSERT(req.GetBlob() == aKey);
 
-						blobSeq = req.m_seq;
+						blobSeq = req.GetSeq();
 
 						(*aGetCounter)++;
 					}
@@ -244,13 +244,13 @@ namespace jelly
 					for(uint32_t i = 0; i < 10; i++)
 					{
 						BlobNodeType::Request req;
-						req.m_key = aKey;
-						req.m_seq = ++blobSeq;
-						req.m_blob = aKey;
+						req.SetKey(aKey);
+						req.SetSeq(++blobSeq);
+						req.SetBlob(aKey);
 						aBlobNode->Set(&req);
-						while (!req.m_completed.Poll())
+						while (!req.IsCompleted())
 							std::this_thread::yield();
-						JELLY_ASSERT(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.GetResult() == RESULT_OK);
 
 						(*aSetCounter)++;
 					}
@@ -258,14 +258,14 @@ namespace jelly
 					// Unlock
 					{
 						LockNodeType::Request req;
-						req.m_key = aKey;
-						req.m_lock = aLockId;
-						req.m_blobSeq = blobSeq;
-						req.m_blobNodeIds = { 1 };
+						req.SetKey(aKey);
+						req.SetLock(aLockId);
+						req.SetBlobSeq(blobSeq);
+						req.SetBlobNodeIds(1);
 						aLockNode->Unlock(&req);
-						while (!req.m_completed.Poll())
+						while (!req.IsCompleted())
 							std::this_thread::yield();
-						JELLY_ASSERT(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.GetResult() == RESULT_OK);
 					}
 				}
 
@@ -343,18 +343,18 @@ namespace jelly
 					// Try to lock
 					{
 						LockNodeType::Request req;
-						req.m_key = key;
-						req.m_lock = aLockId;
+						req.SetKey(key);
+						req.SetLock(aLockId);
 						aLockNode->Lock(&req);
-						while(!req.m_completed.Poll())
+						while(!req.IsCompleted())
 							std::this_thread::yield();
-						if(req.m_result == RESULT_ALREADY_LOCKED)
+						if(req.GetResult() == RESULT_ALREADY_LOCKED)
 							continue;
-						JELLY_ASSERT(req.m_result == RESULT_OK);
-						blobSeq = req.m_blobSeq;
-						if(req.m_blobNodeIds != UINT32_MAX)
+						JELLY_ASSERT(req.GetResult() == RESULT_OK);
+						blobSeq = req.GetBlobSeq();
+						if(req.GetBlobNodeIds() != UINT32_MAX)
 						{
-							blobNodeId = req.m_blobNodeIds & 0x000000FF;
+							blobNodeId = req.GetBlobNodeIds() & 0x000000FF;
 							JELLY_ASSERT(blobNodeId == 1);
 						}
 
@@ -364,17 +364,17 @@ namespace jelly
 					// Do a single set
 					{
 						BlobNodeType::Request req;
-						req.m_key = key;
-						req.m_seq = ++blobSeq;
-						req.m_blob = key;
+						req.SetKey(key);
+						req.SetSeq(++blobSeq);
+						req.SetBlob(key);
 						aBlobNode->Set(&req);
-						while (!req.m_completed.Poll())
+						while (!req.IsCompleted())
 							std::this_thread::yield();						
 
-						if(req.m_result == RESULT_OUTDATED)
-							blobSeq = req.m_seq;
+						if(req.GetResult() == RESULT_OUTDATED)
+							blobSeq = req.GetSeq();
 						else
-							JELLY_ASSERT(req.m_result == RESULT_OK);
+							JELLY_ASSERT(req.GetResult() == RESULT_OK);
 
 						(*aSetCounter)++;
 					}
@@ -382,14 +382,14 @@ namespace jelly
 					// Unlock
 					{
 						LockNodeType::Request req;
-						req.m_key = key;
-						req.m_lock = aLockId;
-						req.m_blobSeq = blobSeq;
-						req.m_blobNodeIds = 1;
+						req.SetKey(key);
+						req.SetLock(aLockId);
+						req.SetBlobSeq(blobSeq);
+						req.SetBlobNodeIds(1);
 						aLockNode->Unlock(&req);
-						while (!req.m_completed.Poll())
+						while (!req.IsCompleted())
 							std::this_thread::yield();
-						JELLY_ASSERT(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.GetResult() == RESULT_OK);
 
 						aValidKeySet->Add(key);
 					}
@@ -421,13 +421,13 @@ namespace jelly
 					// Do a get (no locking needed)
 					{
 						BlobNodeType::Request req;
-						req.m_key = key;
-						req.m_seq = 0;
+						req.SetKey(key);
+						req.SetSeq(0);
 						aBlobNode->Get(&req);
-						while (!req.m_completed.Poll())
+						while (!req.IsCompleted())
 							std::this_thread::yield();
-						JELLY_ASSERT(req.m_result == RESULT_OK);
-						JELLY_ASSERT(req.m_blob == key);
+						JELLY_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ASSERT(req.GetBlob() == key);
 
 						(*aGetCounter)++;
 					}
@@ -697,40 +697,40 @@ namespace jelly
 					// Do a set
 					{
 						BlobNodeType::Request req;
-						req.m_key = 1;
-						req.m_seq = 1;
-						req.m_blob = 123;
+						req.SetKey(1);
+						req.SetSeq(1);
+						req.SetBlob(123);
 						blobNode.Set(&req);
 						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
-						JELLY_ASSERT(req.m_completed.Poll());
-						JELLY_ASSERT(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_OK);
 					}
 
 					// Do another set with lower sequence number, should fail
 					{
 						BlobNodeType::Request req;
-						req.m_key = 1;
-						req.m_seq = 0;
-						req.m_blob = 456;
+						req.SetKey(1);
+						req.SetSeq(0);
+						req.SetBlob(456);
 						blobNode.Set(&req);
 						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
-						JELLY_ASSERT(req.m_completed.Poll());
-						JELLY_ASSERT(req.m_result == RESULT_OUTDATED);
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_OUTDATED);
 					}
 
 					// Now do a get
 					{
 						BlobNodeType::Request req;
-						req.m_key = 1;
+						req.SetKey(1);
 						blobNode.Get(&req);
 						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
-						JELLY_ASSERT(req.m_completed.Poll());
-						JELLY_ASSERT(req.m_result == RESULT_OK);
-						JELLY_ASSERT(req.m_blob == 123);
-						JELLY_ASSERT(req.m_seq == 1);
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ASSERT(req.GetBlob() == 123);
+						JELLY_ASSERT(req.GetSeq() == 1);
 					}
 
 					_VerifyResidentKeys(&blobNode, { 1 });
@@ -748,52 +748,52 @@ namespace jelly
 					// Do another set with lower sequence number again, should still fail
 					{
 						BlobNodeType::Request req;
-						req.m_key = 1;
-						req.m_seq = 0;
-						req.m_blob = 456;
+						req.SetKey(1);
+						req.SetSeq(0);
+						req.SetBlob(456);
 						blobNode.Set(&req);
 						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
-						JELLY_ASSERT(req.m_completed.Poll());
-						JELLY_ASSERT(req.m_result == RESULT_OUTDATED);
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_OUTDATED);
 					}
 
 					// Do a proper set with updated sequence number
 					{
 						BlobNodeType::Request req;
-						req.m_key = 1;
-						req.m_seq = 2;
-						req.m_blob = 789;
+						req.SetKey(1);
+						req.SetSeq(2);
+						req.SetBlob(789);
 						blobNode.Set(&req);
 						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
-						JELLY_ASSERT(req.m_completed.Poll());
-						JELLY_ASSERT(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_OK);
 					}
 
 					// Verify with a get
 					{
 						BlobNodeType::Request req;
-						req.m_key = 1;
+						req.SetKey(1);
 						blobNode.Get(&req);
 						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
-						JELLY_ASSERT(req.m_completed.Poll());
-						JELLY_ASSERT(req.m_result == RESULT_OK);
-						JELLY_ASSERT(req.m_blob == 789);
-						JELLY_ASSERT(req.m_seq == 2);
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ASSERT(req.GetBlob() == 789);
+						JELLY_ASSERT(req.GetSeq() == 2);
 					}
 
 					// Try getting something with a minimum sequence number that doesn't exist
 					{
 						BlobNodeType::Request req;
-						req.m_key = 1;
-						req.m_seq = 100;
+						req.SetKey(1);
+						req.SetSeq(100);
 						blobNode.Get(&req);
 						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
-						JELLY_ASSERT(req.m_completed.Poll());
-						JELLY_ASSERT(req.m_result == RESULT_OUTDATED);
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_OUTDATED);
 					}
 
 					blobNode.FlushPendingStore();
@@ -811,14 +811,14 @@ namespace jelly
 					BlobNodeType blobNode(aHost, 0);
 
 					BlobNodeType::Request req;
-					req.m_key = 2;
-					req.m_seq = 1;
-					req.m_blob = 1234;
+					req.SetKey(2);
+					req.SetSeq(1);
+					req.SetBlob(1234);
 					blobNode.Set(&req);
 					JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 					blobNode.FlushPendingWAL(0);
-					JELLY_ASSERT(req.m_completed.Poll());
-					JELLY_ASSERT(req.m_result == RESULT_OK);
+					JELLY_ASSERT(req.IsCompleted());
+					JELLY_ASSERT(req.GetResult() == RESULT_OK);
 				}
 
 				// Do 2 writes, each with a flush pending store. This will cause us to have 3
@@ -830,14 +830,14 @@ namespace jelly
 					// Do another set
 					{
 						BlobNodeType::Request req;
-						req.m_key = 1;
-						req.m_seq = 3 + i;
-						req.m_blob = 1000 + i;
+						req.SetKey(1);
+						req.SetSeq(3 + i);
+						req.SetBlob(1000 + i);
 						blobNode.Set(&req);
 						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
-						JELLY_ASSERT(req.m_completed.Poll());
-						JELLY_ASSERT(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_OK);
 					}
 
 					blobNode.FlushPendingStore();
@@ -867,15 +867,15 @@ namespace jelly
 					// Do a get
 					{
 						BlobNodeType::Request req;
-						req.m_key = 2;
-						req.m_seq = 0;
+						req.SetKey(2);
+						req.SetSeq(0);
 						blobNode.Get(&req);
 						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
-						JELLY_ASSERT(req.m_completed.Poll());
-						JELLY_ASSERT(req.m_result == RESULT_OK);
-						JELLY_ASSERT(req.m_blob == 1234);
-						JELLY_ASSERT(req.m_seq == 1);
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ASSERT(req.GetBlob() == 1234);
+						JELLY_ASSERT(req.GetSeq() == 1);
 					}
 
 					_VerifyResidentKeys(&blobNode, { });
@@ -894,14 +894,14 @@ namespace jelly
 					for(uint32_t i = 0; i < 5; i++)
 					{
 						BlobNodeType::Request req;
-						req.m_key = 1000 + i;
-						req.m_seq = 0;
-						req.m_blob = 10000 + i;
+						req.SetKey(1000 + i);
+						req.SetSeq(0);
+						req.SetBlob(10000 + i);
 						blobNode.Set(&req);
 						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
-						JELLY_ASSERT(req.m_completed.Poll());
-						JELLY_ASSERT(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_OK);
 						blobNode.FlushPendingStore();
 					}
 				}
@@ -949,15 +949,15 @@ namespace jelly
 					// Lock
 					{
 						LockNodeType::Request req;
-						req.m_key = 1;
-						req.m_lock = 123;
+						req.SetKey(1);
+						req.SetLock(123);
 						lockNode.Lock(&req);
 						JELLY_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
-						JELLY_ASSERT(req.m_completed.Poll());
-						JELLY_ASSERT(req.m_result == RESULT_OK);
-						JELLY_ASSERT(req.m_blobSeq == UINT32_MAX);
-						JELLY_ASSERT(req.m_blobNodeIds == 0xFFFFFFFF);
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ASSERT(req.GetBlobSeq() == UINT32_MAX);
+						JELLY_ASSERT(req.GetBlobNodeIds() == 0xFFFFFFFF);
 					}
 				}	
 
@@ -971,65 +971,65 @@ namespace jelly
 					// Try applying another lock, should fail
 					{
 						LockNodeType::Request req;
-						req.m_key = 1;
-						req.m_lock = 456;
+						req.SetKey(1);
+						req.SetLock(456);
 						lockNode.Lock(&req);
 						JELLY_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
-						JELLY_ASSERT(req.m_completed.Poll());
-						JELLY_ASSERT(req.m_result == RESULT_ALREADY_LOCKED);
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_ALREADY_LOCKED);
 					}
 
 					// Apply existing lock again, should work
 					{
 						LockNodeType::Request req;
-						req.m_key = 1;
-						req.m_lock = 123;
+						req.SetKey(1);
+						req.SetLock(123);
 						lockNode.Lock(&req);
 						JELLY_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
-						JELLY_ASSERT(req.m_completed.Poll());
-						JELLY_ASSERT(req.m_result == RESULT_OK);
-						JELLY_ASSERT(req.m_blobSeq == UINT32_MAX);
-						JELLY_ASSERT(req.m_blobNodeIds == 0xFFFFFFFF);
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ASSERT(req.GetBlobSeq() == UINT32_MAX);
+						JELLY_ASSERT(req.GetBlobNodeIds() == 0xFFFFFFFF);
 					}
 
 					// Unlock with wrong lock, should fail
 					{
 						LockNodeType::Request req;
-						req.m_key = 1;
-						req.m_lock = 456;
+						req.SetKey(1);
+						req.SetLock(456);
 						lockNode.Unlock(&req);
 						JELLY_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
-						JELLY_ASSERT(req.m_completed.Poll());
-						JELLY_ASSERT(req.m_result == RESULT_ALREADY_LOCKED);
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_ALREADY_LOCKED);
 					}
 
 					// Unlock key that doesn't exist
 					{
 						LockNodeType::Request req;
-						req.m_key = 2;
-						req.m_lock = 123;
+						req.SetKey(2);
+						req.SetLock(123);
 						lockNode.Unlock(&req);
 						JELLY_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
-						JELLY_ASSERT(req.m_completed.Poll());
-						JELLY_ASSERT(req.m_result == RESULT_DOES_NOT_EXIST);
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_DOES_NOT_EXIST);
 					}
 
 					// Unlock correctly
 					{
 						LockNodeType::Request req;
-						req.m_key = 1;
-						req.m_lock = 123;
-						req.m_blobSeq = 1;
-						req.m_blobNodeIds = 0xFF030201;
+						req.SetKey(1);
+						req.SetLock(123);
+						req.SetBlobSeq(1);
+						req.SetBlobNodeIds(0xFF030201);
 						lockNode.Unlock(&req);
 						JELLY_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
-						JELLY_ASSERT(req.m_completed.Poll());
-						JELLY_ASSERT(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_OK);
 					}
 				}
 
@@ -1044,43 +1044,43 @@ namespace jelly
 					// Apply lock, should work now
 					{
 						LockNodeType::Request req;
-						req.m_key = 1;
-						req.m_lock = 456;
+						req.SetKey(1);
+						req.SetLock(456);
 						lockNode.Lock(&req);
 						JELLY_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
-						JELLY_ASSERT(req.m_completed.Poll());
-						JELLY_ASSERT(req.m_result == RESULT_OK);
-						JELLY_ASSERT(req.m_blobSeq == 1);
-						JELLY_ASSERT(req.m_blobNodeIds == 0xFF030201);
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ASSERT(req.GetBlobSeq() == 1);
+						JELLY_ASSERT(req.GetBlobNodeIds() == 0xFF030201);
 					}
 
 					// Also apply locks on another two keys in descending order, 
 					// so we can check that they'll get sorted for the store
 					{
 						LockNodeType::Request req;
-						req.m_key = 3;
-						req.m_lock = 456;
+						req.SetKey(3);
+						req.SetLock(456);
 						lockNode.Lock(&req);
 						JELLY_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
-						JELLY_ASSERT(req.m_completed.Poll());
-						JELLY_ASSERT(req.m_result == RESULT_OK);
-						JELLY_ASSERT(req.m_blobSeq == UINT32_MAX);
-						JELLY_ASSERT(req.m_blobNodeIds == 0xFFFFFFFF);
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ASSERT(req.GetBlobSeq() == UINT32_MAX);
+						JELLY_ASSERT(req.GetBlobNodeIds() == 0xFFFFFFFF);
 					}
 
 					{
 						LockNodeType::Request req;
-						req.m_key = 2;
-						req.m_lock = 456;
+						req.SetKey(2);
+						req.SetLock(456);
 						lockNode.Lock(&req);
 						JELLY_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
-						JELLY_ASSERT(req.m_completed.Poll());
-						JELLY_ASSERT(req.m_result == RESULT_OK);
-						JELLY_ASSERT(req.m_blobSeq == UINT32_MAX);
-						JELLY_ASSERT(req.m_blobNodeIds == 0xFFFFFFFF);
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ASSERT(req.GetBlobSeq() == UINT32_MAX);
+						JELLY_ASSERT(req.GetBlobNodeIds() == 0xFFFFFFFF);
 					}
 
 					lockNode.FlushPendingStore();
@@ -1113,14 +1113,14 @@ namespace jelly
 					BlobNodeType blobNode(aHost, 0);
 
 					BlobNodeType::Request req;
-					req.m_key = 1;
-					req.m_seq = 1;
-					req.m_blob = 101;
+					req.SetKey(1);
+					req.SetSeq(1);
+					req.SetBlob(101);
 					blobNode.Set(&req);
 					JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 					blobNode.FlushPendingWAL(0);
-					JELLY_ASSERT(req.m_completed.Poll());
-					JELLY_ASSERT(req.m_result == RESULT_OK);
+					JELLY_ASSERT(req.IsCompleted());
+					JELLY_ASSERT(req.GetResult() == RESULT_OK);
 				}
 
 				// Do another little request, but cancel it (before processing it)
@@ -1128,13 +1128,13 @@ namespace jelly
 					BlobNodeType blobNode(aHost, 0);
 
 					BlobNodeType::Request req;
-					req.m_key = 2;
-					req.m_seq = 1;
-					req.m_blob = 101;
+					req.SetKey(2);
+					req.SetSeq(1);
+					req.SetBlob(101);
 					blobNode.Set(&req);
 					blobNode.Stop();
-					JELLY_ASSERT(req.m_completed.Poll());
-					JELLY_ASSERT(req.m_result == RESULT_CANCELED);
+					JELLY_ASSERT(req.IsCompleted());
+					JELLY_ASSERT(req.GetResult() == RESULT_CANCELED);
 				}
 
 				// Cancel after processing, but before flushing WAL
@@ -1142,14 +1142,14 @@ namespace jelly
 					BlobNodeType blobNode(aHost, 0);
 
 					BlobNodeType::Request req;
-					req.m_key = 3;
-					req.m_seq = 1;
-					req.m_blob = 101;
+					req.SetKey(3);
+					req.SetSeq(1);
+					req.SetBlob(101);
 					blobNode.Set(&req);
 					JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 					blobNode.Stop();
-					JELLY_ASSERT(req.m_completed.Poll());
-					JELLY_ASSERT(req.m_result == RESULT_CANCELED);
+					JELLY_ASSERT(req.IsCompleted());
+					JELLY_ASSERT(req.GetResult() == RESULT_CANCELED);
 				}
 
 				// Cancel after processing and flushing WAL (request should be completed succesfully)
@@ -1157,15 +1157,15 @@ namespace jelly
 					BlobNodeType blobNode(aHost, 0);
 
 					BlobNodeType::Request req;
-					req.m_key = 4;
-					req.m_seq = 1;
-					req.m_blob = 101;
+					req.SetKey(4);
+					req.SetSeq(1);
+					req.SetBlob(101);
 					blobNode.Set(&req);
 					JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 					blobNode.FlushPendingWAL(0);
 					blobNode.Stop();
-					JELLY_ASSERT(req.m_completed.Poll());
-					JELLY_ASSERT(req.m_result == RESULT_OK);
+					JELLY_ASSERT(req.IsCompleted());
+					JELLY_ASSERT(req.GetResult() == RESULT_OK);
 				}
 
 				// Do request after stopping node, should be canceled immediately
@@ -1175,12 +1175,12 @@ namespace jelly
 					blobNode.Stop();
 
 					BlobNodeType::Request req;
-					req.m_key = 5;
-					req.m_seq = 1;
-					req.m_blob = 101;
+					req.SetKey(5);
+					req.SetSeq(1);
+					req.SetBlob(101);
 					blobNode.Set(&req);
-					JELLY_ASSERT(req.m_completed.Poll());
-					JELLY_ASSERT(req.m_result == RESULT_CANCELED);
+					JELLY_ASSERT(req.IsCompleted());
+					JELLY_ASSERT(req.GetResult() == RESULT_CANCELED);
 				}
 			}
 
@@ -1196,49 +1196,49 @@ namespace jelly
 					// Lock
 					{
 						LockNodeType::Request req;
-						req.m_key = 1;
-						req.m_lock = 100;
+						req.SetKey(1);
+						req.SetLock(100);
 						lockNode.Lock(&req);
 						JELLY_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
-						JELLY_ASSERT(req.m_completed.Poll());
-						JELLY_ASSERT(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_OK);
 					}
 
 					// Try to delete locked key, should fail
 					{
 						LockNodeType::Request req;
-						req.m_key = 1;
+						req.SetKey(1);
 						lockNode.Delete(&req);
 						JELLY_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
-						JELLY_ASSERT(req.m_completed.Poll());
-						JELLY_ASSERT(req.m_result == RESULT_ALREADY_LOCKED);
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_ALREADY_LOCKED);
 					}
 
 					// Unlock
 					{
 						LockNodeType::Request req;
-						req.m_key = 1;
-						req.m_lock = 100;
-						req.m_blobNodeIds = 0;
-						req.m_blobSeq = 1;
+						req.SetKey(1);
+						req.SetLock(100);
+						req.SetBlobNodeIds(0);
+						req.SetBlobSeq(1);
 						lockNode.Unlock(&req);
 						JELLY_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
-						JELLY_ASSERT(req.m_completed.Poll());
-						JELLY_ASSERT(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_OK);
 					}
 
 					// Delete
 					{
 						LockNodeType::Request req;
-						req.m_key = 1;
+						req.SetKey(1);
 						lockNode.Delete(&req);
 						JELLY_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
-						JELLY_ASSERT(req.m_completed.Poll());
-						JELLY_ASSERT(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_OK);
 					}
 				}
 
@@ -1262,13 +1262,13 @@ namespace jelly
 					for(uint32_t i = 0; i < 3; i++)
 					{
 						LockNodeType::Request req;
-						req.m_key = 2 + i;
-						req.m_lock = 100;
+						req.SetKey(2 + i);
+						req.SetLock(100);
 						lockNode.Lock(&req);
 						JELLY_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
-						JELLY_ASSERT(req.m_completed.Poll());
-						JELLY_ASSERT(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_OK);
 						lockNode.FlushPendingStore();
 					}
 				}
@@ -1308,13 +1308,13 @@ namespace jelly
 					// Make another store, because we can't compact the latest store
 					{
 						LockNodeType::Request req;
-						req.m_key = 5;
-						req.m_lock = 100;
+						req.SetKey(5);
+						req.SetLock(100);
 						lockNode.Lock(&req);
 						JELLY_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
-						JELLY_ASSERT(req.m_completed.Poll());
-						JELLY_ASSERT(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_OK);
 						lockNode.FlushPendingStore();
 					}
 
@@ -1347,14 +1347,14 @@ namespace jelly
 					// Set
 					{
 						BlobNodeType::Request req;
-						req.m_key = 1;
-						req.m_seq = 1;
-						req.m_blob = 123;
+						req.SetKey(1);
+						req.SetSeq(1);
+						req.SetBlob(123);
 						blobNode.Set(&req);
 						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
-						JELLY_ASSERT(req.m_completed.Poll());
-						JELLY_ASSERT(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_OK);
 					}
 
 					_VerifyResidentKeys<BlobNodeType>(&blobNode, { 1 });
@@ -1362,13 +1362,13 @@ namespace jelly
 					// Delete
 					{
 						BlobNodeType::Request req;
-						req.m_key = 1;
-						req.m_seq = 2;
+						req.SetKey(1);
+						req.SetSeq(2);
 						blobNode.Delete(&req);
 						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
-						JELLY_ASSERT(req.m_completed.Poll());
-						JELLY_ASSERT(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_OK);
 					}
 
 					_VerifyResidentKeys<BlobNodeType>(&blobNode, { 1 }); // Tombstones are counted as being resident, just 0 size
@@ -1376,25 +1376,25 @@ namespace jelly
 					// Get - should fail
 					{
 						BlobNodeType::Request req;
-						req.m_key = 1;
+						req.SetKey(1);
 						blobNode.Get(&req);
 						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
-						JELLY_ASSERT(req.m_completed.Poll());
-						JELLY_ASSERT(req.m_result == RESULT_DOES_NOT_EXIST);
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_DOES_NOT_EXIST);
 					}
 
 					// Set again, should override the delete
 					{
 						BlobNodeType::Request req;
-						req.m_key = 1;
-						req.m_seq = 3;
-						req.m_blob = 1234;
+						req.SetKey(1);
+						req.SetSeq(3);
+						req.SetBlob(1234);
 						blobNode.Set(&req);
 						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
-						JELLY_ASSERT(req.m_completed.Poll());
-						JELLY_ASSERT(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_OK);
 					}
 
 					_VerifyResidentKeys<BlobNodeType>(&blobNode, { 1 });
@@ -1402,13 +1402,13 @@ namespace jelly
 					// Get - now it should work
 					{
 						BlobNodeType::Request req;
-						req.m_key = 1;
+						req.SetKey(1);
 						blobNode.Get(&req);
 						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
-						JELLY_ASSERT(req.m_completed.Poll());
-						JELLY_ASSERT(req.m_result == RESULT_OK);
-						JELLY_ASSERT(req.m_blob == 1234);
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ASSERT(req.GetBlob() == 1234);
 					}
 				}
 			}
@@ -1429,14 +1429,14 @@ namespace jelly
 					for(uint32_t key = 1; key <= 5; key++)
 					{
 						BlobNodeType::Request req;
-						req.m_key = key;
-						req.m_seq = 1;
-						req.m_blob = 100 + key;
+						req.SetKey(key);
+						req.SetSeq(1);
+						req.SetBlob(100 + key);
 						blobNode.Set(&req);
 						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
-						JELLY_ASSERT(req.m_completed.Poll());
-						JELLY_ASSERT(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_OK);
 					}
 
 					// Verify all of them are now resident
@@ -1445,14 +1445,14 @@ namespace jelly
 					// Do another set (on a new key), this shouldn't expell anything as everything is still in the WAL
 					{
 						BlobNodeType::Request req;
-						req.m_key = 6;
-						req.m_seq = 1;
-						req.m_blob = 100 + 6;
+						req.SetKey(6);
+						req.SetSeq(1);
+						req.SetBlob(100 + 6);
 						blobNode.Set(&req);
 						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
-						JELLY_ASSERT(req.m_completed.Poll());
-						JELLY_ASSERT(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_OK);
 					}
 
 					_VerifyResidentKeys(&blobNode, { 1, 2, 3, 4, 5, 6 });
@@ -1463,14 +1463,14 @@ namespace jelly
 					// Write again now that WAL is cleared
 					{
 						BlobNodeType::Request req;
-						req.m_key = 7;
-						req.m_seq = 1;
-						req.m_blob = 100 + 7;
+						req.SetKey(7);
+						req.SetSeq(1);
+						req.SetBlob(100 + 7);
 						blobNode.Set(&req);
 						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
-						JELLY_ASSERT(req.m_completed.Poll());
-						JELLY_ASSERT(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_OK);
 					}
 
 					// Now oldest should be expelled down to 5 blobs
@@ -1479,14 +1479,14 @@ namespace jelly
 					// Now try to update the oldest item, which should move it to the front
 					{
 						BlobNodeType::Request req;
-						req.m_key = 3;
-						req.m_seq = 2; // Incremented sequence number
-						req.m_blob = 103;
+						req.SetKey(3);
+						req.SetSeq(2); // Incremented sequence number
+						req.SetBlob(103);
 						blobNode.Set(&req);
 						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
-						JELLY_ASSERT(req.m_completed.Poll());
-						JELLY_ASSERT(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_OK);
 					}
 
 					_VerifyResidentKeys(&blobNode, { 4, 5, 6, 7, 3 });
@@ -1494,14 +1494,14 @@ namespace jelly
 					// Try to get one of the expelled keys
 					{
 						BlobNodeType::Request req;
-						req.m_key = 1;
+						req.SetKey(1);
 						blobNode.Get(&req);
 						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
-						JELLY_ASSERT(req.m_completed.Poll());
-						JELLY_ASSERT(req.m_result == RESULT_OK);
-						JELLY_ASSERT(req.m_blob == 101);
-						JELLY_ASSERT(req.m_seq == 1);
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ASSERT(req.GetBlob() == 101);
+						JELLY_ASSERT(req.GetSeq() == 1);
 					}
 
 					_VerifyResidentKeys(&blobNode, { 5, 6, 7, 3, 1 });
@@ -1509,14 +1509,14 @@ namespace jelly
 					// Try to set an expelled key
 					{
 						BlobNodeType::Request req;
-						req.m_key = 2;
-						req.m_seq = 2; // Incremented sequence number
-						req.m_blob = 102;
+						req.SetKey(2);
+						req.SetSeq(2); // Incremented sequence number
+						req.SetBlob(102);
 						blobNode.Set(&req);
 						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
-						JELLY_ASSERT(req.m_completed.Poll());
-						JELLY_ASSERT(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_OK);
 					}
 
 					_VerifyResidentKeys(&blobNode, { 6, 7, 3, 1, 2 });
@@ -1534,14 +1534,14 @@ namespace jelly
 					for(uint32_t i = 1; i <= 3; i++)
 					{
 						BlobNodeType::Request req;
-						req.m_key = i;
-						req.m_seq = 1; 
-						req.m_blob = 100 + i;
+						req.SetKey(i);
+						req.SetSeq(1); 
+						req.SetBlob(100 + i);
 						blobNode.Set(&req);
 						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
-						JELLY_ASSERT(req.m_completed.Poll());
-						JELLY_ASSERT(req.m_result == RESULT_OK);
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_OK);
 					}
 
 					// All keys should be resident because they're still in the WAL
@@ -1578,14 +1578,14 @@ namespace jelly
 					for (uint32_t i = 1; i <= 2; i++)
 					{
 						BlobNodeType::Request req;
-						req.m_key = 1;
-						req.m_seq = i;
-						req.m_blob = 100 + i;
+						req.SetKey(1);
+						req.SetSeq(i);
+						req.SetBlob(100 + i);
 						blobNode.Set(&req);
 						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
-						JELLY_ASSERT(req.m_completed.Poll());
-						JELLY_ASSERT(req.m_result == RESULT_OK); 
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_OK); 
 
 						blobNode.FlushPendingStore();
 					}
@@ -1608,13 +1608,13 @@ namespace jelly
 					// Read the blob and see that it's the latest
 					{
 						BlobNodeType::Request req;
-						req.m_key = 1;
+						req.SetKey(1);
 						blobNode.Get(&req);
 						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
-						JELLY_ASSERT(req.m_completed.Poll());
-						JELLY_ASSERT(req.m_result == RESULT_OK);
-						JELLY_ASSERT(req.m_seq == 2);
-						JELLY_ASSERT(req.m_blob == 102);
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ASSERT(req.GetSeq() == 2);
+						JELLY_ASSERT(req.GetBlob() == 102);
 					}
 				}
 			}

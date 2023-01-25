@@ -6,7 +6,9 @@ namespace jelly
 {
 	
 	/**
-	* Holds the result of a compaction operation. PerformCompaction() (slow), which can run on any thread,
+	* \brief Holds the result of a compaction operation. 
+	* 
+	* PerformCompaction() (slow), which can run on any thread,
 	* will put the result in this (files to be deleted and redirects), so it can then be applied
 	* with ApplyCompactionResult() (fast) on the main thread.
 	* 

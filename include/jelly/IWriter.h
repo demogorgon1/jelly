@@ -6,9 +6,9 @@ namespace jelly
 {
 
 	/**
-	 * Abstract binary writer interface.
+	 * \brief Abstract binary writer interface.
 	 *
-	 * @see IReader
+	 * \see IReader
 	 */
 	class IWriter
 	{

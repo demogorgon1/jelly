@@ -63,9 +63,9 @@ namespace jelly
 							requests[i] = std::make_unique<BlobNodeType::Request>();
 							BlobNodeType::Request* req = requests[i].get();
 
-							req->m_key = (uint32_t)i;
-							req->m_seq = 0;
-							req->m_blob = blobs[i];
+							req->SetKey((uint32_t)i);
+							req->SetSeq(0);
+							req->SetBlob(blobs[i]);
 
 							blobNode.Set(req);
 						}

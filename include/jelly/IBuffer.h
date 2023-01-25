@@ -4,7 +4,7 @@ namespace jelly
 {
 
 	/**
-	 * Abstract interface for a binary buffer.
+	 * \brief Abstract interface for a binary buffer.
 	 * 
 	 * @see Buffer
 	 */

@@ -4,7 +4,8 @@ namespace jelly
 {
 
 	/** 
-	* Description of a minor compaction job (two stores turned into one). 
+	* \brief Description of a minor compaction job (two stores turned into one). 
+	* 
 	* The "oldest store id" is required for pruning tombstones: every tombstone has an 
 	* inscription mentioning the latest store id at time of deletion. When a tombstone
 	* is encountered during the compaction process, the inscriped store id is compared 

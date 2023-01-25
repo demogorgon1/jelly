@@ -291,8 +291,8 @@ namespace jelly
 					JELLY_ASSERT(!m_lockRequest);
 
 					m_lockRequest = std::make_unique<_LockNodeRequestType>();
-					m_lockRequest->m_key = m_key;
-					m_lockRequest->m_lock = m_lockId;
+					m_lockRequest->SetKey(m_key);
+					m_lockRequest->SetLock(m_lockId);
 					m_lockNode->Lock(m_lockRequest.get());
 				});				
 			}
@@ -308,9 +308,9 @@ namespace jelly
 					JELLY_ASSERT(!m_unlockRequest);
 
 					m_unlockRequest = std::make_unique<_LockNodeRequestType>();
-					m_unlockRequest->m_key = m_key;
-					m_unlockRequest->m_lock = m_lockId;
-					m_unlockRequest->m_blobSeq = m_blobSeq;
+					m_unlockRequest->SetKey(m_key);
+					m_unlockRequest->SetLock(m_lockId);
+					m_unlockRequest->SetBlobSeq(m_blobSeq);
 					m_lockNode->Unlock(m_unlockRequest.get());
 				});				
 			}
@@ -326,10 +326,10 @@ namespace jelly
 					JELLY_ASSERT(!m_getRequest);
 
 					m_getRequest = std::make_unique<_BlobNodeRequestType>();
-					m_getRequest->m_key = m_key;
+					m_getRequest->SetKey(m_key);
 
 					if(m_blobSeq != UINT32_MAX)
-						m_getRequest->m_seq = m_blobSeq;
+						m_getRequest->SetSeq(m_blobSeq);
 
 					m_blobNode->Get(m_getRequest.get());
 				});								
@@ -346,9 +346,9 @@ namespace jelly
 					JELLY_ASSERT(!m_setRequest);
 
 					m_setRequest = std::make_unique<_BlobNodeRequestType>();
-					m_setRequest->m_key = m_key;
-					m_setRequest->m_seq = ++m_blobSeq;
-					m_setRequest->m_blob = m_key;
+					m_setRequest->SetKey(m_key);
+					m_setRequest->SetSeq(++m_blobSeq);
+					m_setRequest->SetBlob(m_key);
 					m_blobNode->Set(m_setRequest.get());
 				});								
 			}
@@ -407,23 +407,23 @@ namespace jelly
 			{
 				if(m_lockRequest)
 				{
-					if(m_lockRequest->m_completed.Poll())
+					if(m_lockRequest->IsCompleted())
 					{
-						_Message("Completed lock request: %s (key=%u)", _ResultToString(m_lockRequest->m_result), m_lockRequest->m_key);
+						_Message("Completed lock request: %s (key=%u)", _ResultToString(m_lockRequest->GetResult()), m_lockRequest->GetKey());
 
-						switch(m_lockRequest->m_result)
+						switch(m_lockRequest->GetResult())
 						{
 						case RESULT_ALREADY_LOCKED:
 						case RESULT_CANCELED:
 							m_lockRequest = std::make_unique<_LockNodeRequestType>();
-							m_lockRequest->m_key = m_key;
-							m_lockRequest->m_lock = m_lockId;
+							m_lockRequest->SetKey(m_key);
+							m_lockRequest->SetLock(m_lockId);
 							m_lockNode->Lock(m_lockRequest.get());
 							break;
 
 						default:
-							JELLY_ASSERT(m_lockRequest->m_result == RESULT_OK);
-							m_blobSeq = m_lockRequest->m_blobSeq;
+							JELLY_ASSERT(m_lockRequest->GetResult() == RESULT_OK);
+							m_blobSeq = m_lockRequest->GetBlobSeq();
 							m_lockRequest.reset();
 							break;
 						}
@@ -432,24 +432,24 @@ namespace jelly
 
 				if (m_unlockRequest)
 				{
-					if (m_unlockRequest->m_completed.Poll())
+					if (m_unlockRequest->IsCompleted())
 					{
-						_Message("Completed unlock request: %s (key=%u)", _ResultToString(m_unlockRequest->m_result), m_unlockRequest->m_key);
+						_Message("Completed unlock request: %s (key=%u)", _ResultToString(m_unlockRequest->GetResult()), m_unlockRequest->GetKey());
 
-						switch(m_unlockRequest->m_result)
+						switch(m_unlockRequest->GetResult())
 						{
 						case RESULT_CANCELED:
 							m_unlockRequest = std::make_unique<_LockNodeRequestType>();
-							m_unlockRequest->m_key = m_key;
-							m_unlockRequest->m_lock = m_lockId;
-							m_unlockRequest->m_blobSeq = m_blobSeq;
+							m_unlockRequest->SetKey(m_key);
+							m_unlockRequest->SetLock(m_lockId);
+							m_unlockRequest->SetBlobSeq(m_blobSeq);
 							m_lockNode->Unlock(m_unlockRequest.get());
 							break;
 
 						default:
-							JELLY_ASSERT(m_unlockRequest->m_result == RESULT_OK			// Success
-								|| m_unlockRequest->m_result == RESULT_NOT_LOCKED		// Was already unlocked
-								|| m_unlockRequest->m_result == RESULT_ALREADY_LOCKED);	// Was already unlocked AND locked by someone else
+							JELLY_ASSERT(m_unlockRequest->GetResult() == RESULT_OK			// Success
+								|| m_unlockRequest->GetResult() == RESULT_NOT_LOCKED		// Was already unlocked
+								|| m_unlockRequest->GetResult() == RESULT_ALREADY_LOCKED);	// Was already unlocked AND locked by someone else
 							m_unlockRequest.reset();
 						}
 					}
@@ -457,29 +457,29 @@ namespace jelly
 
 				if (m_getRequest)
 				{
-					if (m_getRequest->m_completed.Poll())
+					if (m_getRequest->IsCompleted())
 					{
-						_Message("Completed get request: %s (key=%u)", _ResultToString(m_getRequest->m_result), m_getRequest->m_key);
+						_Message("Completed get request: %s (key=%u)", _ResultToString(m_getRequest->GetResult()), m_getRequest->GetKey());
 
-						switch(m_getRequest->m_result)
+						switch(m_getRequest->GetResult())
 						{
 						case RESULT_OK:
-							JELLY_ASSERT(m_getRequest->m_blob == m_key);
+							JELLY_ASSERT(m_getRequest->GetBlob() == m_key);
 							m_getRequest.reset();
 							break;
 
 						case RESULT_CANCELED:
 							m_getRequest = std::make_unique<_BlobNodeRequestType>();
-							m_getRequest->m_key = m_key;
+							m_getRequest->SetKey(m_key);
 
 							if (m_blobSeq != UINT32_MAX)
-								m_getRequest->m_seq = m_blobSeq;
+								m_getRequest->SetSeq(m_blobSeq);
 
 							m_blobNode->Get(m_getRequest.get());
 							break;
 
 						default:
-							JELLY_ASSERT(m_getRequest->m_result == RESULT_DOES_NOT_EXIST);
+							JELLY_ASSERT(m_getRequest->GetResult() == RESULT_DOES_NOT_EXIST);
 							m_getRequest.reset();
 							break;
 						}
@@ -488,22 +488,22 @@ namespace jelly
 
 				if (m_setRequest)
 				{
-					if (m_setRequest->m_completed.Poll())
+					if (m_setRequest->IsCompleted())
 					{
-						_Message("Completed set request: %s (key=%u)", _ResultToString(m_setRequest->m_result), m_setRequest->m_key);
+						_Message("Completed set request: %s (key=%u)", _ResultToString(m_setRequest->GetResult()), m_setRequest->GetKey());
 
-						switch (m_setRequest->m_result)
+						switch (m_setRequest->GetResult())
 						{
 						case RESULT_CANCELED:
 							m_setRequest = std::make_unique<_BlobNodeRequestType>();
-							m_setRequest->m_key = m_key;
-							m_setRequest->m_seq = ++m_blobSeq;
-							m_setRequest->m_blob = m_key;
+							m_setRequest->SetKey(m_key);
+							m_setRequest->SetSeq(++m_blobSeq);
+							m_setRequest->SetBlob(m_key);
 							m_blobNode->Set(m_setRequest.get());
 							break;
 
 						default:
-							JELLY_ASSERT(m_setRequest->m_result == RESULT_OK);
+							JELLY_ASSERT(m_setRequest->GetResult() == RESULT_OK);
 							m_setRequest.reset();
 						}
 					}

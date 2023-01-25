@@ -10,10 +10,12 @@ namespace jelly
 	class IHost;
 
 	/**
+	 * \brief Object for generating housekeeping advice.
+	 * 
 	 * This housekeeping advisor can help you make decicision about when various \ref Node housekeeping tasks
 	 * should be performed. This class will not perform these tasks, it will just tell you when to do them.
 	 * 
-	 * @code
+	 * \code
 	 * typedef HousekeepingAdvisor<NodeType> HousekeepingAdvisorType;
 	 * HousekeepingAdvisorType housekeepingAdvisor(&host, &node);
 	 * 
@@ -49,14 +51,16 @@ namespace jelly
 	 *         break;
 	 *     }
 	 * });
-	 * @endcode
+	 * \endcode
+	 * 
+	 * \see Node
 	 */
 	template <typename _NodeType>
 	class HousekeepingAdvisor
 	{
 	public:
 		/**
-		 * Housekeeping advisor configuration passed to its constructor.
+		 * \brief Housekeeping advisor configuration passed to its constructor.
 		 */
 		struct Config
 		{	
@@ -127,7 +131,7 @@ namespace jelly
 		};
 			
 		/**
-		 * Event structure passed to application EventHandler callback during Update().
+		 * \brief Event structure passed to application EventHandler callback during Update().
 		 */
 		struct Event
 		{

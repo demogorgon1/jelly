@@ -45,7 +45,7 @@ namespace jelly
 							requests[i] = std::make_unique<BlobNodeType::Request>();
 							BlobNodeType::Request* req = requests[i].get();
 
-							req->m_key = i;
+							req->SetKey(i);
 
 							blobNode.Get(req);
 						}
@@ -68,11 +68,11 @@ namespace jelly
 
 						for(std::unique_ptr<BlobNodeType::Request>& req : requests)
 						{
-							JELLY_ASSERT(req->m_completed.Poll());
-							JELLY_ASSERT(req->m_result == RESULT_OK);
+							JELLY_ASSERT(req->IsCompleted());
+							JELLY_ASSERT(req->GetResult() == RESULT_OK);
 
-							const uint8_t* p = (const uint8_t*)req->m_blob.GetBuffer().GetPointer();
-							size_t size = req->m_blob.GetBuffer().GetSize();
+							const uint8_t* p = (const uint8_t*)req->GetBlob().GetBuffer().GetPointer();
+							size_t size = req->GetBlob().GetBuffer().GetSize();
 							for(size_t i = 0; i < size; i++)
 							{
 								uint8_t expectedByte = (uint8_t)(random() % 64);

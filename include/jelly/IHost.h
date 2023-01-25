@@ -17,11 +17,13 @@ namespace jelly
 	class IWALWriter;
 
 	/**
-	 * Abstract interface for nodes to interfact with the system with. \ref DefaultHost provides a default implementation
+	 * \brief Abstract interface for nodes to interfact with the system with. 
+	 * 
+	   DefaultHost provides a default implementation
 	 * of this interface. You don't need to have a host object per node: multiple nodes can share the same one if you have
 	 * multiple nodes hosted in the same process. The idea is that you'll probably want to have one host object per process.
 	 * 
-	 * @see DefaultHost
+	 * \see DefaultHost
 	 */
 	class IHost
 	{

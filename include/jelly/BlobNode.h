@@ -13,11 +13,11 @@ namespace jelly
 {
 
 	/**
-	 * A node for storing blobs.
+	 * \brief A node for storing blobs.
 	 * 
-	 * @tparam _KeyType			Key type. For example \ref UIntKey.
-	 * @tparam _BlobType		Blob type. For example \ref Blob.
-	 * @tparam _STLKeyHasher	A way to hash a key. For example \ref UIntKey::Hasher.
+	 * \tparam _KeyType			Key type. For example \ref UIntKey.
+	 * \tparam _BlobType		Blob type. For example \ref Blob.
+	 * \tparam _STLKeyHasher	A way to hash a key. For example \ref UIntKey::Hasher.
 	 */
 	template 
 	<
@@ -123,12 +123,12 @@ namespace jelly
 		Set(
 			Request*										aRequest)
 		{
-			JELLY_ASSERT(aRequest->m_result == RESULT_NONE);
+			JELLY_ASSERT(aRequest->GetResult() == RESULT_NONE);
 
-			aRequest->m_callback = [=, this]()
+			aRequest->SetExecutionCallback([=, this]()
 			{
-				aRequest->m_result = _Update(aRequest, false); // Update: Set
-			};
+				aRequest->SetResult(_Update(aRequest, false)); // Update: Set
+			});
 
 			this->AddRequestToQueue(aRequest);
 		}
@@ -151,12 +151,12 @@ namespace jelly
 		Get(
 			Request*										aRequest)
 		{
-			JELLY_ASSERT(aRequest->m_result == RESULT_NONE);
+			JELLY_ASSERT(aRequest->GetResult() == RESULT_NONE);
 
-			aRequest->m_callback = [=, this]()
+			aRequest->SetExecutionCallback([=, this]()
 			{
-				aRequest->m_result = _Get(aRequest);
-			};
+				aRequest->SetResult(_Get(aRequest));
+			});
 
 			this->AddRequestToQueue(aRequest);
 		}
@@ -178,12 +178,12 @@ namespace jelly
 		Delete(
 			Request*										aRequest)
 		{
-			JELLY_ASSERT(aRequest->m_result == RESULT_NONE);
+			JELLY_ASSERT(aRequest->GetResult() == RESULT_NONE);
 
-			aRequest->m_callback = [=, this]()
+			aRequest->SetExecutionCallback([=, this]()
 			{
-				aRequest->m_result = _Update(aRequest, true); // Update: Delete
-			};
+				aRequest->SetResult(_Update(aRequest, true)); // Update: Delete
+			});
 
 			this->AddRequestToQueue(aRequest);
 		}
@@ -223,11 +223,11 @@ namespace jelly
 			if(!aDelete)
 			{
 				newBlob = std::make_unique<BlobBuffer>();
-				aRequest->m_blob.ToBuffer(this->m_host->GetCompressionProvider(), *newBlob);
+				aRequest->GetBlob().ToBuffer(this->m_host->GetCompressionProvider(), *newBlob);
 			}
 
 			Item* item;
-			if (!this->GetItem(aRequest->m_key, item))
+			if (!this->GetItem(aRequest->GetKey(), item))
 			{
 				if(aDelete)
 				{
@@ -235,7 +235,7 @@ namespace jelly
 				}
 				else
 				{
-					this->SetItem(aRequest->m_key, item = new Item(aRequest->m_key, aRequest->m_seq));				
+					this->SetItem(aRequest->GetKey(), item = new Item(aRequest->GetKey(), aRequest->GetSeq()));				
 
 					item->m_blob = std::move(newBlob);
 
@@ -247,10 +247,10 @@ namespace jelly
 			}
 			else
 			{
-				if(item->m_meta.m_seq >= aRequest->m_seq)
+				if(item->m_meta.m_seq >= aRequest->GetSeq())
 				{
 					// Trying to set an old version - return latest sequence number to requester
-					aRequest->m_seq = item->m_meta.m_seq;
+					aRequest->SetSeq(item->m_meta.m_seq);
 					return RESULT_OUTDATED;
 				}
 
@@ -294,17 +294,15 @@ namespace jelly
 
 			item->m_isResident = true; 
 
-			item->m_meta.m_seq = aRequest->m_seq;
-			item->m_meta.m_timeStamp = aRequest->m_timeStamp;
+			item->m_meta.m_seq = aRequest->GetSeq();
+			item->m_meta.m_timeStamp = aRequest->GetTimeStamp();
 
 			if(aDelete)
 				item->m_tombstone.Set(this->GetNextStoreId());
 			else
 				item->m_tombstone.Clear();
-				
-			this->WriteToWAL(item, &aRequest->m_completed, &aRequest->m_result);
-
-			aRequest->m_hasPendingWrite = true;
+			
+			aRequest->WriteToWAL(this, item);
 
 			if(obeyResidentBlobSizeLimit)
 				_ObeyResidentBlobLimits();
@@ -317,16 +315,16 @@ namespace jelly
 			Request*										aRequest)
 		{
 			Item* item;
-			if (!this->GetItem(aRequest->m_key, item))
+			if (!this->GetItem(aRequest->GetKey(), item))
 				return RESULT_DOES_NOT_EXIST;
 
 			if(item->m_tombstone.IsSet())
 				return RESULT_DOES_NOT_EXIST;
 
-			if(item->m_meta.m_seq < aRequest->m_seq)
+			if(item->m_meta.m_seq < aRequest->GetSeq())
 			{
 				// Return stored sequence number
-				aRequest->m_seq = item->m_meta.m_seq;
+				aRequest->SetSeq(item->m_meta.m_seq);
 				return RESULT_OUTDATED;
 			}
 
@@ -360,7 +358,7 @@ namespace jelly
 
 				m_residentItems.Add(item);
 
-				aRequest->m_blob.FromBuffer(this->m_host->GetCompressionProvider(), *item->m_blob);
+				aRequest->GetBlob().FromBuffer(this->m_host->GetCompressionProvider(), *item->m_blob);
 
 				_ObeyResidentBlobLimits();
 			}
@@ -368,11 +366,11 @@ namespace jelly
 			{
 				m_residentItems.MoveToTail(item);
 
-				aRequest->m_blob.FromBuffer(this->m_host->GetCompressionProvider(), *item->m_blob);
+				aRequest->GetBlob().FromBuffer(this->m_host->GetCompressionProvider(), *item->m_blob);
 			}
 
-			aRequest->m_seq = item->m_meta.m_seq;
-			aRequest->m_timeStamp = item->m_meta.m_timeStamp;
+			aRequest->SetSeq(item->m_meta.m_seq);
+			aRequest->SetTimeStamp(item->m_meta.m_timeStamp);
 
 			return RESULT_OK;
 		}

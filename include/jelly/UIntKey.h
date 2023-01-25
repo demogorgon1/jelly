@@ -6,13 +6,13 @@ namespace jelly
 {
 	
 	/**
-	 * Template for unsigned integer keys.
+	 * \brief Template for unsigned integer keys.
 	 */
 	template <typename _T>
 	struct UIntKey
 	{
 		/**
-		 * Hasher object for unsigned integer key.
+		 * \brief Hasher object for unsigned integer key.
 		 */
 		struct Hasher
 		{

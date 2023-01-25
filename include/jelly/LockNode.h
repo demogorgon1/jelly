@@ -11,11 +11,11 @@ namespace jelly
 {
 
 	/**
-	 * A node for storing blobs.
+	 * \brief A node for storing blobs.
 	 * 
-	 * @tparam _KeyType			Key type. For example \ref UIntKey.
-	 * @tparam _BlobType		Blob type. For example \ref Blob.
-	 * @tparam _STLKeyHasher	A way to hash a key. For example \ref UIntKey::Hasher.
+	 * \tparam _KeyType			Key type. For example \ref UIntKey.
+	 * \tparam _BlobType		Blob type. For example \ref Blob.
+	 * \tparam _STLKeyHasher	A way to hash a key. For example \ref UIntKey::Hasher.
 	 */	
 	template 
 	<
@@ -104,12 +104,12 @@ namespace jelly
 		Lock(
 			Request*											aRequest)
 		{
-			JELLY_ASSERT(aRequest->m_result == RESULT_NONE);
+			JELLY_ASSERT(aRequest->GetResult() == RESULT_NONE);
 
-			aRequest->m_callback = [=, this]()
+			aRequest->SetExecutionCallback([=, this]()
 			{
-				aRequest->m_result = _Lock(aRequest);
-			};
+				aRequest->SetResult(_Lock(aRequest));
+			});
 
 			this->AddRequestToQueue(aRequest);
 		}
@@ -128,12 +128,12 @@ namespace jelly
 		Unlock(
 			Request*											aRequest)
 		{
-			JELLY_ASSERT(aRequest->m_result == RESULT_NONE);
+			JELLY_ASSERT(aRequest->GetResult() == RESULT_NONE);
 
-			aRequest->m_callback = [=, this]()
+			aRequest->SetExecutionCallback([=, this]()
 			{
-				aRequest->m_result = _Unlock(aRequest);
-			};
+				aRequest->SetResult(_Unlock(aRequest));
+			});
 
 			this->AddRequestToQueue(aRequest);
 		}
@@ -149,12 +149,12 @@ namespace jelly
 		Delete(
 			Request*											aRequest)
 		{
-			JELLY_ASSERT(aRequest->m_result == RESULT_NONE);
+			JELLY_ASSERT(aRequest->GetResult() == RESULT_NONE);
 
-			aRequest->m_callback = [=, this]()
+			aRequest->SetExecutionCallback([=, this]()
 			{
-				aRequest->m_result = _Delete(aRequest);
-			};
+				aRequest->SetResult(_Delete(aRequest));
+			});
 
 			this->AddRequestToQueue(aRequest);			
 		}
@@ -168,47 +168,45 @@ namespace jelly
 			Request*											aRequest)
 		{
 			Item* item;
-			if (!this->GetItem(aRequest->m_key, item))
+			if (!this->GetItem(aRequest->GetKey(), item))
 			{
 				// Never seen before, apply lock
-				this->SetItem(aRequest->m_key, item = new Item(aRequest->m_key, aRequest->m_lock));
+				this->SetItem(aRequest->GetKey(), item = new Item(aRequest->GetKey(), aRequest->GetLock()));
 			}
 			else
 			{
 				if(!item->m_lock.IsSet())
 				{
 					// Not locked, just apply lock
-					item->m_lock = aRequest->m_lock;
-					aRequest->m_lock.Clear();
-					aRequest->m_blobNodeIds = item->m_meta.m_blobNodeIds;
+					item->m_lock = aRequest->GetLock();
+					aRequest->SetLock(_LockType());
+					aRequest->SetBlobNodeIds(item->m_meta.m_blobNodeIds);
 				}
-				else if(item->m_lock != aRequest->m_lock)
+				else if(item->m_lock != aRequest->GetLock())
 				{
 					// Locked by someone else, fail
-					aRequest->m_lock = item->m_lock;
+					aRequest->SetLock(item->m_lock);
 					return RESULT_ALREADY_LOCKED;
 				}
 				else
 				{
 					// Same lock, no need to write anything
-					aRequest->m_blobSeq = item->m_meta.m_blobSeq;
-					aRequest->m_blobNodeIds = item->m_meta.m_blobNodeIds;
-					aRequest->m_timeStamp = item->m_meta.m_timeStamp;
+					aRequest->SetBlobSeq(item->m_meta.m_blobSeq);
+					aRequest->SetBlobNodeIds(item->m_meta.m_blobNodeIds);
+					aRequest->SetTimeStamp(item->m_meta.m_timeStamp);
 					return RESULT_OK;
 				}
 			}
 
-			aRequest->m_blobSeq = item->m_meta.m_blobSeq;
-			aRequest->m_blobNodeIds = item->m_meta.m_blobNodeIds;
+			aRequest->SetBlobSeq(item->m_meta.m_blobSeq);
+			aRequest->SetBlobNodeIds(item->m_meta.m_blobNodeIds);
 
-			item->m_meta.m_timeStamp = aRequest->m_timeStamp;
+			item->m_meta.m_timeStamp = aRequest->GetTimeStamp();
 			item->m_meta.m_seq++;
 
 			item->m_tombstone.Clear();
 
-			aRequest->m_hasPendingWrite = true;
-
-			this->WriteToWAL(item, &aRequest->m_completed, &aRequest->m_result);
+			aRequest->WriteToWAL(this, item);
 
 			return RESULT_OK;
 		}
@@ -218,7 +216,7 @@ namespace jelly
 			Request*											aRequest)
 		{
 			Item* item;
-			if (!this->GetItem(aRequest->m_key, item))
+			if (!this->GetItem(aRequest->GetKey(), item))
 			{
 				// Doesn't exist
 				return RESULT_DOES_NOT_EXIST;
@@ -228,7 +226,7 @@ namespace jelly
 				// It wasn't locked, fail
 				return RESULT_NOT_LOCKED;
 			}
-			else if(item->m_lock != aRequest->m_lock)
+			else if(item->m_lock != aRequest->GetLock())
 			{
 				// Locked by someone else, fail
 				return RESULT_ALREADY_LOCKED;
@@ -236,14 +234,12 @@ namespace jelly
 			
 			item->m_lock.Clear();
 
-			item->m_meta.m_blobSeq = aRequest->m_blobSeq;
-			item->m_meta.m_blobNodeIds = aRequest->m_blobNodeIds;
-			item->m_meta.m_timeStamp = aRequest->m_timeStamp;
+			item->m_meta.m_blobSeq = aRequest->GetBlobSeq();
+			item->m_meta.m_blobNodeIds = aRequest->GetBlobNodeIds();
+			item->m_meta.m_timeStamp = aRequest->GetTimeStamp();
 			item->m_meta.m_seq++;
 	
-			aRequest->m_hasPendingWrite = true;
-
-			this->WriteToWAL(item, &aRequest->m_completed, &aRequest->m_result);
+			aRequest->WriteToWAL(this, item);
 
 			return RESULT_OK;
 		}
@@ -253,7 +249,7 @@ namespace jelly
 			Request*											aRequest)
 		{
 			Item* item;
-			if (!this->GetItem(aRequest->m_key, item))
+			if (!this->GetItem(aRequest->GetKey(), item))
 			{
 				// Doesn't exist
 				return RESULT_DOES_NOT_EXIST;
@@ -266,14 +262,12 @@ namespace jelly
 
 			item->m_meta.m_blobSeq = UINT32_MAX;
 			item->m_meta.m_blobNodeIds = UINT32_MAX;
-			item->m_meta.m_timeStamp = aRequest->m_timeStamp;
+			item->m_meta.m_timeStamp = aRequest->GetTimeStamp();
 			item->m_meta.m_seq++;
 
 			item->m_tombstone.Set(this->GetNextStoreId());
 
-			aRequest->m_hasPendingWrite = true;
-
-			this->WriteToWAL(item, &aRequest->m_completed, &aRequest->m_result);
+			aRequest->WriteToWAL(this, item);
 
 			return RESULT_OK;
 		}

@@ -10,7 +10,13 @@
 namespace jelly
 {
 
-	// A node that keeps track of key locks and where the blobs are stored
+	/**
+	 * A node for storing blobs.
+	 * 
+	 * @tparam _KeyType			Key type. For example \ref UIntKey.
+	 * @tparam _BlobType		Blob type. For example \ref Blob.
+	 * @tparam _STLKeyHasher	A way to hash a key. For example \ref UIntKey::Hasher.
+	 */	
 	template 
 	<
 		typename _KeyType,
@@ -80,15 +86,20 @@ namespace jelly
 		{
 		}
 
-		// Apply lock to a key
-		// 
-		// In: 
-		//   m_key			Request key
-		//   m_lock			Lock id that should be used
-		// Out:
-		//   m_blobSeq		Latest blob sequence number
-		//   m_blobNodeIds	Up to 4 ids of blob nodes where blob is stored
-		//   m_lock			Previous lock id
+		/**
+		* Submits a lock request to the queue.
+		*
+		* Input  | <!-- -->
+		* -------|-----------------------------------------------------------------------------------------------
+		* m_key  | Request key.
+		* m_lock | Lock id that should be used.
+		*
+		* Output         | <!-- -->
+		* ---------------|-----------------------------------------------------------------------------------
+		* m_blobSeq      | Latest blob sequence number.
+		* m_blobNodeIds  | Up to 4 ids of blob nodes where blob is stored.
+		* m_lock         | Previous lock id.
+		*/
 		void
 		Lock(
 			Request*											aRequest)
@@ -103,13 +114,16 @@ namespace jelly
 			this->AddRequestToQueue(aRequest);
 		}
 
-		// Unlock a key previously locked with the same lock id
-		// 
-		// In: 
-		//   m_key			Request key
-		//   m_lock			Lock id that should be used
-		//   m_blobSeq		Latest blob sequence number
-		//   m_blobNodeIds	Up to 4 ids of blob nodes where blob is stored
+		/**
+		* Submits an unlock request to the queue.
+		*
+		* Input          | <!-- -->
+		* ---------------|-----------------------------------------------------------------------------------------------
+		* m_key          | Request key.
+		* m_lock         | Lock id that should be used.
+		* m_blobSeq      | Latest blob sequence number.
+		* m_blobNodeIds  | Up to 4 ids of blob nodes where blob is stored
+		*/
 		void
 		Unlock(
 			Request*											aRequest)
@@ -124,10 +138,13 @@ namespace jelly
 			this->AddRequestToQueue(aRequest);
 		}
 
-		// Deletes an unlocked key
-		//
-		// In:
-		//   m_key			Request key
+		/**
+		* Submits an delete request to the queue.
+		*
+		* Input          | <!-- -->
+		* ---------------|-----------------------------------------------------------------------------------------------
+		* m_key          | Request key.
+		*/
 		void
 		Delete(
 			Request*											aRequest)

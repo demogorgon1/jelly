@@ -1,5 +1,7 @@
 #pragma once
 
+// This header file must be included before any other jelly headers.
+
 #if !defined(_WIN32)
 	#include <signal.h>
 #endif

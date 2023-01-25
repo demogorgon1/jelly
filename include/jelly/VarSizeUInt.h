@@ -5,6 +5,7 @@
 namespace jelly
 {
 
+	// Encoding and decoding of variably sized integers
 	namespace VarSizeUInt
 	{
 

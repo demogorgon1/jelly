@@ -3,6 +3,7 @@
 namespace jelly
 {
 
+	// Generic fixed-size ring-buffer
 	template <typename _T>
 	class RingBuffer
 	{

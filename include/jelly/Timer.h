@@ -3,6 +3,7 @@
 namespace jelly
 {
 
+	// Egg clock timer
 	class Timer
 	{
 	public:

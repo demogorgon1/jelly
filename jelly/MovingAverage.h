@@ -5,6 +5,7 @@
 namespace jelly
 {
 
+	// Fixed-size moving average filter
 	template <typename _T>
 	class MovingAverage
 	{

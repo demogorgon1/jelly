@@ -13,6 +13,7 @@ namespace jelly
 
 	class IStats;
 
+	// DefaultHost implementation of IWALWriter
 	class WALWriter
 		: public IWALWriter
 	{

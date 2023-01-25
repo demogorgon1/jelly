@@ -3,6 +3,7 @@
 namespace jelly
 {
 
+	// DefaultHost: utility for dealing with WAL and store file names.
 	namespace PathUtils
 	{
 

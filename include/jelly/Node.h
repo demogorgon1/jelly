@@ -16,8 +16,11 @@
 namespace jelly
 {
 
-	// Base class for LockNode and BlobNode. Contains a bunch of shared functionality as they are 
-	// conceptually very similar. 
+	/**
+	 * Base class for LockNode and BlobNode. Contains a bunch of shared functionality as they are 
+	 * conceptually very similar. 
+	 * Applications should not use this class template directly.
+	 */
 	template 
 	<
 		typename _KeyType,
@@ -58,7 +61,9 @@ namespace jelly
 				delete wal;
 		}
 
-		// Stop accepting new requests and cancel all pending requests, including the ones currently waiting for a WAL.
+		/**
+		 * Stop accepting new requests and cancel all pending requests, including the ones currently waiting for a WAL.
+		 */
 		void
 		Stop()
 		{
@@ -96,7 +101,10 @@ namespace jelly
 			}
 		}
 
-		// Process all pending requests and return the number of requests processed. Must be called on the main thread.
+		/**
+		 * Process all pending requests and return the number of requests processed. Must be called on the main thread.
+		 * Returns number of requests processed.
+		 */
 		uint32_t
 		ProcessRequests()
 		{
@@ -148,9 +156,12 @@ namespace jelly
 			return count;
 		}
 
-		// Flush the specified concurrent WAL. This must be done after ProcessRequests(), but doesn't need to be
-		// on the main thread. Requests that required stuff to be written to a WAL isn't going to be flagged as
-		// completed before the WAL has been flushed.
+		/**
+		 * Flush the specified concurrent WAL. This must be done after ProcessRequests(), but doesn't need to be
+		 * on the main thread. Requests that required stuff to be written to a WAL isn't going to be flagged as
+		 * completed before the WAL has been flushed. 
+		 * Returns number of items flushed.
+		 */
 		size_t
 		FlushPendingWAL(
 			uint32_t		aWALConcurrentIndex)
@@ -168,8 +179,10 @@ namespace jelly
 			return 0;
 		}
 
-		// Return the number of requests waiting to be flushed to the specified concurrent WAL. This should be
-		// called on the main thread, before any calls to FlushPendingWAL().
+		/**
+		 * Return the number of requests waiting to be flushed to the specified concurrent WAL. This should be
+		 * called on the main thread, before any calls to FlushPendingWAL().
+		 */
 		size_t
 		GetPendingWALRequestCount(
 			uint32_t		aWALConcurrentIndex) const
@@ -183,8 +196,11 @@ namespace jelly
 			return 0;
 		}
 
-		// Flush the pending store to permanent storage. Must be called from the main thread.
-		// Items flushed here will remove their reference to their pending WAL.
+		/**
+		 * Flush the pending store to permanent storage. Must be called from the main thread.
+		 * Items flushed here will remove their reference to their pending WAL.
+		 * Returns number of items flushed.
+		 */
 		size_t
 		FlushPendingStore()
 		{			
@@ -207,24 +223,30 @@ namespace jelly
 			return count;
 		}
 
-		// Return the number of items in the pending store. Each of these items hold a reference to a pending
-		// WAL. Must be called from the main thread.
+		/**
+		 * Return the number of items in the pending store. Each of these items hold a reference to a pending
+		 * WAL. Must be called from the main thread.
+		 */
 		size_t
 		GetPendingStoreItemCount() const
 		{
 			return m_pendingStore.size();
 		}
 
-		// Returns the number of items that has been written to WALs for the pending store. This can be larger 
-		// than GetPendingStoreItemCount() if the same item has been written multiple times between pending store 
-		// flushes. Must be called from the main thread.
+		/**
+		 * Returns the number of items that has been written to WALs for the pending store. This can be larger 
+		 * than GetPendingStoreItemCount() if the same item has been written multiple times between pending store 
+		 * flushes. Must be called from the main thread.
+		 */
 		uint32_t
 		GetPendingStoreWALItemCount() const
 		{
 			return m_pendingStoreWALItemCount;
 		}
 
-		// Return total size of all WALs on disk. Must be called from the main thread.
+		/**
+		 * Return total size of all WALs on disk. Must be called from the main thread.
+		 */
 		size_t
 		GetTotalWALSize() const
 		{
@@ -236,7 +258,9 @@ namespace jelly
 			return totalSize;
 		}
 
-		// Delete all closed WALs with no references. Must be called from the main thread.
+		/**
+		 * Delete all closed WALs with no references. Must be called from the main thread.
+		 */
 		size_t
 		CleanupWALs()
 		{
@@ -263,9 +287,11 @@ namespace jelly
 			return deletedWALs;
 		}
 
-		// Perform (minor) compaction on the specified store ids. Any tombstones found from before
-		// "min store id" will be evicted. This can be called from any thread. Apply the result of the 
-		// compaction using ApplyCompactionResult() from the main thread.
+		/**
+		 * Perform (minor) compaction on the specified store ids. Any tombstones found from before
+		 * "min store id" will be evicted. This can be called from any thread. Apply the result of the 
+		 * compaction using ApplyCompactionResult() from the main thread.
+		 */
 		CompactionResultType*
 		PerformCompaction(
 			const CompactionJob&						aCompactionJob)
@@ -298,8 +324,11 @@ namespace jelly
 			return result.release();
 		}
 
-		// Perform major copmaction where all stores (except the latest, which could potentially be work in progress)
-		// will be compacted.
+		/**
+		 * Perform major copmaction where all stores (except the latest, which could potentially be work in progress)
+		 * will be compacted. This can be called from any thread. Apply the result of the 
+		 * compaction using ApplyCompactionResult() from the main thread.
+		 */
 		CompactionResultType*
 		PerformMajorCompaction()
 		{
@@ -321,8 +350,10 @@ namespace jelly
 			return result.release();
 		}
 
-		// When PerformCompaction() has completed (on any thread) this method should be called on the main thread
-		// to apply the result of the compaction.
+		/**
+		 * When PerformCompaction() or PerformMajorCompaction() has completed (on any thread) this method should be 
+		 * called on the main thread to apply the result of the compaction.
+		 */
 		void
 		ApplyCompactionResult(
 			CompactionResultType*						aCompactionResult)
@@ -360,7 +391,9 @@ namespace jelly
 			}
 		}
 
-		// Creates a new always incrementing store id. Can be called from any thread.
+		/**
+		 * Creates a new always incrementing store id. Can be called from any thread.
+		 */
 		uint32_t
 		CreateStoreId()
 		{
@@ -375,11 +408,12 @@ namespace jelly
 		}
 
 		// Data access
-		uint32_t			GetNodeId() const { return m_nodeId; }
-		bool				IsStopped() const { std::lock_guard lock(m_requestsLock); return m_stopped; }
-		size_t				GetPendingWALCount() const { return m_pendingWALs.size(); }
-		IHost*				GetHost() { return m_host; }
-		FileStatsContext*	GetStoreFileStatsContext() { return &m_statsContext.m_fileStore; }
+
+		uint32_t			GetNodeId() const { return m_nodeId; }											///< Returns node id.
+		bool				IsStopped() const { std::lock_guard lock(m_requestsLock); return m_stopped; }	///< Returns whether node has been requested to stop.
+		size_t				GetPendingWALCount() const { return m_pendingWALs.size(); }						///< Returns number of pending WALs.
+		IHost*				GetHost() { return m_host; }													///< Returns pointer to host object associated with this node.
+		FileStatsContext*	GetStoreFileStatsContext() { return &m_statsContext.m_fileStore; }				///< Returns context for file statistics.
 
 	protected:
 

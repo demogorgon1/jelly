@@ -32,6 +32,7 @@ namespace jelly
 								const ExtraApplicationStats& aExtraApplicationStats = ExtraApplicationStats());
 		virtual				~Stats();
 
+		//---------------------------------------------------------------------------
 		// IStats implementation
 		void				Emit_UInt64(
 								uint32_t							aId,
@@ -39,13 +40,13 @@ namespace jelly
 								const std::optional<Stat::Type>&	aExpectedType) override;
 		void				Update() override;
 		Counter				GetCounter(
-								uint32_t							aId) override;
+								uint32_t							aId) const override;
 		Sampler				GetSampler(
-								uint32_t							aId) override;
+								uint32_t							aId) const override;
 		Gauge				GetGauge(
-								uint32_t							aId) override;
+								uint32_t							aId) const override;
 		uint32_t			GetIdByString(
-								const char*							aString) override;
+								const char*							aString) const override;
 
 	private:
 
@@ -255,7 +256,7 @@ namespace jelly
 		void				_UpdateGauges(
 								std::chrono::time_point<std::chrono::steady_clock>	aCurrentTime);
 		const Stat::Info*	_GetStatInfo(
-								uint32_t											aId);
+								uint32_t											aId) const;
 	};
 
 }

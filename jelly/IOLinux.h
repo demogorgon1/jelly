@@ -1,5 +1,7 @@
 #pragma once
 
+// File I/O on Linux
+
 #if !defined(_WIN32)
 
 #include <jelly/ErrorUtils.h>

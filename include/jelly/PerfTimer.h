@@ -3,6 +3,7 @@
 namespace jelly
 {
 
+	// High-resolution timer for performance-related time measurements.
 	class PerfTimer
 	{
 	public:

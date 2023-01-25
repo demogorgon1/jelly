@@ -5,6 +5,7 @@ namespace jelly
 
 	class IStats;
 
+	// Tells a File object how I/O statistics should be reported for this specific file.
 	struct FileStatsContext
 	{
 		FileStatsContext(

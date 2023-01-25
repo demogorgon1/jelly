@@ -6,6 +6,7 @@
 namespace jelly
 {
 
+	// DefaultHost implementation of IStoreWriter
 	class StoreWriter
 		: public IStoreWriter
 	{

@@ -11,6 +11,7 @@ namespace jelly
 		class IStreamDecompressor;
 	}
 
+	// DefaultHost implementation of IFileStreamReader
 	class FileStreamReader
 		: public IFileStreamReader
 	{

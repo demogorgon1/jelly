@@ -8,7 +8,6 @@ namespace jelly
 {
 
 	// Item meta data as stored on disk (both stores and WALs)
-
 	namespace MetaData
 	{
 

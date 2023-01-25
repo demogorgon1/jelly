@@ -5,9 +5,22 @@
 namespace jelly
 {
 	
-	// Holds the result of a compaction operation. PerformCompaction() (slow), which can run on any thread,
-	// will put the result in this (files to be deleted and redirects), so it can then be applied
-	// with ApplyCompactionResult() (fast) on the main thread.
+	/**
+	* Holds the result of a compaction operation. PerformCompaction() (slow), which can run on any thread,
+	* will put the result in this (files to be deleted and redirects), so it can then be applied
+	* with ApplyCompactionResult() (fast) on the main thread.
+	* 
+	* @code
+	* // This can be done on any thread
+	* std::unique_ptr<CompactionResult<_KeyType, _STLKeyHasher>> compactionResult(node->PerformCompaction(compactionJob));
+	* ...
+	* // This must happen on the main thread
+	* node->ApplyCompactionResult(compactionResult.get());
+	* @endcode
+	* 
+	* @see BlobNode
+	* @see LockNode
+	*/		
 	template <typename _KeyType, typename _STLKeyHasher>
 	class CompactionResult
 	{

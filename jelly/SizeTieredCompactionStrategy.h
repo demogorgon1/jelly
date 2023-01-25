@@ -4,7 +4,8 @@
 
 namespace jelly
 {
-	
+
+	// Size-tiered compaction strategy (STCS) for use with the compaction advisor	
 	class SizeTieredCompactionStrategy
 		: public ICompactionStrategy
 	{

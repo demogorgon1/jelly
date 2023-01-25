@@ -7,6 +7,7 @@
 namespace jelly
 {
 
+	// ZSTD stream compressing and decompressing
 	namespace ZstdStream
 	{
 

@@ -93,7 +93,7 @@ namespace jelly
 	
 	Stats::Counter
 	Stats::GetCounter(
-		uint32_t		aId)
+		uint32_t		aId) const 
 	{
 		const Stat::Info* info = _GetStatInfo(aId);
 		JELLY_ASSERT(info->m_type == Stat::TYPE_COUNTER);
@@ -104,7 +104,7 @@ namespace jelly
 	
 	Stats::Sampler
 	Stats::GetSampler(
-		uint32_t		aId)
+		uint32_t		aId) const
 	{
 		const Stat::Info* info = _GetStatInfo(aId);
 		JELLY_ASSERT(info->m_type == Stat::TYPE_SAMPLER);
@@ -115,7 +115,7 @@ namespace jelly
 
 	Stats::Gauge
 	Stats::GetGauge(
-		uint32_t		aId)
+		uint32_t		aId) const
 	{
 		const Stat::Info* info = _GetStatInfo(aId);
 		JELLY_ASSERT(info->m_type == Stat::TYPE_GAUGE);
@@ -126,7 +126,7 @@ namespace jelly
 
 	uint32_t			
 	Stats::GetIdByString(
-		const char*		aString) 
+		const char*		aString) const
 	{
 		for(uint32_t i = 0; i < m_totalStatCount; i++)
 		{
@@ -365,7 +365,7 @@ namespace jelly
 
 	const Stat::Info* 
 	Stats::_GetStatInfo(
-		uint32_t											aId)
+		uint32_t											aId) const
 	{
 		if(aId < (uint32_t)Stat::NUM_IDS)
 			return Stat::GetInfo(aId);

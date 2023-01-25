@@ -9,10 +9,55 @@ namespace jelly
 
 	class IHost;
 
+	/**
+	 * This housekeeping advisor can help you make decicision about when various \ref Node housekeeping tasks
+	 * should be performed. This class will not perform these tasks, it will just tell you when to do them.
+	 * 
+	 * @code
+	 * typedef HousekeepingAdvisor<NodeType> HousekeepingAdvisorType;
+	 * HousekeepingAdvisorType housekeepingAdvisor(&host, &node);
+	 * 
+	 * ...
+	 * 
+	 * // HousekeepingAdvisor must be updated on the main thread, i.e. the same one you call Node::ProcessRequests() on.
+	 * housekeepingAdvisor.Update([](
+	 *     const HousekeepingAdvisorType::Event& aEvent)
+	 * {
+	 *     switch(aEvent.m_type)
+	 *     {
+	 *     case HousekeepingAdvisorType::Event::TYPE_FLUSH_PENDING_WAL: 
+	 *         // Now is a good time to flush the pending WAL. If using concurrent WALs, aEvent.m_concurrentWALIndex
+	 *         // specifies which one. Note that Node::FlushPendingWAL() can be called on any thread, so ideally
+	 *         // at this point you should spawn task on a worker thread for it, but for simplicity you can also just
+	 *         // call the method directly here.
+	 *         break; 
+	 * 
+	 *     case HousekeepingAdvisorType::Event::TYPE_FLUSH_PENDING_STORE:
+	 *         // Time to flush pending store with Node::FlushPendingStore(). This must be done on the main thread.
+	 *         break;
+	 * 
+	 *     case HousekeepingAdvisorType::Event::TYPE_CLEANUP_WALS:
+	 *         // Too many WALs. Time to call Node::CleanupWALs() to free up disk space. Must be done on main thread.
+	 *         break;
+	 * 
+	 *     case HousekeepingAdvisorType::Event::TYPE_PERFORM_COMPACTION:
+	 *         // Free up disk space by performing a minor compaction with Node::PerformCompaction(). The event
+	 *         // includes a \ref CompactionJob with information associated with the suggested minor compaction, 
+	 *         // which should be passed to Node::PerformCompaction(). 
+	 *         // This can be done on a worker thread and when it's finished the result should be applied with
+	 *         // Node::ApplyCompactionResult() on the main thread.
+	 *         break;
+	 *     }
+	 * });
+	 * @endcode
+	 */
 	template <typename _NodeType>
 	class HousekeepingAdvisor
 	{
 	public:
+		/**
+		 * Housekeeping advisor configuration passed to its constructor.
+		 */
 		struct Config
 		{	
 			Config()
@@ -29,17 +74,61 @@ namespace jelly
 
 			}
 
-			uint32_t										m_minWALFlushIntervalMS;
-			uint32_t										m_cleanupWALIntervalMS;
-			uint32_t										m_minCompactionIntervalMS;
-			size_t											m_pendingStoreItemLimit;
-			uint32_t										m_pendingStoreWALItemLimit;
-			uint32_t										m_compactionAdvisorSizeMemory;
-			uint32_t										m_compactionAdvisorSizeTrendMemory;
-			CompactionAdvisor::Strategy						m_compactionAdvisorStrategy;
-			uint32_t										m_compactionAdvisorStrategyUpdateIntervalMS;
+			/**
+			 * Minimum WAL flushing interval in milliseconds. Minimum time between TYPE_FLUSH_PENDING_WAL events.
+			 * If requests are rare the interval might be longer.
+			 */
+			uint32_t							m_minWALFlushIntervalMS;
+
+			/**
+			 * Base interval of TYPE_CLEANUP_WALS events.
+			 */
+			uint32_t							m_cleanupWALIntervalMS;		
+
+			/**
+			 * Never suggest minor compactions more often than this. 
+			 */
+
+			uint32_t							m_minCompactionIntervalMS;
+
+			/**
+			 * If number of pending store items exceed this number, a TYPE_FLUSH_PENDING_STORE event will be 
+			 * triggered. Note that if one item has multiple writes it still counts as one item.
+			 */
+			size_t								m_pendingStoreItemLimit;
+
+			/**
+			 * If number of pending items written to WALs exceed this number, a TYPE_FLUSH_PENDING_STORE event
+			 * will be triggered. It doesn't matter how many different items we're talking about - it could all
+			 * be the same item written repeatedly.
+			 */
+			uint32_t							m_pendingStoreWALItemLimit;
+
+			/**
+			 * Compaction advisor will monitor total store size on disk over time. This is the max time to look
+			 * back, measured in number of calls to Update().
+			 */
+			uint32_t							m_compactionAdvisorSizeMemory;
+
+			/**
+			 * Like m_compactionAdvisorSizeMemory, but for the derivative (change) of total store size.
+			 */
+			uint32_t							m_compactionAdvisorSizeTrendMemory;
+
+			/**
+			 * Compaction strategy to use. 
+			 */
+			CompactionAdvisor::Strategy			m_compactionAdvisorStrategy;
+
+			/**
+			 * How often the compaction strategy should be updated.
+			 */
+			uint32_t							m_compactionAdvisorStrategyUpdateIntervalMS;
 		};
 			
+		/**
+		 * Event structure passed to application EventHandler callback during Update().
+		 */
 		struct Event
 		{
 			enum Type				
@@ -57,10 +146,10 @@ namespace jelly
 
 			}
 
-			Type											m_type;
+			Type								m_type;
 
-			CompactionJob									m_compactionJob;		// TYPE_PERFORM_COMPACTION
-			uint32_t										m_concurrentWALIndex;	// TYPE_FLUSH_PENDING_WAL
+			CompactionJob						m_compactionJob;		// TYPE_PERFORM_COMPACTION
+			uint32_t							m_concurrentWALIndex;	// TYPE_FLUSH_PENDING_WAL
 		};
 
 		typedef std::function<void(const Event&)> EventHandler;
@@ -103,6 +192,7 @@ namespace jelly
 
 		}
 
+		//! Updates the housekeeping advisor, invoking the event handler if it wants the application to do something
 		void	
 		Update(
 			EventHandler		aEventHandler)

@@ -1,13 +1,21 @@
 #pragma once
 
+/**
+ * \file Stat.h
+ * 
+ * Database statistics definitions.
+ */
+
 #include "ErrorUtils.h"
 
 namespace jelly
 {
 
+	// Database statistics definitions
 	namespace Stat
 	{
 
+		//! Unique statistics identifiers. Look at the source code for details.
 		enum Id : uint32_t
 		{
 			ID_DISK_WRITE_LOCK_WAL_BYTES,
@@ -27,15 +35,17 @@ namespace jelly
 			NUM_IDS
 		};
 
+		//! Statistics types
 		enum Type 
 		{
-			TYPE_COUNTER,
-			TYPE_SAMPLER,
-			TYPE_GAUGE,
+			TYPE_COUNTER,	//!< Incrementing counter (see IStats::Counter)
+			TYPE_SAMPLER,	//!< Value sampler (see IStats::Sampler)
+			TYPE_GAUGE,		//!< Single value gauge (see IStats::Gauge)
 
 			NUM_TYPES
 		};
 
+		//! Information about a statistic
 		struct Info
 		{
 			Type			m_type;
@@ -65,6 +75,7 @@ namespace jelly
 
 		static_assert(sizeof(INFO) == sizeof(Info) * (size_t)NUM_IDS);
 
+		//! Query information about a statistic
 		inline const Info*
 		GetInfo(
 			uint32_t		aId)

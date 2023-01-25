@@ -9,6 +9,7 @@ namespace jelly
 
 	class IHost;
 
+	// Helper for advising about compactions. This is used internally by the HousekeepingAdvisor.
 	class CompactionAdvisor
 	{
 	public:

@@ -5,12 +5,17 @@
 namespace jelly
 {
 
-	// Abstract binary reader interface
+	/**
+	 * Abstract binary reader interface.
+	 * 
+	 * @see IWriter
+	 */
 	class IReader
 	{
 	public:
 		virtual			~IReader() {}
 
+		//! Reads a variably sized unsigned integer. Optionally returns the size of it.
 		template <typename _T>
 		bool
 		ReadUInt(
@@ -39,6 +44,7 @@ namespace jelly
 			return !readError;
 		}
 
+		//! Reads a POD type.
 		template <typename _T>
 		bool
 		ReadPOD(
@@ -47,7 +53,10 @@ namespace jelly
 			return Read(&aOutValue, sizeof(_T)) == sizeof(_T);
 		}
 
+		//---------------------------------------------------------------------------
 		// Virtual interface
+
+		//! Reads into a buffer. Returns number of bytes actually read (0 if end has been reached).
 		virtual size_t	Read(
 							void*	aBuffer,
 							size_t	aBufferSize) = 0;

@@ -5,12 +5,17 @@
 namespace jelly
 {
 
-	// Abstract binary writer interface
+	/**
+	 * Abstract binary writer interface.
+	 *
+	 * @see IReader
+	 */
 	class IWriter
 	{
 	public:
 		virtual			~IWriter() {}
 
+		//! Writes a variably sized unsigned integer.
 		template <typename _T>
 		bool
 		WriteUInt(
@@ -24,6 +29,7 @@ namespace jelly
 			return true;
 		}
 
+		//! Writes a POD type.
 		template <typename _T>
 		bool
 		WritePOD(
@@ -32,7 +38,10 @@ namespace jelly
 			return Write(&aValue, sizeof(_T)) == sizeof(_T);
 		}
 
+		//------------------------------------------------------------------------------------
 		// Virtual interface
+
+		//! Writes a buffer. Returns number of bytes written.
 		virtual size_t	Write(
 							const void*	aBuffer,
 							size_t		aBufferSize) = 0;

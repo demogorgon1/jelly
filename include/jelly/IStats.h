@@ -5,6 +5,17 @@
 namespace jelly
 {
 
+	/**
+	 * Interface for emitting and querying database statistics. Statistics come in 3 flavors:
+	 * 
+	 * Statistic | <!-- -->
+	 * ----------|-----------------------------------------------------------------------------
+	 * Counter   | An incrementing number, for example number of bytes being written to disk.
+	 * Sampler   | Samples a value of some number, for example duration of some operation.
+	 * Gauge     | A number, for example current number of WAL files on disk.
+	 * 
+	 * Statistics are reset with every call to Update().
+	 */
 	class IStats
 	{
 	public:
@@ -18,6 +29,9 @@ namespace jelly
 		{
 		}
 
+		/**
+		 * Describes the state of a counter. 
+		 */
 		struct Counter
 		{
 			Counter()
@@ -28,11 +42,14 @@ namespace jelly
 
 			}
 
-			uint64_t		m_value;
-			uint64_t		m_rate;
-			uint64_t		m_rateMA;
+			uint64_t		m_value;	///< Current counter value.
+			uint64_t		m_rate;		///< Rate.
+			uint64_t		m_rateMA;	///< Moving average filtered rate.
 		};
 
+		/**
+		 * Describes the state of a sampler.
+		 */
 		struct Sampler
 		{
 			Sampler()
@@ -44,12 +61,15 @@ namespace jelly
 
 			}
 
-			uint64_t		m_avg;
-			uint64_t		m_min;
-			uint64_t		m_max;
-			uint64_t		m_count;
+			uint64_t		m_avg;		///< Average sample value.
+			uint64_t		m_min;		///< Minimum sample value.
+			uint64_t		m_max;		///< Maximum sample value.
+			uint64_t		m_count;	///< Number of samples.
 		};
 
+		/**
+		 * Describes the state of a gauge.
+		 */
 		struct Gauge
 		{
 			Gauge()
@@ -58,9 +78,10 @@ namespace jelly
 
 			}
 
-			uint64_t		m_value;
+			uint64_t		m_value;	///< Value of the gauge.
 		};
 
+		//! Emit a statistic specified by aId. 
 		template <typename _T>
 		void
 		Emit(
@@ -73,20 +94,32 @@ namespace jelly
 			Emit_UInt64(aId, (uint64_t)aValue, aExpectedType);
 		}
 
+		//---------------------------------------------------------------------------
 		// Virtual methods
+
 		virtual void				Emit_UInt64(
 										uint32_t							/*aId*/,
 										uint64_t							/*aValue*/,
-										const std::optional<Stat::Type>&	/*aExpectedType*/) { }
+										const std::optional<Stat::Type>&	/*aExpectedType*/) { }	
+
+		//! Update statistics. Counters and gauges will be reset.
 		virtual void				Update() { }
+
+		//! Query a counter.
 		virtual Counter				GetCounter(
-										uint32_t		/*aId*/) { return Counter(); }
+										uint32_t		/*aId*/) const { return Counter(); }
+
+		//! Query a sampler.
 		virtual Sampler				GetSampler(
-										uint32_t		/*aId*/) { return Sampler(); }
+										uint32_t		/*aId*/) const { return Sampler(); }
+
+		//! Query a gauge.		 
 		virtual Gauge				GetGauge(
-										uint32_t		/*aId*/) { return Gauge(); }
+										uint32_t		/*aId*/) const { return Gauge(); }
+
+		//! Get a statistic id from a string name.
 		virtual uint32_t			GetIdByString(
-										const char*							/*aString*/) { return UINT32_MAX; }
+										const char*							/*aString*/) const { return UINT32_MAX; }
 
 	};
 

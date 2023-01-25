@@ -8,6 +8,7 @@
 namespace jelly
 {
 
+	// Encapsulates platform specific file I/O implementations
 	class File
 		: public IReader
 		, public IWriter

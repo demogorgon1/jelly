@@ -3,7 +3,9 @@
 namespace jelly
 {
 
-	// Configuration shared by LockNode and BlobNode
+	/**
+	 * Configuration shared by LockNode and BlobNode
+	 */
 	struct NodeConfig
 	{
 		NodeConfig()
@@ -13,11 +15,15 @@ namespace jelly
 
 		}
 
-		// WAL size limit in bytes. When reached the WAL will be closed and a new one started
+		/**
+		 * WAL size limit in bytes. When reached the WAL will be closed and a new one started
+		 */
 		size_t			m_walSizeLimit;		
 
-		// Number of WALs to keep open at the same time. Items are assigned to WALs based on keys.
-		// Concurrent WALs can be flushed in a multithreaded manner.
+		/**
+		 * Number of WALs to keep open at the same time. Items are assigned to WALs based on keys.
+		 * Concurrent WALs can be flushed in a multi-threaded manner.
+		 */
 		uint32_t		m_walConcurrency;	
 	};
 

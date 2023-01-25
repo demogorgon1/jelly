@@ -116,7 +116,9 @@ namespace jelly
 			aOut->AddCompactedStore(aCompactionJob.m_storeId2, compactionRedirect2.release());
 		}
 		
-		// Do a "major" compaction of everything
+		// Do a "major" compaction of everything. This is a more generalized version of PerformCompaction as 
+		// it takes a list of stores instead of always 2. This is slightly slower though, hence having 2
+		// different functions.
 		template <typename _KeyType, typename _ItemType, typename _STLKeyHasher, typename _NodeType>
 		void
 		PerformMajorCompaction(

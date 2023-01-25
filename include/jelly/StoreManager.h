@@ -7,6 +7,7 @@ namespace jelly
 
 	class IStoreBlobReader;
 
+	// DefaultHost store manager
 	class StoreManager
 	{
 	public:

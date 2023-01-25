@@ -6,6 +6,7 @@
 namespace jelly
 {
 
+	// Abstract compaction strategy interface
 	class ICompactionStrategy
 	{
 	public:
@@ -20,8 +21,8 @@ namespace jelly
 			}
 
 			size_t											m_c;	// Current
-			int32_t											m_dc;	// Trend of m_c
-			int32_t											m_ddc;	// Trend of m_dc;
+			int32_t											m_dc;	// Derivative of m_c (velocity of total store size)
+			int32_t											m_ddc;	// Derivative of m_dc (acceleration of total store size)
 		};
 
 		typedef std::function<void(const CompactionJob&)> SuggestionCallback;

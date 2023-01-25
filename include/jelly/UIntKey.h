@@ -5,9 +5,15 @@
 namespace jelly
 {
 	
+	/**
+	 * Template for unsigned integer keys.
+	 */
 	template <typename _T>
 	struct UIntKey
 	{
+		/**
+		 * Hasher object for unsigned integer key.
+		 */
 		struct Hasher
 		{
 			std::size_t
@@ -33,8 +39,8 @@ namespace jelly
 		{
 			return m_value;
 		}
-
-		_T		m_value;
+		
+		_T		m_value;	///< Key value
 	};
 
 }

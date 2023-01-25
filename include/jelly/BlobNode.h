@@ -12,7 +12,13 @@
 namespace jelly
 {
 
-	// A node for storing blobs
+	/**
+	 * A node for storing blobs.
+	 * 
+	 * @tparam _KeyType			Key type. For example \ref UIntKey.
+	 * @tparam _BlobType		Blob type. For example \ref Blob.
+	 * @tparam _STLKeyHasher	A way to hash a key. For example \ref UIntKey::Hasher.
+	 */
 	template 
 	<
 		typename _KeyType,
@@ -100,15 +106,19 @@ namespace jelly
 		{
 		}
 		
-		// Set a blob
-		// 
-		// In: 
-		//   m_key			Request key
-		//   m_seq			Sequence number of the blob
-		//   m_blob			The blob
-		// Out:
-		//   m_seq			If RESULT_OUTDATED this returns the sequence number of the 
-		//                  currently stored blob
+		/**
+		 * Submits a set request to the queue.
+		 * 
+		 * Input  | <!-- -->
+		 * -------|-----------------------------------------------------------------------------------
+		 * m_key  | Request key.
+		 * m_seq  | Sequence number of the blob.
+		 * m_blob | The blob.
+		 * 
+		 * Output | <!-- -->
+		 * -------|-----------------------------------------------------------------------------------
+		 * m_seq  | If RESULT_OUTDATED this returns the sequence number of the currently stored blob.
+		 */
 		void
 		Set(
 			Request*										aRequest)
@@ -123,15 +133,20 @@ namespace jelly
 			this->AddRequestToQueue(aRequest);
 		}
 
-		// Get a blob
-		// 
-		// In: 
-		//   m_key			Request key
-		//   m_seq			Minimum sequence number of the blob (REUSLT_OUTDATED if 
-		//                  sequence number isn't at least this)
-		// Out:
-		//   m_blob			The blob
-		//   m_seq			Returns the stored sequence number
+  		 /**
+		 * Submits a get request to the queue.
+		 * 
+		 * Input  | <!-- -->
+		 * -------|-----------------------------------------------------------------------------------------------
+		 * m_key  | Request key.
+		 * m_seq  | Minimum sequence number of the blob (REUSLT_OUTDATED if sequence number isn't at least this).
+		 * m_blob | The blob.
+		 * 
+		 * Output | <!-- -->
+		 * -------|-----------------------------------------------------------------------------------
+		 * m_blob | The blob.
+		 * m_seq  | Returns the stored sequence number.
+		 */
 		void
 		Get(
 			Request*										aRequest)
@@ -146,14 +161,19 @@ namespace jelly
 			this->AddRequestToQueue(aRequest);
 		}
 
-		// Delete a blob
-		//
-		// In: 
-		//   m_key			Request key
-		//   m_seq			Sequence number of the blob being deleted
-		// Out:
-		//   m_seq			If RESULT_OUTDATED this returns the sequence number of the 
-		//                  currently stored blob
+		/**
+		* Submits a delete request to the queue.
+		*
+		* Input  | <!-- -->
+		* -------|-----------------------------------------------------------------------------------------------
+		* m_key  | Request key.
+		* m_seq  | Sequence number of the blob being deleted.
+		*
+		* Output | <!-- -->
+		* -------|-----------------------------------------------------------------------------------
+		* m_blob | The blob.
+		* m_seq  | If RESULT_OUTDATED this returns the sequence number of the currently stored blob.
+		*/
 		void
 		Delete(
 			Request*										aRequest)

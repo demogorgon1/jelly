@@ -6,6 +6,7 @@
 namespace jelly
 {
 
+	// Starts a high-resolution timer and emits it as a statistic sampler when it runs out of scope.
 	class ScopedTimeSampler
 	{
 	public:

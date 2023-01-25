@@ -7,6 +7,7 @@
 namespace jelly
 {
 
+	// DefaultHost implementation of IStoreBlobReader
 	class StoreBlobReader
 		: public IStoreBlobReader
 	{

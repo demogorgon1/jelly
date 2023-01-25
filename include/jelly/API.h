@@ -1,4 +1,8 @@
-#include "Base.h"
+#pragma once
+
+// This header file expose the jelly API. Include this from a precompiled header.
+
+#include "Base.h" // Must be included first
 
 #include "Blob.h"
 #include "BlobBuffer.h"

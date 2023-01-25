@@ -9,6 +9,24 @@
 namespace jelly
 {
 
+	/**
+	 * Generic blob type that encapsulates a binary buffer object.
+	 * 
+	 * @code
+	 * Blob<8> blob; 
+	 * blob.GetBuffer().SetSize(5); // Smaller than 8 bytes, so this does not cause a memory allocation
+	 * memcpy(blob.GetBuffer().GetPointer(), "hello", 5);
+	 * 
+	 * // Resize the buffer (original content is retained)
+	 * // This doesn't fit within the static 8-byte limit, so this will cause an allocation
+	 * blob.GetBuffer().SetSize(10); 
+	 * memcpy(blob.GetBuffer().GetPointer(), "helloworld", 10);
+	 * @endcode
+	 * 
+	 * @tparam _StaticSize		Size of static part of the buffer. 
+	 * 
+	 * @see Buffer
+	 */
 	template<size_t _StaticSize = 1>
 	class Blob
 	{
@@ -113,8 +131,8 @@ namespace jelly
 		}
 
 		// Data access
-		const Buffer<_StaticSize>&	GetBuffer() const { return m_buffer; }
-		Buffer<_StaticSize>&		GetBuffer() { return m_buffer; }
+		const Buffer<_StaticSize>&	GetBuffer() const { return m_buffer; }	//!< Returns const reference to encapsulated buffer object.
+		Buffer<_StaticSize>&		GetBuffer() { return m_buffer; }		//!< Returns reference to encapsulated buffer object.
 
 	private:
 		

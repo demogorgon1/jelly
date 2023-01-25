@@ -6,6 +6,15 @@
 namespace jelly
 {
 
+	/**
+	 * Binary buffer object implementing the \ref IBuffer interface.
+	 *
+	 * @tparam _StaticSize		Size of static part of the buffer. Memory will only be allocated dynamically if buffer size exceeds this.
+	 * 
+	 * @see Blob
+	 * @see BufferReader
+	 * @see BufferWriter
+	 */
 	template <size_t _StaticSize>
 	class Buffer
 		: public IBuffer
@@ -43,12 +52,14 @@ namespace jelly
 			_Reset();
 		}
 
+		//! Returns whether or not buffer is static.
 		bool
 		IsStatic() const
 		{
 			return m_data == m_static;
 		}
 
+		//! Compares contents with the specified IBuffer object. 
 		bool
 		operator==(
 			const IBuffer&	aOther) const
@@ -59,6 +70,7 @@ namespace jelly
 			return memcmp(m_data, aOther.GetPointer(), m_size) == 0;
 		}
 
+		//! Copies the contents of the specified \ref IBuffer object.
 		Buffer<_StaticSize>&
 		operator=(
 			const IBuffer&	aOther) 
@@ -68,6 +80,7 @@ namespace jelly
 			return *this;
 		}
 
+		//! Copies the contents of the specified \ref Buffer object.
 		Buffer<_StaticSize>&
 		operator=(
 			const Buffer<_StaticSize>&	aOther)
@@ -77,6 +90,7 @@ namespace jelly
 			return *this;
 		}
 
+		//------------------------------------------------------------------------------
 		// IBuffer implentation
 		void		
 		Reset() override

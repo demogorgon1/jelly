@@ -3,6 +3,9 @@
 namespace jelly
 {
 
+	/**
+	 * Template for unsigned integer locks.
+	 */
 	template <typename _T>
 	struct UIntLock
 	{
@@ -15,7 +18,7 @@ namespace jelly
 		bool	IsSet() const { return m_value != 0; }
 		void	Clear() { m_value = 0; }
 
-		_T	m_value;
+		_T	m_value; ///< Lock value
 	};
 
 }

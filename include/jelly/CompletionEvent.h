@@ -3,6 +3,9 @@
 namespace jelly
 {
 
+	/**
+	 * Event object that can be signaled when something has completed.
+	 */
 	struct CompletionEvent
 	{
 		CompletionEvent()
@@ -11,6 +14,7 @@ namespace jelly
 
 		}
 		
+		//! Signal the completion event
 		void
 		Signal()
 		{
@@ -19,21 +23,25 @@ namespace jelly
 				m_callback();
 		}
 
+		//! Poll if the completion event has been signaled
 		bool
 		Poll()
 		{
 			return m_signal;
 		}
 
+		//! Reset the completion event after it has been signaled
 		void
 		Reset()
 		{
 			m_signal = false;
 		}
 
+		//-----------------------------------------------------------------------------
 		// Public data
+
 		std::atomic_bool		m_signal;
-		std::function<void()>	m_callback;
+		std::function<void()>	m_callback; //!< Optional callback to be called when signaled. This is done on the signaling thread.
 	};
 
 }

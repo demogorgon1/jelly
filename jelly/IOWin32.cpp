@@ -249,14 +249,6 @@ namespace jelly
 		}
 
 		size_t		
-		FileWriteStream::GetSize() const
-		{
-			JELLY_ASSERT(m_handle.IsSet());
-
-			return m_size;
-		}
-
-		size_t		
 		FileWriteStream::Write(
 			const void*			aBuffer,
 			size_t				aBufferSize) 
@@ -294,6 +286,8 @@ namespace jelly
 		size_t
 		FileWriteStream::GetTotalBytesWritten() const
 		{
+			JELLY_ASSERT(m_handle.IsSet());
+
 			return m_size;
 		}
 

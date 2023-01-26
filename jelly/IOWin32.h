@@ -115,7 +115,6 @@ namespace jelly
 						~FileWriteStream();
 
 			size_t		Flush();
-			size_t		GetSize() const;
 
 			// IWriter implementation
 			size_t		Write(

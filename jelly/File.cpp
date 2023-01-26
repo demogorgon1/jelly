@@ -91,7 +91,7 @@ namespace jelly
 	File::GetSize() const
 	{
 		if(m_internal->m_fileWriteStream)
-			return m_internal->m_fileWriteStream->GetSize();
+			return m_internal->m_fileWriteStream->GetTotalBytesWritten();
 		if (m_internal->m_fileReadStream)
 			return m_internal->m_fileReadStream->GetSize();
 

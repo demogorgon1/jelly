@@ -20,7 +20,7 @@ namespace jelly
 			
 		// IStoreWriter implementation
 		size_t		WriteItem(
-						const IItem*					aItem) override;
+						const ItemBase*					aItem) override;
 		void		Flush() override;
 
 	private:

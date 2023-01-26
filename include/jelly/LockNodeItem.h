@@ -1,6 +1,6 @@
 #pragma once
 
-#include "IItem.h"
+#include "ItemBase.h"
 #include "IWriter.h"
 #include "MetaData.h"
 
@@ -12,7 +12,7 @@ namespace jelly
 	// Item stored by LockNode
 	template <typename _KeyType, typename _LockType>
 	struct LockNodeItem
-		: public IItem
+		: public ItemBase
 	{		
 		LockNodeItem(
 			const _KeyType&									aKey = _KeyType(),
@@ -37,10 +37,23 @@ namespace jelly
 			, m_pendingWAL(NULL)
 			, m_walInstanceCount(0)
 		{
-			m_meta.m_seq = aSeq;
+			SetSeq(aSeq);
+			SetTombstoneStoreId(aTombstoneStoreId);
+
 			m_meta.m_blobSeq = aBlobSeq;
 			m_meta.m_blobNodeIds = aBlobNodeIds;
-			m_tombstone.m_storeId = aTombstoneStoreId;
+		}
+
+		void
+		Reset()
+		{
+			JELLY_ASSERT(m_pendingWAL == NULL);
+			JELLY_ASSERT(m_walInstanceCount == 0);
+
+			m_key = _KeyType();
+			m_lock = _LockType();
+
+			ResetBase();
 		}
 
 		void
@@ -49,24 +62,22 @@ namespace jelly
 		{
 			m_key = aOther->m_key;
 			m_lock = aOther->m_lock;
-			m_tombstone = aOther->m_tombstone;
-			m_meta.m_seq = aOther->m_meta.m_seq;
+
 			m_meta.m_blobNodeIds = aOther->m_meta.m_blobNodeIds;
 			m_meta.m_blobSeq = aOther->m_meta.m_blobSeq;
-			m_meta.m_timeStamp = aOther->m_meta.m_timeStamp;
+
+			CopyBase(*aOther);
 		}
 
 		bool
 		Compare(
 			const LockNodeItem*								aOther) const
 		{
-			// Note: not comparing timestamps
 			return m_key == aOther->m_key 
 				&& m_lock == aOther->m_lock 
-				&& m_meta.m_seq == aOther->m_meta.m_seq
 				&& m_meta.m_blobNodeIds == aOther->m_meta.m_blobNodeIds
 				&& m_meta.m_blobSeq == aOther->m_meta.m_blobSeq 
-				&& m_tombstone == aOther->m_tombstone;
+				&& CompareBase(*aOther);
 		}
 
 		bool
@@ -81,21 +92,22 @@ namespace jelly
 			uint32_t										aOldestStoreId,
 			IStoreWriter*									aStoreWriter)
 		{
-			if (!m_tombstone.ShouldPrune(aOldestStoreId))
+			if (!ShouldBePruned(aOldestStoreId))
 				aStoreWriter->WriteItem(this);
 
 			return UINT64_MAX;
 		}
+
 		// IItem implementation
 		size_t
 		Write(
 			IWriter*										aWriter) const override
 		{
+			WriteBase(aWriter);
 			m_key.Write(aWriter);			
 			m_lock.Write(aWriter);
 			m_meta.Write(aWriter);
-			m_tombstone.Write(aWriter);
-
+		
 			return 0; // Only used for blobs
 		}
 
@@ -104,14 +116,15 @@ namespace jelly
 			IReader*										aReader,
 			size_t*											/*aOutBlobOffset*/) override
 		{
+			if (!ReadBase(aReader))
+				return false;
 			if (!m_key.Read(aReader))
 				return false;
 			if (!m_lock.Read(aReader))
 				return false;
 			if(!m_meta.Read(aReader))
 				return false;
-			if(!m_tombstone.Read(aReader))
-				return false;
+
 			return true;
 		}
 
@@ -119,7 +132,6 @@ namespace jelly
 		_KeyType							m_key;
 		_LockType							m_lock;	
 		MetaData::Lock						m_meta;
-		MetaData::Tombstone					m_tombstone;
 
 		// Runtime state, not serialized
 		WAL*								m_pendingWAL;

@@ -4,8 +4,8 @@
 #include "Compression.h"
 #include "ErrorUtils.h"
 #include "IFileStreamReader.h"
-#include "IItem.h"
 #include "IReader.h"
+#include "ItemBase.h"
 #include "IStoreWriter.h"
 #include "IWriter.h"
 #include "MetaData.h"
@@ -18,7 +18,7 @@ namespace jelly
 	// Blob node item
 	template <typename _KeyType, typename _BlobType>
 	struct BlobNodeItem
-		: public IItem
+		: public ItemBase
 	{
 		BlobNodeItem(
 			const _KeyType&									aKey = _KeyType(),
@@ -33,7 +33,7 @@ namespace jelly
 			, m_walInstanceCount(0)
 			, m_isResident(false)
 		{
-			m_meta.m_seq = aSeq;
+			SetSeq(aSeq);
 		}
 
 		BlobNodeItem(
@@ -50,8 +50,26 @@ namespace jelly
 			, m_walInstanceCount(0)
 			, m_isResident(false)
 		{
-			m_meta.m_seq = aSeq;
+			SetSeq(aSeq);
+
 			m_blob = aBlob;
+		}
+
+		void
+		Reset()
+		{
+			JELLY_ASSERT(m_pendingWAL == NULL);
+			JELLY_ASSERT(m_next == NULL);
+			JELLY_ASSERT(m_prev == NULL);
+			JELLY_ASSERT(m_walInstanceCount == 0);
+			JELLY_ASSERT(!m_isResident);
+
+			m_key = _KeyType();
+			m_storeId = 0;
+			m_storeOffset = 0;
+			m_storeSize = 0;			
+
+			ResetBase();
 		}
 
 		void
@@ -61,13 +79,12 @@ namespace jelly
 			m_blob = std::move(aOther->m_blob);
 
 			m_key = aOther->m_key;
-			m_meta.m_seq = aOther->m_meta.m_seq;
-			m_meta.m_timeStamp = aOther->m_meta.m_timeStamp;
-			m_tombstone = aOther->m_tombstone;
 			m_storeId = aOther->m_storeId;
 			m_storeOffset = aOther->m_storeOffset;
 			m_storeSize = aOther->m_storeSize;
 			m_isResident = aOther->m_isResident;
+
+			CopyBase(*aOther);
 		}
 
 		bool
@@ -78,14 +95,14 @@ namespace jelly
 			JELLY_ASSERT(aOther->m_blob);
 
 			// Note: no comparison of timestamp
-			return m_key == aOther->m_key && *m_blob == *aOther->m_blob && m_meta.m_seq == aOther->m_meta.m_seq && m_tombstone == aOther->m_tombstone;
+			return m_key == aOther->m_key && *m_blob == *aOther->m_blob && CompareBase(*aOther);
 		}
 
 		bool
 		CompactionRead(
 			IFileStreamReader*								aStoreReader)
 		{
-			m_storeOffset = aStoreReader->GetReadOffset();
+			m_storeOffset = aStoreReader->GetTotalBytesRead();
 
 			return Read(aStoreReader, &m_storeOffset);
 		}
@@ -97,7 +114,7 @@ namespace jelly
 		{
 			m_storeOffset = UINT64_MAX;
 
-			if (!m_tombstone.ShouldPrune(aOldestStoreId))
+			if (!ShouldBePruned(aOldestStoreId))
 				m_storeOffset = aStoreWriter->WriteItem(this);
 
 			return m_storeOffset;
@@ -108,28 +125,29 @@ namespace jelly
 		Write(
 			IWriter*										aWriter) const override
 		{
-			size_t blobOffset = 0;
+			size_t startOffset = aWriter->GetTotalBytesWritten();
 
-			if(!m_tombstone.IsSet())
+			WriteBase(aWriter);
+			m_key.Write(aWriter);
+
+			size_t blobOffset = 0; 
+
+			if(!HasTombstone())
 			{
 				JELLY_ASSERT(m_blob);
 
-				VarSizeUInt::Encoder<size_t> blobSize;
-				blobSize.Encode(m_blob->GetSize());
-				JELLY_CHECK(aWriter->Write(blobSize.GetBuffer(), blobSize.GetBufferSize()) == blobSize.GetBufferSize(), "Failed to write blob item blob size.");
+				JELLY_CHECK(aWriter->WriteUInt<size_t>(m_blob->GetSize()), "Failed to write blob item blob size.");
+
+				blobOffset = aWriter->GetTotalBytesWritten() - startOffset;
+
 				JELLY_CHECK(aWriter->Write(m_blob->GetPointer(), m_blob->GetSize()) == m_blob->GetSize(), "Failed to write blob item blob.");
 
-				blobOffset = blobSize.GetBufferSize();
 			}
 			else
 			{
 				JELLY_ASSERT(!m_blob);
 			}
 			
-			m_key.Write(aWriter);
-			m_meta.Write(aWriter);
-			m_tombstone.Write(aWriter);
-
 			return blobOffset;
 		}
 
@@ -138,30 +156,31 @@ namespace jelly
 			IReader*										aReader,
 			size_t*											aOutBlobOffset) override
 		{		
-			size_t size;
-			size_t sizeSize;
-			if(!aReader->ReadUInt<size_t>(size, &sizeSize))
+			size_t startOffset = aReader->GetTotalBytesRead();
+
+			if(!ReadBase(aReader))
+				return false;
+			if(!m_key.Read(aReader))
 				return false;
 
-			if(aOutBlobOffset != NULL)
-				(*aOutBlobOffset) += sizeSize;
+			if(!HasTombstone())
+			{
+				size_t size;
+				if (!aReader->ReadUInt<size_t>(size))
+					return false;
 
-			std::unique_ptr<BlobBuffer> blob = std::make_unique<BlobBuffer>();
-			blob->SetSize((size_t)size);
+				if (aOutBlobOffset != NULL)
+					(*aOutBlobOffset) += aReader->GetTotalBytesRead() - startOffset;
 
-			if(aReader->Read(blob->GetPointer(), blob->GetSize()) != blob->GetSize())
-				return false;
+				std::unique_ptr<BlobBuffer> blob = std::make_unique<BlobBuffer>();
+				blob->SetSize((size_t)size);
 
-			if (!m_key.Read(aReader))
-				return false;
-			if(!m_meta.Read(aReader))
-				return false;
-			if(!m_tombstone.Read(aReader))
-				return false;
+				if (aReader->Read(blob->GetPointer(), blob->GetSize()) != blob->GetSize())
+					return false;
 
-			m_blob = std::move(blob);
-			m_storeSize = m_blob->GetSize();
-			m_isResident = true;
+				m_blob = std::move(blob);
+				m_storeSize = m_blob->GetSize();
+			}
 
 			return true;
 		}
@@ -184,8 +203,6 @@ namespace jelly
 		// Public data
 		_KeyType							m_key;
 		std::unique_ptr<BlobBuffer>			m_blob;
-		MetaData::Blob						m_meta;
-		MetaData::Tombstone					m_tombstone;
 	
 		// Remaining members are part of runtime state, not serialized
 		WAL*								m_pendingWAL;

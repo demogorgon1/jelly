@@ -247,10 +247,10 @@ namespace jelly
 			}
 			else
 			{
-				if(item->m_meta.m_seq >= aRequest->GetSeq())
+				if(item->GetSeq() >= aRequest->GetSeq())
 				{
 					// Trying to set an old version - return latest sequence number to requester
-					aRequest->SetSeq(item->m_meta.m_seq);
+					aRequest->SetSeq(item->GetSeq());
 					return RESULT_OUTDATED;
 				}
 
@@ -265,7 +265,7 @@ namespace jelly
 
 					m_residentItems.MoveToTail(item);
 				}
-				else if(item->m_tombstone.IsSet())
+				else if(item->HasTombstone())
 				{
 					// Was deleted (and is also resident)
 					if (!aDelete)
@@ -294,13 +294,13 @@ namespace jelly
 
 			item->m_isResident = true; 
 
-			item->m_meta.m_seq = aRequest->GetSeq();
-			item->m_meta.m_timeStamp = aRequest->GetTimeStamp();
+			item->SetSeq(aRequest->GetSeq());
+			item->SetTimeStamp(aRequest->GetTimeStamp());
 
 			if(aDelete)
-				item->m_tombstone.Set(this->GetNextStoreId());
+				item->SetTombstoneStoreId(this->GetNextStoreId());
 			else
-				item->m_tombstone.Clear();
+				item->RemoveTombstone();
 			
 			aRequest->WriteToWAL(this, item);
 
@@ -318,13 +318,13 @@ namespace jelly
 			if (!this->GetItem(aRequest->GetKey(), item))
 				return RESULT_DOES_NOT_EXIST;
 
-			if(item->m_tombstone.IsSet())
+			if(item->HasTombstone())
 				return RESULT_DOES_NOT_EXIST;
 
-			if(item->m_meta.m_seq < aRequest->GetSeq())
+			if(item->GetSeq() < aRequest->GetSeq())
 			{
 				// Return stored sequence number
-				aRequest->SetSeq(item->m_meta.m_seq);
+				aRequest->SetSeq(item->GetSeq());
 				return RESULT_OUTDATED;
 			}
 
@@ -369,8 +369,8 @@ namespace jelly
 				aRequest->GetBlob().FromBuffer(this->m_host->GetCompressionProvider(), *item->m_blob);
 			}
 
-			aRequest->SetSeq(item->m_meta.m_seq);
-			aRequest->SetTimeStamp(item->m_meta.m_timeStamp);
+			aRequest->SetSeq(item->GetSeq());
+			aRequest->SetTimeStamp(item->GetTimeStamp());
 
 			return RESULT_OK;
 		}
@@ -442,7 +442,7 @@ namespace jelly
 
 					if (item->m_blob)
 					{
-						timeStampSorter.insert(TimeStampSorterValue({ item->m_key, item->m_meta.m_timeStamp }, item));
+						timeStampSorter.insert(TimeStampSorterValue({ item->m_key, item->GetTimeStamp() }, item));
 
 						totalSize += item->m_blob->GetSize();
 					}
@@ -488,7 +488,7 @@ namespace jelly
 				Item* existing;
 				if (this->GetItem(key, existing))
 				{
-					if (item.get()->m_meta.m_seq > existing->m_meta.m_seq)
+					if (item.get()->GetSeq() > existing->GetSeq())
 					{
 						if(existing->m_blob)
 						{
@@ -534,7 +534,7 @@ namespace jelly
 				}
 			}
 
-			aWAL->SetSize(aReader->GetReadOffset());
+			aWAL->SetSize(aReader->GetTotalBytesRead());
 		}
 
 		void
@@ -546,7 +546,7 @@ namespace jelly
 			{
 				std::unique_ptr<Item> item(new Item());
 
-				item->m_storeOffset = aReader->GetReadOffset();
+				item->m_storeOffset = aReader->GetTotalBytesRead();
 				item->m_storeId = aStoreId;
 
 				if(!item->Read(aReader, &item->m_storeOffset))
@@ -570,7 +570,7 @@ namespace jelly
 				Item* existing;
 				if (this->GetItem(key, existing))
 				{
-					if (item.get()->m_meta.m_seq > existing->m_meta.m_seq)
+					if (item.get()->GetSeq() > existing->GetSeq())
 					{
 						if(existing->m_blob)
 						{

@@ -41,6 +41,7 @@ namespace jelly
 		size_t		Read(
 						void*			aBuffer,
 						size_t			aBufferSize) override;
+		size_t		GetTotalBytesRead() const override;
 
 		//------------------------------------------------------------------------------
 		// Data access
@@ -51,6 +52,7 @@ namespace jelly
 
 		const uint8_t*	m_p;
 		size_t			m_remaining;
+		size_t			m_totalBytesRead;
 	};
 
 }

@@ -108,12 +108,6 @@ namespace jelly
 		return m_file.GetSize() == m_offset;
 	}
 
-	size_t		
-	FileStreamReader::GetReadOffset() const 
-	{
-		return m_offset;
-	}
-
 	//-------------------------------------------------------------------------------------------
 
 	size_t
@@ -174,6 +168,12 @@ namespace jelly
 			m_offset += bytes;
 			return bytes;
 		}
+	}
+
+	size_t		
+	FileStreamReader::GetTotalBytesRead() const 
+	{
+		return m_offset;
 	}
 
 }

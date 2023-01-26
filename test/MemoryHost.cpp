@@ -152,6 +152,12 @@ namespace jelly
 				return aBufferSize;
 			}
 
+			size_t
+			GetTotalBytesWritten() const override
+			{
+				return m_bufferList->m_totalBytes;
+			}
+
 			// Public data
 			BufferList*			m_bufferList;
 		};
@@ -210,10 +216,16 @@ namespace jelly
 				return totalRead;
 			}
 
+			size_t
+			GetTotalBytesRead() const override
+			{
+				return m_globalReadOffset;
+			}
+
 			// Public data
 			const MemoryBuffer*		m_currentBuffer;
-			size_t				m_currentBufferOffset;
-			size_t				m_globalReadOffset;
+			size_t					m_currentBufferOffset;
+			size_t					m_globalReadOffset;
 		};
 
 	}
@@ -277,6 +289,12 @@ namespace jelly
 					return m_bufferListReader.Read(aBuffer, aBufferSize);
 				}
 
+				size_t	
+				GetTotalBytesRead() const override
+				{
+					return m_bufferListReader.GetTotalBytesRead();
+				}
+
 				// IFileStreamReader implementation
 				bool	
 				IsEnd() const override
@@ -284,12 +302,6 @@ namespace jelly
 					return m_bufferListReader.m_currentBuffer == NULL;
 				}
 				
-				size_t	
-				GetReadOffset() const override
-				{
-					return m_bufferListReader.m_globalReadOffset;
-				}
-
 				// Public data
 				BufferListReader m_bufferListReader;
 			};
@@ -313,7 +325,7 @@ namespace jelly
 				void	
 				ReadItemBlob(
 					size_t				aOffset,
-					IItem*				aItem) override
+					ItemBase*			aItem) override
 				{
 					JELLY_ASSERT(m_bufferList != NULL);
 
@@ -361,7 +373,7 @@ namespace jelly
 				// IStoreWriter implementation
 				size_t	
 				WriteItem(
-					const IItem*					aItem) override
+					const ItemBase*					aItem) override
 				{
 					JELLY_ASSERT(m_bufferList->m_writeGuard);
 
@@ -441,10 +453,10 @@ namespace jelly
 					return m_bufferListReader.m_currentBuffer == NULL;
 				}
 				
-				size_t	
-				GetReadOffset() const override
+				size_t
+				GetTotalBytesRead() const override
 				{
-					return m_bufferListReader.m_globalReadOffset;
+					return m_bufferListReader.GetTotalBytesRead();
 				}
 
 				// Public data
@@ -476,7 +488,7 @@ namespace jelly
 				
 				void	
 				WriteItem(
-					const IItem*		aItem,
+					const ItemBase*		aItem,
 					CompletionEvent*	aCompletionEvent,
 					Result*				aResult) override
 				{

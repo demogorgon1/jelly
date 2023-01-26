@@ -11,7 +11,7 @@ namespace jelly
 	 * 
 	 * The buffer will automatically grow as you add more data. 
 	 *
-	 * @code
+	 * \code
 	 * // Write something into a buffer
 	 * Buffer<1> buffer;
 	 * BufferWriter writer(&buffer);
@@ -21,11 +21,11 @@ namespace jelly
 	 * BufferReader reader(buffer.GetPointer(), buffer.GetSize());
 	 * uint32_t something = reader.ReadUInt<uint32_t>();
 	 * JELLY_ASSERT(something == 1234);
-	 * @endcode
+	 * \endcode
 	 * 
-	 * @see Buffer
-	 * @see BufferReader
-	 * @see Blob
+	 * \see Buffer
+	 * \see BufferReader
+	 * \see Blob
 	 */
 	class BufferWriter
 		: public IWriter
@@ -56,6 +56,12 @@ namespace jelly
 			memcpy((uint8_t*)m_buffer.GetPointer() + writeOffset, aBuffer, aBufferSize);
 
 			return aBufferSize;
+		}
+
+		size_t
+		GetTotalBytesWritten() const override
+		{
+			return m_buffer.GetSize();
 		}
 
 	private:

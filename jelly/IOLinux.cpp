@@ -97,6 +97,7 @@ namespace jelly
 		FileReadStream::FileReadStream(
 			const char*			aPath)
 			: m_size(0)
+			, m_totalBytesRead(0)
 		{
 			int flags = O_RDONLY;
 			int mode = 0;
@@ -167,7 +168,15 @@ namespace jelly
 				remaining -= toCopy;
 			}
 
+			m_totalBytesRead += readBytes;
+
 			return readBytes;
+		}
+
+		size_t			
+		FileReadStream::GetTotalBytesRead() const 
+		{
+			return m_totalBytesRead;
 		}
 
 		FileReadStream::FileReadBuffer* 
@@ -223,14 +232,6 @@ namespace jelly
 		}
 
 		size_t		
-		FileWriteStream::GetSize() const
-		{
-			JELLY_ASSERT(m_handle.IsSet());
-
-			return m_size;
-		}
-
-		size_t		
 		FileWriteStream::Write(
 			const void*			aBuffer,
 			size_t				aBufferSize) 
@@ -263,6 +264,14 @@ namespace jelly
 			m_size += aBufferSize;
 
 			return aBufferSize;
+		}
+
+		size_t			
+		FileWriteStream::GetTotalBytesWritten() const
+		{
+			JELLY_ASSERT(m_handle.IsSet());
+
+			return m_size;
 		}
 
 		void		

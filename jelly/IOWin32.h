@@ -74,6 +74,7 @@ namespace jelly
 			size_t		Read(
 							void*				aBuffer,
 							size_t				aBufferSize) override;
+			size_t		GetTotalBytesRead() const override;
 
 		private:
 
@@ -98,6 +99,7 @@ namespace jelly
 
 			Handle								m_handle;
 			size_t								m_size;
+			size_t								m_totalBytesRead;
 
 			FileReadBuffer*	_ReadBuffer();
 		};
@@ -119,6 +121,7 @@ namespace jelly
 			size_t		Write(
 							const void*			aBuffer,
 							size_t				aBufferSize) override;
+			size_t		GetTotalBytesWritten() const override;
 
 		private:
 

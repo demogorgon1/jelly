@@ -6,7 +6,7 @@ namespace jelly
 {
 
 	struct CompletionEvent;
-	class IItem;
+	class ItemBase;
 
 	// Interface for WAL writer implementation
 	class IWALWriter
@@ -17,7 +17,7 @@ namespace jelly
 		// Virtual interface
 		virtual size_t	GetSize() const = 0;
 		virtual void	WriteItem(
-							const IItem*		aItem,
+							const ItemBase*		aItem,
 							CompletionEvent*	aCompletionEvent,
 							Result*				aResult) = 0;
 		virtual size_t	Flush() = 0;

@@ -3,7 +3,7 @@
 namespace jelly
 {
 
-	class IItem;
+	class ItemBase;
 
 	// Interface for random-access store blob reader implementation
 	class IStoreBlobReader
@@ -13,8 +13,8 @@ namespace jelly
 
 		// Virtual interface
 		virtual void	ReadItemBlob(
-							size_t				aOffset,
-							IItem*				aItem) = 0;
+							size_t					aOffset,
+							ItemBase*				aItem) = 0;
 		virtual void	Close() = 0;
 	};
 

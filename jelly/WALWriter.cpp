@@ -3,7 +3,7 @@
 #include <jelly/CompletionEvent.h>
 #include <jelly/Compression.h>
 #include <jelly/ErrorUtils.h>
-#include <jelly/IItem.h>
+#include <jelly/ItemBase.h>
 #include <jelly/Stat.h>
 
 #include "WALWriter.h"
@@ -50,7 +50,7 @@ namespace jelly
 
 	void
 	WALWriter::WriteItem(
-		const IItem*					aItem,
+		const ItemBase*					aItem,
 		CompletionEvent*				aCompletionEvent,
 		Result*							aResult) 
 	{

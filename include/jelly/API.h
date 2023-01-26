@@ -23,7 +23,7 @@
 #include "HousekeepingAdvisor.h"
 #include "IFileStreamReader.h"
 #include "IHost.h"
-#include "IItem.h"
+#include "ItemBase.h"
 #include "IReader.h"
 #include "IStats.h"
 #include "IStoreBlobReader.h"

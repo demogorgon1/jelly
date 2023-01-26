@@ -60,6 +60,9 @@ namespace jelly
 		virtual size_t	Read(
 							void*	aBuffer,
 							size_t	aBufferSize) = 0;
+
+		//! Returns total number of bytes read.
+		virtual size_t	GetTotalBytesRead() const = 0;
 	};
 
 }

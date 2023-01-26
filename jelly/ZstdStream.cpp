@@ -39,6 +39,7 @@ namespace jelly
 
 		Compressor::Compressor()
 			: m_error(false)
+			, m_totalBytesWritten(0)
 		{
 			m_internal = new Internal();
 
@@ -133,7 +134,15 @@ namespace jelly
 					m_outputCallback(buffer, outBuffer.pos);
 			}
 
+			m_totalBytesWritten += aBufferSize;
+
 			return aBufferSize;
+		}
+
+		size_t	
+		Compressor::GetTotalBytesWritten() const
+		{
+			return m_totalBytesWritten;
 		}
 
 		//------------------------------------------------------------------------

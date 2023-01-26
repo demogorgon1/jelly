@@ -45,6 +45,9 @@ namespace jelly
 		virtual size_t	Write(
 							const void*	aBuffer,
 							size_t		aBufferSize) = 0;
+
+		//! Returns number of bytes written in total
+		virtual size_t	GetTotalBytesWritten() const = 0;
 	};
 
 }

@@ -14,7 +14,6 @@ namespace jelly
 
 		// Virtual interface
 		virtual bool	IsEnd() const = 0;
-		virtual size_t	GetReadOffset() const = 0;
 	};
 
 }

@@ -10,6 +10,7 @@ namespace jelly
 		size_t			aBufferSize)
 		: m_p((const uint8_t*)aBuffer)
 		, m_remaining(aBufferSize)
+		, m_totalBytesRead(0)
 	{
 
 	}
@@ -35,7 +36,15 @@ namespace jelly
 			m_remaining -= toCopy;
 		}
 
+		m_totalBytesRead += toCopy;
+
 		return toCopy;
+	}
+
+	size_t		
+	BufferReader::GetTotalBytesRead() const 
+	{
+		return m_totalBytesRead;
 	}
 
 }

@@ -26,10 +26,10 @@ namespace jelly
 
 		// IFileStreamReader implementation
 		bool		IsEnd() const override;
-		size_t		GetReadOffset() const override;
 		size_t		Read(
 						void*								aBuffer,
 						size_t								aBufferSize) override;
+		size_t		GetTotalBytesRead() const override;
 
 	private:
 

@@ -57,6 +57,7 @@ namespace jelly
 						if(offset != UINT64_MAX)
 							compactionRedirect1->AddEntry(item1.m_key, newStoreId, offset);
 
+						item1.Reset();
 						hasItem1 = false;
 					}
 					else if (!hasItem1 && hasItem2)
@@ -65,6 +66,7 @@ namespace jelly
 						if (offset != UINT64_MAX)
 							compactionRedirect2->AddEntry(item2.m_key, newStoreId, offset);
 
+						item2.Reset();
 						hasItem2 = false;
 					}
 					else
@@ -77,6 +79,7 @@ namespace jelly
 							if (offset != UINT64_MAX)
 								compactionRedirect1->AddEntry(item1.m_key, newStoreId, offset);
 
+							item1.Reset();
 							hasItem1 = false;
 						}
 						else if (item2.m_key < item1.m_key)
@@ -85,6 +88,7 @@ namespace jelly
 							if (offset != UINT64_MAX)
 								compactionRedirect2->AddEntry(item2.m_key, newStoreId, offset);
 
+							item2.Reset();
 							hasItem2 = false;
 						}
 						else
@@ -92,7 +96,7 @@ namespace jelly
 							// Items are the same - keep the one with the highest sequence number
 							size_t offset = UINT64_MAX;
 
-							if (item1.m_meta.m_seq > item2.m_meta.m_seq)
+							if (item1.GetSeq() > item2.GetSeq())
 								offset = item1.CompactionWrite(aCompactionJob.m_oldestStoreId, fOut.get());
 							else
 								offset = item2.CompactionWrite(aCompactionJob.m_oldestStoreId, fOut.get());
@@ -105,6 +109,9 @@ namespace jelly
 
 							hasItem1 = false;
 							hasItem2 = false;
+
+							item1.Reset();
+							item2.Reset();
 						}
 					}
 				}
@@ -220,11 +227,11 @@ namespace jelly
 						{
 							JELLY_ASSERT(aLHS->m_hasItem && aRHS->m_hasItem);
 							JELLY_ASSERT(aLHS->m_item.m_key == aRHS->m_item.m_key);
-							return aLHS->m_item.m_meta.m_seq > aRHS->m_item.m_meta.m_seq;
+							return aLHS->m_item.GetSeq() > aRHS->m_item.GetSeq();
 						});
 
 					// Verify that array is ordered largest to smallest
-					JELLY_ASSERT(lowestKeySourceStores[0]->m_item.m_meta.m_seq >= lowestKeySourceStores[lowestKeySourceStores.size() - 1]->m_item.m_meta.m_seq);
+					JELLY_ASSERT(lowestKeySourceStores[0]->m_item.GetSeq() >= lowestKeySourceStores[lowestKeySourceStores.size() - 1]->m_item.GetSeq());
 
 					{
 						_ItemType& sourceItem = lowestKeySourceStores[0]->m_item;
@@ -238,6 +245,8 @@ namespace jelly
 
 							JELLY_ASSERT(lowestKeyStore->m_hasItem);
 							lowestKeyStore->m_hasItem = false;
+
+							lowestKeyStore->m_item.Reset();
 						}
 					}
 				}

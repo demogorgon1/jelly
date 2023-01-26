@@ -25,11 +25,13 @@ namespace jelly
 			size_t	Write(
 						const void*					aBuffer,
 						size_t						aBufferSize) override;
+			size_t	GetTotalBytesWritten() const override;
 
 		private:
 
 			Compression::OutputCallback	m_outputCallback;
 			bool						m_error;
+			size_t						m_totalBytesWritten;
 				
 			struct Internal;
 			Internal*					m_internal;

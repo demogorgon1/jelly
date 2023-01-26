@@ -104,6 +104,7 @@ namespace jelly
 		FileReadStream::FileReadStream(
 			const char*			aPath)
 			: m_size(0)
+			, m_totalBytesRead(0)
 		{
 			DWORD desiredAccess = GENERIC_READ;
 			DWORD shareMode = FILE_SHARE_READ;
@@ -176,7 +177,15 @@ namespace jelly
 				remaining -= toCopy;
 			}
 
+			m_totalBytesRead += readBytes;
+
 			return readBytes;
+		}
+
+		size_t		
+		FileReadStream::GetTotalBytesRead() const 
+		{
+			return m_totalBytesRead;
 		}
 
 		FileReadStream::FileReadBuffer* 
@@ -280,6 +289,12 @@ namespace jelly
 			m_size += aBufferSize;
 
 			return aBufferSize;
+		}
+
+		size_t
+		FileWriteStream::GetTotalBytesWritten() const
+		{
+			return m_size;
 		}
 
 		void		

@@ -41,11 +41,13 @@ namespace jelly
 		size_t		Write(
 						const void*			aBuffer,
 						size_t				aBufferSize) override;
+		size_t		GetTotalBytesWritten() const override;
 
 		// IReader implementation
 		size_t		Read(
 						void*				aBuffer,
 						size_t				aBufferSize) override;
+		size_t		GetTotalBytesRead() const override;
 
 		// Data access
 		const char*	GetPath() const { return m_path.c_str(); }

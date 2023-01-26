@@ -141,6 +141,12 @@ namespace jelly
 		return bytes;
 	}
 
+	size_t		
+	File::GetTotalBytesWritten() const 
+	{
+		return m_internal->m_fileWriteStream->GetTotalBytesWritten();
+	}
+
 	//---------------------------------------------------------------------
 
 	size_t		
@@ -157,6 +163,12 @@ namespace jelly
 			m_statsContext->m_stats->Emit(m_statsContext->m_idRead, bytes, Stat::TYPE_COUNTER);
 
 		return bytes;
+	}
+
+	size_t		
+	File::GetTotalBytesRead() const 
+	{
+		return m_internal->m_fileReadStream->GetTotalBytesRead();
 	}
 
 }

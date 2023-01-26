@@ -1,7 +1,7 @@
 #pragma once
 
 #include <jelly/File.h>
-#include <jelly/IItem.h>
+#include <jelly/ItemBase.h>
 #include <jelly/IStoreBlobReader.h>
 
 namespace jelly
@@ -22,7 +22,7 @@ namespace jelly
 		// IStoreBlobReader
 		void		ReadItemBlob(
 						size_t				aOffset, 
-						IItem*				aItem) override;
+						ItemBase*				aItem) override;
 		void		Close() override;
 
 	private:

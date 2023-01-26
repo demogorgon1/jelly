@@ -1,7 +1,7 @@
 #include <jelly/Base.h>
 
 #include <jelly/ErrorUtils.h>
-#include <jelly/IItem.h>
+#include <jelly/ItemBase.h>
 #include <jelly/Stat.h>
 
 #include "StoreWriter.h"
@@ -30,7 +30,7 @@ namespace jelly
 		
 	size_t
 	StoreWriter::WriteItem(
-		const IItem*					aItem)
+		const ItemBase*					aItem)
 	{
 		size_t offset = m_file.GetSize();
 

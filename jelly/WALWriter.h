@@ -29,7 +29,7 @@ namespace jelly
 		// IWALWriter implementation
 		size_t		GetSize() const override;
 		void		WriteItem(
-						const IItem*					aItem,
+						const ItemBase*					aItem,
 						CompletionEvent*				aCompletionEvent,
 						Result*							aResult) override;
 		size_t		Flush() override;
@@ -40,7 +40,7 @@ namespace jelly
 
 		struct PendingItemWrite
 		{
-			const IItem*										m_item;
+			const ItemBase*										m_item;
 			CompletionEvent*									m_completionEvent;
 			Result*												m_result;
 		};

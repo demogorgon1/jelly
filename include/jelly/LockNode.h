@@ -193,7 +193,7 @@ namespace jelly
 					// Same lock, no need to write anything
 					aRequest->SetBlobSeq(item->m_meta.m_blobSeq);
 					aRequest->SetBlobNodeIds(item->m_meta.m_blobNodeIds);
-					aRequest->SetTimeStamp(item->m_meta.m_timeStamp);
+					aRequest->SetTimeStamp(item->GetTimeStamp());
 					return RESULT_OK;
 				}
 			}
@@ -201,10 +201,10 @@ namespace jelly
 			aRequest->SetBlobSeq(item->m_meta.m_blobSeq);
 			aRequest->SetBlobNodeIds(item->m_meta.m_blobNodeIds);
 
-			item->m_meta.m_timeStamp = aRequest->GetTimeStamp();
-			item->m_meta.m_seq++;
+			item->SetTimeStamp(aRequest->GetTimeStamp());
+			item->IncrementSeq();
 
-			item->m_tombstone.Clear();
+			item->RemoveTombstone();
 
 			aRequest->WriteToWAL(this, item);
 
@@ -236,8 +236,9 @@ namespace jelly
 
 			item->m_meta.m_blobSeq = aRequest->GetBlobSeq();
 			item->m_meta.m_blobNodeIds = aRequest->GetBlobNodeIds();
-			item->m_meta.m_timeStamp = aRequest->GetTimeStamp();
-			item->m_meta.m_seq++;
+
+			item->SetTimeStamp(aRequest->GetTimeStamp());
+			item->IncrementSeq();
 	
 			aRequest->WriteToWAL(this, item);
 
@@ -262,10 +263,11 @@ namespace jelly
 
 			item->m_meta.m_blobSeq = UINT32_MAX;
 			item->m_meta.m_blobNodeIds = UINT32_MAX;
-			item->m_meta.m_timeStamp = aRequest->GetTimeStamp();
-			item->m_meta.m_seq++;
 
-			item->m_tombstone.Set(this->GetNextStoreId());
+			item->SetTimeStamp(aRequest->GetTimeStamp());
+			item->IncrementSeq();
+
+			item->SetTombstoneStoreId(this->GetNextStoreId());
 
 			aRequest->WriteToWAL(this, item);
 
@@ -333,7 +335,7 @@ namespace jelly
 				Item* existing;
 				if (this->GetItem(key, existing))
 				{
-					if (item.get()->m_meta.m_seq > existing->m_meta.m_seq)
+					if (item.get()->GetSeq() > existing->GetSeq())
 					{
 						existing->MoveFrom(item.get());
 
@@ -362,7 +364,7 @@ namespace jelly
 				}
 			}
 
-			aWAL->SetSize(aReader->GetReadOffset());
+			aWAL->SetSize(aReader->GetTotalBytesRead());
 		}
 
 		void
@@ -381,7 +383,7 @@ namespace jelly
 				Item* existing;
 				if (this->GetItem(key, existing))
 				{
-					if (item.get()->m_meta.m_seq > existing->m_meta.m_seq)
+					if (item.get()->GetSeq() > existing->GetSeq())
 					{
 						existing->MoveFrom(item.get());
 					}

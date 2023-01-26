@@ -33,7 +33,7 @@ namespace jelly
 	void		
 	StoreBlobReader::ReadItemBlob(
 		size_t				aOffset,
-		IItem*				aItem)
+		ItemBase*				aItem)
 	{
 		if(!m_file)
 			m_file = std::make_unique<File>(m_fileStatsContext, m_path.c_str(), File::MODE_READ_RANDOM);

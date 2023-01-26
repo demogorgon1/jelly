@@ -487,16 +487,20 @@ namespace jelly
 				if(!item->Read(aReader, NULL))
 					break;
 
+				typename Item::RuntimeState& itemRuntimeState = item->GetRuntimeState();
+
 				_KeyType key = item.get()->GetKey();
 
 				Item* existing;
 				if (this->GetItem(key, existing))
 				{
-					if (item.get()->GetSeq() > existing->GetSeq())
+					// We have an existing item for this key - update it if new sequence number is higher
+					if (item->GetSeq() > existing->GetSeq())
 					{
 						if(existing->HasBlob())
 						{
 							JELLY_ASSERT(m_totalResidentBlobSize >= existing->GetBlob()->GetSize());
+
 							m_totalResidentBlobSize -= existing->GetBlob()->GetSize();
 						}
 
@@ -505,29 +509,35 @@ namespace jelly
 
 						existing->MoveFrom(item.get());
 
-						if(item->GetRuntimeState().m_isResident)
+						// Resident items sorted by age (newest at tail, which is this item now)
+						if(itemRuntimeState.m_isResident)
 							m_residentItems.MoveToTail(existing);
 
-						if (existing->GetRuntimeState().m_pendingWAL != NULL)
+						typename Item::RuntimeState& existingRuntimeState = existing->GetRuntimeState();
+
+						if (existingRuntimeState.m_pendingWAL != NULL)
 						{
-							existing->GetRuntimeState().m_pendingWAL->RemoveReference();
-							existing->GetRuntimeState().m_pendingWAL = NULL;
+							// Item is already in pending store list, remove reference to current WAL as we'll add a new one
+							existingRuntimeState.m_pendingWAL->RemoveReference();
+							existingRuntimeState.m_pendingWAL = NULL;
 						}
 						else
 						{
+							// Item isn't in the pending store, add it
 							this->m_pendingStore.insert(std::pair<const _KeyType, Item*>(existing->GetKey(), existing));
 						}
 
-						existing->GetRuntimeState().m_pendingWAL = aWAL;
-						existing->GetRuntimeState().m_pendingWAL->AddReference();
+						existingRuntimeState.m_pendingWAL = aWAL;
+						existingRuntimeState.m_pendingWAL->AddReference();
 					}
 				}
 				else
 				{
+					// First time we see this key, add it
 					m_residentItems.Add(item.get());
 
-					item->GetRuntimeState().m_pendingWAL = aWAL;
-					item->GetRuntimeState().m_pendingWAL->AddReference();
+					itemRuntimeState.m_pendingWAL = aWAL;
+					itemRuntimeState.m_pendingWAL->AddReference();
 
 					this->m_pendingStore.insert(std::pair<const _KeyType, Item*>(item->GetKey(), item.get()));
 
@@ -570,7 +580,6 @@ namespace jelly
 				else
 				{
 					itemRuntimeState.m_isResident = true;
-
 				}
 
 				Item* existing;

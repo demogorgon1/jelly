@@ -93,15 +93,14 @@ namespace jelly
 		* Submits a lock request to the queue.
 		*
 		* Input  | <!-- -->
-		* -------|-----------------------------------------------------------------------------------------------
+		* -------|-----------------------------------------------------------------------------------
 		* m_key  | Request key.
 		* m_lock | Lock id that should be used.
 		*
-		* Output         | <!-- -->
-		* ---------------|-----------------------------------------------------------------------------------
-		* m_blobSeq      | Latest blob sequence number.
-		* m_blobNodeIds  | Up to 4 ids of blob nodes where blob is stored.
-		* m_lock         | Previous lock id.
+		* Output | <!-- -->
+		* -------|-----------------------------------------------------------------------------------
+		* m_meta | Latest meta data.
+		* m_lock | Previous lock id.
 		*/
 		void
 		Lock(
@@ -120,12 +119,11 @@ namespace jelly
 		/**
 		* Submits an unlock request to the queue.
 		*
-		* Input          | <!-- -->
-		* ---------------|-----------------------------------------------------------------------------------------------
-		* m_key          | Request key.
-		* m_lock         | Lock id that should be used.
-		* m_blobSeq      | Latest blob sequence number.
-		* m_blobNodeIds  | Up to 4 ids of blob nodes where blob is stored
+		* Input  | <!-- -->
+		* -------|-----------------------------------------------------------------------------------
+		* m_key  | Request key.
+		* m_lock | Lock id that should be used.
+		* m_meta | New meta data to save with the lock.
 		*/
 		void
 		Unlock(
@@ -144,9 +142,9 @@ namespace jelly
 		/**
 		* Submits an delete request to the queue.
 		*
-		* Input          | <!-- -->
-		* ---------------|-----------------------------------------------------------------------------------------------
-		* m_key          | Request key.
+		* Input | <!-- -->
+		* ------|------------------------------------------------------------------------------------
+		* m_key | Request key.
 		*/
 		void
 		Delete(
@@ -333,26 +331,30 @@ namespace jelly
 				{
 					if (item->GetSeq() > existing->GetSeq())
 					{
+						typename Item::RuntimeState& existingRuntimeState = existing->GetRuntimeState();
+
 						existing->MoveFrom(item.get());
 
-						if (existing->GetRuntimeState().m_pendingWAL != NULL)
+						if (existingRuntimeState.m_pendingWAL != NULL)
 						{
-							existing->GetRuntimeState().m_pendingWAL->RemoveReference();
-							existing->GetRuntimeState().m_pendingWAL = NULL;
+							existingRuntimeState.m_pendingWAL->RemoveReference();
+							existingRuntimeState.m_pendingWAL = NULL;
 						}
 						else
 						{
 							this->m_pendingStore.insert(std::pair<const _KeyType, Item*>(existing->GetKey(), existing));
 						}
 
-						existing->GetRuntimeState().m_pendingWAL = aWAL;
-						existing->GetRuntimeState().m_pendingWAL->AddReference();
+						existingRuntimeState.m_pendingWAL = aWAL;
+						existingRuntimeState.m_pendingWAL->AddReference();
 					}
 				}
 				else
-				{
-					item->GetRuntimeState().m_pendingWAL = aWAL;
-					item->GetRuntimeState().m_pendingWAL->AddReference();
+				{					
+					typename Item::RuntimeState& itemRuntimeState = item->GetRuntimeState();
+
+					itemRuntimeState.m_pendingWAL = aWAL;
+					itemRuntimeState.m_pendingWAL->AddReference();
 
 					this->m_pendingStore.insert(std::pair<const _KeyType, Item*>(item->GetKey(), item.get()));
 
@@ -380,9 +382,7 @@ namespace jelly
 				if (this->GetItem(key, existing))
 				{
 					if (item->GetSeq() > existing->GetSeq())
-					{
 						existing->MoveFrom(item.get());
-					}
 				}
 				else
 				{

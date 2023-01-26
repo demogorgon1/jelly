@@ -15,6 +15,8 @@ namespace jelly
 		bool	Read(IReader* aReader) { return aReader->ReadUInt(m_value); }
 		bool	operator==(const UIntLock& aOther) const { return m_value == aOther.m_value; }
 		bool	operator!=(const UIntLock& aOther) const { return m_value != aOther.m_value; }
+		bool	operator==(const _T& aOther) const { return m_value == aOther; }
+		bool	operator!=(const _T& aOther) const { return m_value != aOther; }
 		bool	IsSet() const { return m_value != 0; }
 		void	Clear() { m_value = 0; }
 

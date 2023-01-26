@@ -12,7 +12,7 @@ namespace jelly
 		namespace
 		{
 
-			typedef BlobNode<UIntKey<uint32_t>,	UInt32Blob,	UIntKey<uint32_t>::Hasher> BlobNodeType;
+			typedef BlobNode<UIntKey<uint32_t>,	UInt32Blob> BlobNodeType;
 			typedef HousekeepingAdvisor<BlobNodeType> HousekeepingAdvisorType;
 
 			void

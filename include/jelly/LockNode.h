@@ -16,25 +16,23 @@ namespace jelly
 	 * \tparam _KeyType			Key type. For example UIntKey.
 	 * \tparam _LockType		Lock type. For example UIntLock.
 	 * \tparam _LockMetaType	Lock meta data type. For example LockMetaData::StaticSingleBlob.
-	 * \tparam _STLKeyHasher	A way to hash a key. For example UIntKey::Hasher.
 	 */	
 	template 
 	<
 		typename _KeyType,
 		typename _LockType,
-		typename _LockMetaType,
-		typename _STLKeyHasher
+		typename _LockMetaType
 	>
 	class LockNode
 		: public Node<
 			_KeyType, 
 			LockNodeRequest<_KeyType, _LockType, _LockMetaType>, 
 			LockNodeItem<_KeyType, _LockType, _LockMetaType>,
-			_STLKeyHasher,
+			typename _KeyType::Hasher,
 			true> // Enable streaming compression of WALs
 	{
 	public:
-		typedef Node<_KeyType, LockNodeRequest<_KeyType, _LockType, _LockMetaType>, LockNodeItem<_KeyType, _LockType, _LockMetaType>, _STLKeyHasher, true> NodeBase;
+		typedef Node<_KeyType, LockNodeRequest<_KeyType, _LockType, _LockMetaType>, LockNodeItem<_KeyType, _LockType, _LockMetaType>, typename _KeyType::Hasher, true> NodeBase;
 
 		struct Config
 		{

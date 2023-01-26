@@ -22,11 +22,11 @@ namespace jelly
 		namespace
 		{
 
-			typedef BlobNode<UIntKey<uint32_t>, UInt32Blob, UIntKey<uint32_t>::Hasher> BlobNodeType;
+			typedef BlobNode<UIntKey<uint32_t>, UInt32Blob> BlobNodeType;
 			typedef BlobNodeItem<UIntKey<uint32_t>, UInt32Blob> BlobNodeItemType;
 
 			typedef LockMetaData::StaticSingleBlob<4> LockMetaDataType;
-			typedef LockNode<UIntKey<uint32_t>, UIntLock<uint32_t>, LockMetaDataType, UIntKey<uint32_t>::Hasher> LockNodeType;
+			typedef LockNode<UIntKey<uint32_t>, UIntLock<uint32_t>, LockMetaDataType> LockNodeType;
 			typedef LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>, LockMetaDataType> LockNodeItemType;
 
 			typedef CompactionResult<UIntKey<uint32_t>, UIntKey<uint32_t>::Hasher> CompactionResultType;

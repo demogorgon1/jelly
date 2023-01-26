@@ -9,7 +9,7 @@ namespace jelly::Test::Sim
 	{
 		typedef LockMetaData::StaticSingleBlob<4> LockMetaDataType;
 
-		typedef LockNode<UIntKey<uint32_t>, UIntLock<uint32_t>, LockMetaDataType, UIntKey<uint32_t>::Hasher> LockNodeType;
+		typedef LockNode<UIntKey<uint32_t>, UIntLock<uint32_t>, LockMetaDataType> LockNodeType;
 
 		typedef NodeServer<LockNodeType, NODE_SERVER_TYPE_BLOB> LockServerType;
 

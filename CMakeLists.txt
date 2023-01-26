@@ -55,3 +55,5 @@ endif()
 add_subdirectory(jelly)
 add_subdirectory(test)
 add_subdirectory(include)
+add_subdirectory(examples)
+

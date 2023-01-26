@@ -17,24 +17,22 @@ namespace jelly
 	 * 
 	 * \tparam _KeyType			Key type. For example \ref UIntKey.
 	 * \tparam _BlobType		Blob type. For example \ref Blob.
-	 * \tparam _STLKeyHasher	A way to hash a key. For example \ref UIntKey::Hasher.
 	 */
 	template 
 	<
 		typename _KeyType,
-		typename _BlobType,
-		typename _STLKeyHasher
+		typename _BlobType
 	>
 	class BlobNode
 		: public Node<
 			_KeyType, 
 			BlobNodeRequest<_KeyType, _BlobType>, 
 			BlobNodeItem<_KeyType, _BlobType>,
-			_STLKeyHasher,
+			typename _KeyType::Hasher,
 			false> // Disable streaming compression of WALs (blobs are already compressed)
 	{
 	public:
-		typedef Node<_KeyType, BlobNodeRequest<_KeyType, _BlobType>, BlobNodeItem<_KeyType, _BlobType>, _STLKeyHasher, false> NodeBase;
+		typedef Node<_KeyType, BlobNodeRequest<_KeyType, _BlobType>, BlobNodeItem<_KeyType, _BlobType>, typename _KeyType::Hasher, false> NodeBase;
 
 		struct Config
 		{

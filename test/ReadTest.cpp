@@ -15,7 +15,7 @@ namespace jelly
 			Run(
 				const Config* aConfig)
 			{			
-				typedef BlobNode<UIntKey<uint32_t>, Blob<1>, UIntKey<uint32_t>::Hasher> BlobNodeType;
+				typedef BlobNode<UIntKey<uint32_t>, Blob<1>> BlobNodeType;
 
 				#if defined(JELLY_ZSTD)
 					DefaultHost host(".", "wrtest", Compression::ID_ZSTD);

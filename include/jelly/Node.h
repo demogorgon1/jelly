@@ -157,19 +157,38 @@ namespace jelly
 		 */
 		size_t
 		FlushPendingWAL(
-			uint32_t		aWALConcurrentIndex)
+			uint32_t		aWALConcurrentIndex = UINT32_MAX)
 		{
-			JELLY_ASSERT(aWALConcurrentIndex < m_pendingWALs.size());
+			size_t count = 0;
 
-			WAL* pendingWAL = m_pendingWALs[aWALConcurrentIndex];
-			if(pendingWAL != NULL)
+			if(aWALConcurrentIndex == UINT32_MAX)
 			{
-				ScopedTimeSampler timeSampler(m_host->GetStats(), m_statsContext.m_idFlushPendingWALTime);
+				// Flush all pending WALs
+				for(WAL* pendingWAL : m_pendingWALs)
+				{
+					if (pendingWAL != NULL)
+					{
+						ScopedTimeSampler timeSampler(m_host->GetStats(), m_statsContext.m_idFlushPendingWALTime);
 
-				return pendingWAL->GetWriter()->Flush();
+						count += pendingWAL->GetWriter()->Flush();
+					}
+				}
+			}
+			else
+			{
+				// Flush only specific pending WAL
+				JELLY_ASSERT(aWALConcurrentIndex < m_pendingWALs.size());
+
+				WAL* pendingWAL = m_pendingWALs[aWALConcurrentIndex];
+				if (pendingWAL != NULL)
+				{
+					ScopedTimeSampler timeSampler(m_host->GetStats(), m_statsContext.m_idFlushPendingWALTime);
+
+					count += pendingWAL->GetWriter()->Flush();
+				}
 			}
 
-			return 0;
+			return count;
 		}
 
 		/**

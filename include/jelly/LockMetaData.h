@@ -10,7 +10,7 @@ namespace jelly
 	namespace LockMetaData
 	{
 
-		template <size_t _MaxBlobNodeIds>
+		template <size_t _MaxBlobNodeIds = 1>
 		struct StaticSingleBlob
 		{
 			StaticSingleBlob()

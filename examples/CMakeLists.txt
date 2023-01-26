@@ -1,15 +1,17 @@
 cmake_minimum_required (VERSION 3.19)
 
-add_executable(example-blob-node ExampleBlobNode.cpp)
-	
-target_compile_features(example-blob-node PRIVATE cxx_std_20)
+macro(jelly_example EXE_NAME SOURCE_FILE)
+	add_executable(${EXE_NAME} ${SOURCE_FILE})	
+	target_compile_features(${EXE_NAME} PRIVATE cxx_std_20)
+	if(JELLY_PRECOMPILED_HEADERS)
+		target_precompile_headers(${EXE_NAME} PRIVATE <jelly/API.h>)
+	endif()
+	target_link_libraries(${EXE_NAME} jelly::jelly)
+	if(NOT MSVC)
+		target_link_libraries(${EXE_NAME} pthread)
+	endif()
+endmacro()
 
-if(JELLY_PRECOMPILED_HEADERS)
-	target_precompile_headers(example-blob-node PRIVATE <jelly/API.h>)
-endif()
-
-target_link_libraries(example-blob-node jelly::jelly)
-
-if(NOT MSVC)
-	target_link_libraries(example-blob-node pthread)
-endif()
+jelly_example(example-blob-node Example1_BlobNode.cpp)
+jelly_example(example-lock-node Example2_LockNode.cpp)
+jelly_example(example-housekeeping Example3_Housekeeping.cpp)

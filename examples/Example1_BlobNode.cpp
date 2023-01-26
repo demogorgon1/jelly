@@ -1,5 +1,5 @@
 /**
- * \example ExampleBlobNode.cpp
+ * \example Example1_BlobNode.cpp
  * Basic example of how to save and load blobs.
  */
 
@@ -17,8 +17,11 @@ main(
 	// jelly::IHost interface, but you can implement your own if you're so inclined.
 	jelly::DefaultHost host(
 		".",									// Put database files here.
-		"example",								// Database files will be prefixed with this.
+		"example1",								// Database files will be prefixed with this.
 		jelly::Compression::ID_NO_COMPRESSION);	// Don't use compression.
+
+	// Make sure the database is gone.
+	host.DeleteAllFiles();
 
 	// Make a typedef for our BlobNode type because we're lazy and don't want 
 	// to type too much.

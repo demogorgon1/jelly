@@ -35,7 +35,7 @@ namespace jelly
 
 		//! Deletes all database files associated with specified node id.
 		void					DeleteAllFiles(
-									uint32_t					aNodeId);
+									uint32_t					aNodeId = UINT32_MAX);
 
 		//----------------------------------------------------------------------------------------------
 		// IHost implementation

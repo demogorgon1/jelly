@@ -20,6 +20,11 @@ namespace jelly
 		bool	IsSet() const { return m_value != 0; }
 		void	Clear() { m_value = 0; }
 
+		operator _T() const
+		{
+			return m_value;
+		}
+
 		_T	m_value; ///< Lock value
 	};
 

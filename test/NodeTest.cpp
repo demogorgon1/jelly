@@ -23,7 +23,9 @@ namespace jelly
 		{
 
 			typedef BlobNode<UIntKey<uint32_t>, UInt32Blob, UIntKey<uint32_t>::Hasher> BlobNodeType;
-			typedef LockNode<UIntKey<uint32_t>, UIntLock<uint32_t>, UIntKey<uint32_t>::Hasher> LockNodeType;
+
+			typedef LockMetaData::StaticSingleBlob<4> LockMetaDataType;
+			typedef LockNode<UIntKey<uint32_t>, UIntLock<uint32_t>, LockMetaDataType, UIntKey<uint32_t>::Hasher> LockNodeType;
 
 			typedef CompactionResult<UIntKey<uint32_t>, UIntKey<uint32_t>::Hasher> CompactionResultType;
 
@@ -31,25 +33,55 @@ namespace jelly
 			{
 				bool
 				CompareItem(
-					const Compression::IProvider*							aCompression,
-					const BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>&		aItem) const
+					const Compression::IProvider*													aCompression,
+					const BlobNodeItem<UIntKey<uint32_t>, UInt32Blob>&								aItem) const
 				{
 					UInt32Blob blob;
-					blob.FromBuffer(aCompression, *aItem.m_blob);
-					return m_key == aItem.m_key && m_seq == aItem.GetSeq() && blob == m_blob;
+					blob.FromBuffer(aCompression, *aItem.GetBlob());
+					return m_key == aItem.GetKey() && m_seq == aItem.GetSeq() && blob == m_blob;
 				}
 
 				// Public data
-				uint32_t	m_key;
-				uint32_t	m_seq;
-				uint32_t	m_blob;
+				uint32_t				m_key;
+				uint32_t				m_seq;
+				uint32_t				m_blob;
+			};
+
+			struct LockNodeItemData
+			{
+				bool
+				CompareItem(
+					const LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>, LockMetaDataType>&	aItem) const
+				{
+					if(m_key == aItem.GetKey() && m_lock == aItem.GetLock() && m_seq == aItem.GetSeq() && m_tombstoneStoreId == aItem.GetTombstoneStoreId() &&
+						m_blobSeq == aItem.GetMeta().m_blobSeq && m_blobNodeIds.size() == (size_t)aItem.GetMeta().m_blobNodeIdCount)
+					{
+						for(size_t i = 0; i < m_blobNodeIds.size(); i++)
+						{
+							if(m_blobNodeIds[i] != aItem.GetMeta().m_blobNodeIds[i])
+								return false;
+						}
+						
+						return true;
+					}
+
+					return false;
+				}
+
+				// Public data
+				uint32_t				m_key;
+				uint32_t				m_seq;
+				uint32_t				m_lock;
+				uint32_t				m_blobSeq;
+				std::vector<uint32_t>	m_blobNodeIds;
+				uint32_t				m_tombstoneStoreId;
 			};
 
 			template <typename _NodeType>
 			void
 			_PerformCompaction(
-				_NodeType*													aNode,
-				IHost*														aHost)
+				_NodeType*																			aNode,
+				IHost*																				aHost)
 			{
 				CompactionAdvisor compactionAdvisor(aNode->GetNodeId(), aHost, 1, 1, 0, CompactionAdvisor::STRATEGY_SIZE_TIERED);
 				compactionAdvisor.Update();
@@ -65,19 +97,19 @@ namespace jelly
 			template <typename _ItemType>
 			void
 			_VerifyLockNodeFileStreamReader(
-				Compression::IProvider*										/*aCompression*/,
-				IFileStreamReader*											aFileStreamReader,
-				const std::vector<_ItemType>&								aExpected)
+				Compression::IProvider*																/*aCompression*/,
+				IFileStreamReader*																	aFileStreamReader,
+				const std::vector<LockNodeItemData>&												aExpected)
 			{
 				std::unique_ptr<IFileStreamReader> f(aFileStreamReader);
 				JELLY_ASSERT(f);
 
-				for (const _ItemType& expected : aExpected)
+				for (const LockNodeItemData& expected : aExpected)
 				{
 					JELLY_ASSERT(!f->IsEnd());
 					_ItemType item;
 					JELLY_ASSERT(item.Read(f.get(), NULL));
-					JELLY_ASSERT(item.Compare(&expected));
+					JELLY_ASSERT(expected.CompareItem(item));
 				}
 
 				JELLY_ASSERT(f->IsEnd());
@@ -86,9 +118,9 @@ namespace jelly
 			template <typename _ItemType>
 			void
 			_VerifyBlobNodeFileStreamReader(
-				Compression::IProvider*										aCompression,
-				IFileStreamReader*											aFileStreamReader,
-				const std::vector<BlobNodeItemData>&						aExpected)
+				Compression::IProvider*																aCompression,
+				IFileStreamReader*																	aFileStreamReader,
+				const std::vector<BlobNodeItemData>&												aExpected)
 			{
 				std::unique_ptr<IFileStreamReader> f(aFileStreamReader);
 				JELLY_ASSERT(f);
@@ -111,7 +143,7 @@ namespace jelly
 				DefaultHost*												aHost,
 				uint32_t													aNodeId,
 				uint32_t													aId,
-				const std::vector<_ItemType>&								aExpected)
+				const std::vector<LockNodeItemData>&						aExpected)
 			{
 				_VerifyLockNodeFileStreamReader<_ItemType>(NULL, aHost->ReadWALStream(aNodeId, aId, true, NULL), aExpected);
 			}
@@ -133,7 +165,7 @@ namespace jelly
 				DefaultHost*												aHost,
 				uint32_t													aNodeId,
 				uint32_t													aId,
-				const std::vector<_ItemType>&								aExpected)
+				const std::vector<LockNodeItemData>&						aExpected)
 			{
 				_VerifyLockNodeFileStreamReader<_ItemType>(aHost->GetCompressionProvider(), aHost->ReadStoreStream(aNodeId, aId, NULL), aExpected);
 			}
@@ -208,10 +240,11 @@ namespace jelly
 						if(req.GetResult() == RESULT_ALREADY_LOCKED)
 							continue;
 						JELLY_ASSERT(req.GetResult() == RESULT_OK);
-						blobSeq = req.GetBlobSeq();
-						if(req.GetBlobNodeIds() != UINT32_MAX)
+						blobSeq = req.GetMeta().m_blobSeq;
+						if(req.GetMeta().m_blobNodeIdCount > 0)
 						{	
-							blobNodeId = req.GetBlobNodeIds() & 0x000000FF;
+							JELLY_ASSERT(req.GetMeta().m_blobNodeIdCount == 1);
+							blobNodeId = req.GetMeta().m_blobNodeIds[0];
 						}
 
 						(*aLockCounter)++;
@@ -260,8 +293,7 @@ namespace jelly
 						LockNodeType::Request req;
 						req.SetKey(aKey);
 						req.SetLock(aLockId);
-						req.SetBlobSeq(blobSeq);
-						req.SetBlobNodeIds(1);
+						req.SetMeta(LockMetaDataType(blobSeq, { 1 }));
 						aLockNode->Unlock(&req);
 						while (!req.IsCompleted())
 							std::this_thread::yield();
@@ -351,10 +383,11 @@ namespace jelly
 						if(req.GetResult() == RESULT_ALREADY_LOCKED)
 							continue;
 						JELLY_ASSERT(req.GetResult() == RESULT_OK);
-						blobSeq = req.GetBlobSeq();
-						if(req.GetBlobNodeIds() != UINT32_MAX)
+						blobSeq = req.GetMeta().m_blobSeq;
+						if(req.GetMeta().m_blobNodeIdCount > 0)
 						{
-							blobNodeId = req.GetBlobNodeIds() & 0x000000FF;
+							JELLY_ASSERT(req.GetMeta().m_blobNodeIdCount == 1);
+							blobNodeId = req.GetMeta().m_blobNodeIds[0];
 							JELLY_ASSERT(blobNodeId == 1);
 						}
 
@@ -384,8 +417,7 @@ namespace jelly
 						LockNodeType::Request req;
 						req.SetKey(key);
 						req.SetLock(aLockId);
-						req.SetBlobSeq(blobSeq);
-						req.SetBlobNodeIds(1);
+						req.SetMeta(LockMetaDataType(blobSeq, { 1 }));
 						aLockNode->Unlock(&req);
 						while (!req.IsCompleted())
 							std::this_thread::yield();
@@ -956,12 +988,12 @@ namespace jelly
 						lockNode.FlushPendingWAL(0);
 						JELLY_ASSERT(req.IsCompleted());
 						JELLY_ASSERT(req.GetResult() == RESULT_OK);
-						JELLY_ASSERT(req.GetBlobSeq() == UINT32_MAX);
-						JELLY_ASSERT(req.GetBlobNodeIds() == 0xFFFFFFFF);
+						JELLY_ASSERT(req.GetMeta().m_blobSeq == UINT32_MAX);
+						JELLY_ASSERT(req.GetMeta().m_blobNodeIdCount == 0);
 					}
 				}	
 
-				_VerifyLockNodeWAL<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 0, { { 1, 1, 123, UINT32_MAX, 0xFFFFFFFF } });
+				_VerifyLockNodeWAL<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>, LockMetaDataType>>(aHost, 0, 0, { { 1, 1, 123, UINT32_MAX, { }, UINT32_MAX } } );
 				
 				// Restart node
 
@@ -990,8 +1022,8 @@ namespace jelly
 						lockNode.FlushPendingWAL(0);
 						JELLY_ASSERT(req.IsCompleted());
 						JELLY_ASSERT(req.GetResult() == RESULT_OK);
-						JELLY_ASSERT(req.GetBlobSeq() == UINT32_MAX);
-						JELLY_ASSERT(req.GetBlobNodeIds() == 0xFFFFFFFF);
+						JELLY_ASSERT(req.GetMeta().m_blobSeq == UINT32_MAX);
+						JELLY_ASSERT(req.GetMeta().m_blobNodeIdCount == 0);
 					}
 
 					// Unlock with wrong lock, should fail
@@ -1023,8 +1055,7 @@ namespace jelly
 						LockNodeType::Request req;
 						req.SetKey(1);
 						req.SetLock(123);
-						req.SetBlobSeq(1);
-						req.SetBlobNodeIds(0xFF030201);
+						req.SetMeta(LockMetaDataType(1, { 1, 2, 3 }));
 						lockNode.Unlock(&req);
 						JELLY_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
@@ -1033,8 +1064,8 @@ namespace jelly
 					}
 				}
 
-				_VerifyLockNodeWAL<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 0, { { 1, 1, 123, UINT32_MAX, 0xFFFFFFFF } });
-				_VerifyLockNodeWAL<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 1, { { 1, 2, 0, 1, 0xFF030201 } });
+				_VerifyLockNodeWAL<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>, LockMetaDataType>>(aHost, 0, 0, { { 1, 1, 123, UINT32_MAX, { }, UINT32_MAX } });
+				_VerifyLockNodeWAL<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>, LockMetaDataType>>(aHost, 0, 1, { { 1, 2, 0, 1, { 1, 2, 3 }, UINT32_MAX } });
 
 				// Restart
 
@@ -1051,8 +1082,11 @@ namespace jelly
 						lockNode.FlushPendingWAL(0);
 						JELLY_ASSERT(req.IsCompleted());
 						JELLY_ASSERT(req.GetResult() == RESULT_OK);
-						JELLY_ASSERT(req.GetBlobSeq() == 1);
-						JELLY_ASSERT(req.GetBlobNodeIds() == 0xFF030201);
+						JELLY_ASSERT(req.GetMeta().m_blobSeq == 1);
+						JELLY_ASSERT(req.GetMeta().m_blobNodeIdCount == 3);
+						JELLY_ASSERT(req.GetMeta().m_blobNodeIds[0] == 1);
+						JELLY_ASSERT(req.GetMeta().m_blobNodeIds[1] == 2);
+						JELLY_ASSERT(req.GetMeta().m_blobNodeIds[2] == 3);
 					}
 
 					// Also apply locks on another two keys in descending order, 
@@ -1066,8 +1100,8 @@ namespace jelly
 						lockNode.FlushPendingWAL(0);
 						JELLY_ASSERT(req.IsCompleted());
 						JELLY_ASSERT(req.GetResult() == RESULT_OK);
-						JELLY_ASSERT(req.GetBlobSeq() == UINT32_MAX);
-						JELLY_ASSERT(req.GetBlobNodeIds() == 0xFFFFFFFF);
+						JELLY_ASSERT(req.GetMeta().m_blobSeq == UINT32_MAX);
+						JELLY_ASSERT(req.GetMeta().m_blobNodeIdCount == 0);
 					}
 
 					{
@@ -1079,26 +1113,26 @@ namespace jelly
 						lockNode.FlushPendingWAL(0);
 						JELLY_ASSERT(req.IsCompleted());
 						JELLY_ASSERT(req.GetResult() == RESULT_OK);
-						JELLY_ASSERT(req.GetBlobSeq() == UINT32_MAX);
-						JELLY_ASSERT(req.GetBlobNodeIds() == 0xFFFFFFFF);
+						JELLY_ASSERT(req.GetMeta().m_blobSeq == UINT32_MAX);
+						JELLY_ASSERT(req.GetMeta().m_blobNodeIdCount == 0);
 					}
 
 					lockNode.FlushPendingStore();
 				}
 
 				_VerifyNoWAL(aHost, 0, 0);
-				_VerifyLockNodeWAL<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 1, { { 1, 2, 0, 1, 0xFF030201 } });
-				_VerifyLockNodeWAL<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 2,
+				_VerifyLockNodeWAL<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>, LockMetaDataType>>(aHost, 0, 1, { { 1, 2, 0, 1, { 1, 2, 3 }, UINT32_MAX } });
+				_VerifyLockNodeWAL<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>, LockMetaDataType>>(aHost, 0, 2,
 				{ 
-					{ 1, 3, 456, 1, 0xFF030201 },
-					{ 3, 1, 456, UINT32_MAX, 0xFFFFFFFF },
-					{ 2, 1, 456, UINT32_MAX, 0xFFFFFFFF }
+					{ 1, 3, 456, 1, { 1, 2, 3 }, UINT32_MAX },
+					{ 3, 1, 456, UINT32_MAX, { }, UINT32_MAX },
+					{ 2, 1, 456, UINT32_MAX, { }, UINT32_MAX }
 				});
-				_VerifyLockNodeStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 0,
+				_VerifyLockNodeStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>, LockMetaDataType>>(aHost, 0, 0,
 				{ 
-					{ 1, 3, 456, 1, 0xFF030201 },
-					{ 2, 1, 456, UINT32_MAX, 0xFFFFFFFF },
-					{ 3, 1, 456, UINT32_MAX, 0xFFFFFFFF }
+					{ 1, 3, 456, 1, { 1, 2, 3 }, UINT32_MAX },
+					{ 2, 1, 456, UINT32_MAX, { }, UINT32_MAX },
+					{ 3, 1, 456, UINT32_MAX, { }, UINT32_MAX }
 				});
 			}
 
@@ -1221,8 +1255,7 @@ namespace jelly
 						LockNodeType::Request req;
 						req.SetKey(1);
 						req.SetLock(100);
-						req.SetBlobNodeIds(0);
-						req.SetBlobSeq(1);
+						req.SetMeta(LockMetaDataType(1, { 0 }));
 						lockNode.Unlock(&req);
 						JELLY_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
@@ -1243,11 +1276,11 @@ namespace jelly
 				}
 
 				// Only thing on disk should be a WAL with 3 entries - lock, unlock, and finally delete (tombstone'd)
-				_VerifyLockNodeWAL<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 0,
+				_VerifyLockNodeWAL<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>, LockMetaDataType>>(aHost, 0, 0,
 				{ 
-					{ 1, 1, 100, UINT32_MAX, UINT32_MAX, UINT32_MAX },
-					{ 1, 2, 0, 1, 0, UINT32_MAX },
-					{ 1, 3, 0, UINT32_MAX, UINT32_MAX, 0 } // Blod seq/node ids reset, tombstone store id set to 0
+					{ 1, 1, 100, UINT32_MAX, { }, UINT32_MAX },
+					{ 1, 2, 0, 1, { 0 }, UINT32_MAX },
+					{ 1, 3, 0, UINT32_MAX, { }, 0 } // Blod seq/node ids reset, tombstone store id set to 0
 				});
 
 				// Restart
@@ -1274,10 +1307,10 @@ namespace jelly
 				}
 
 				// Now we should have 4 stores - id 0 with a tombstone, id 1 with the other lock, id 2 with another lock, id 3 with last lock
-				_VerifyLockNodeStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 0, { { 1, 3, 0, UINT32_MAX, UINT32_MAX, 0 } }); // key 1 tombstone
-				_VerifyLockNodeStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 1, { { 2, 1, 100, UINT32_MAX, UINT32_MAX, UINT32_MAX } }); // key 2 lock
-				_VerifyLockNodeStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 2, { { 3, 1, 100, UINT32_MAX, UINT32_MAX, UINT32_MAX } }); // key 3 lock
-				_VerifyLockNodeStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 3, { { 4, 1, 100, UINT32_MAX, UINT32_MAX, UINT32_MAX } }); // key 4 lock
+				_VerifyLockNodeStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>, LockMetaDataType>>(aHost, 0, 0, { { 1, 3, 0, UINT32_MAX, { }, 0 } }); // key 1 tombstone
+				_VerifyLockNodeStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>, LockMetaDataType>>(aHost, 0, 1, { { 2, 1, 100, UINT32_MAX, { }, UINT32_MAX } }); // key 2 lock
+				_VerifyLockNodeStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>, LockMetaDataType>>(aHost, 0, 2, { { 3, 1, 100, UINT32_MAX, { }, UINT32_MAX } }); // key 3 lock
+				_VerifyLockNodeStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>, LockMetaDataType>>(aHost, 0, 3, { { 4, 1, 100, UINT32_MAX, { }, UINT32_MAX } }); // key 4 lock
 
 				// Restart
 
@@ -1292,12 +1325,12 @@ namespace jelly
 				}
 
 				// Now we should have 1 store less
-				_VerifyLockNodeStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 2, { { 3, 1, 100, UINT32_MAX, UINT32_MAX, UINT32_MAX } }); // key 3 lock
-				_VerifyLockNodeStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 3, { { 4, 1, 100, UINT32_MAX, UINT32_MAX, UINT32_MAX } }); // key 4 lock
-				_VerifyLockNodeStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 4,
+				_VerifyLockNodeStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>, LockMetaDataType>>(aHost, 0, 2, { { 3, 1, 100, UINT32_MAX, { }, UINT32_MAX } }); // key 3 lock
+				_VerifyLockNodeStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>, LockMetaDataType>>(aHost, 0, 3, { { 4, 1, 100, UINT32_MAX, { }, UINT32_MAX } }); // key 4 lock
+				_VerifyLockNodeStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>, LockMetaDataType>>(aHost, 0, 4,
 				{ 
-					{ 1, 3, 0, UINT32_MAX, UINT32_MAX, 0 }, // key 1 tombstone
-					{ 2, 1, 100, UINT32_MAX, UINT32_MAX, UINT32_MAX }, // key 2 lock
+					{ 1, 3, 0, UINT32_MAX, { }, 0 }, // key 1 tombstone
+					{ 2, 1, 100, UINT32_MAX, { }, UINT32_MAX }, // key 2 lock
 				}); 
 
 				// Restart
@@ -1324,12 +1357,12 @@ namespace jelly
 				}
 
 				// Tombstone should be gone now
-				_VerifyLockNodeStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 2, { { 3, 1, 100, UINT32_MAX, UINT32_MAX, UINT32_MAX } }); // key 3 lock
-				_VerifyLockNodeStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 5, { { 5, 1, 100, UINT32_MAX, UINT32_MAX, UINT32_MAX } }); // key 5 lock
-				_VerifyLockNodeStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>>>(aHost, 0, 6,
+				_VerifyLockNodeStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>, LockMetaDataType>>(aHost, 0, 2, { { 3, 1, 100, UINT32_MAX, { }, UINT32_MAX } }); // key 3 lock
+				_VerifyLockNodeStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>, LockMetaDataType>>(aHost, 0, 5, { { 5, 1, 100, UINT32_MAX, { }, UINT32_MAX } }); // key 5 lock
+				_VerifyLockNodeStore<LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>, LockMetaDataType>>(aHost, 0, 6,
 				{ 
-					{ 2, 1, 100, UINT32_MAX, UINT32_MAX, UINT32_MAX }, // key 2 lock
-					{ 4, 1, 100, UINT32_MAX, UINT32_MAX, UINT32_MAX } // key 4 lock
+					{ 2, 1, 100, UINT32_MAX, { }, UINT32_MAX }, // key 2 lock
+					{ 4, 1, 100, UINT32_MAX, { }, UINT32_MAX } // key 4 lock
 				}); 
 			}
 

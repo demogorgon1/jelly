@@ -18,12 +18,15 @@ namespace jelly
 				UInt32Blob,
 				UIntKey<uint32_t>::Hasher> BlobNodeType;
 
+			typedef LockMetaData::StaticSingleBlob<4> LockNodeMetaType;
+
 			typedef LockNode<
 				UIntKey<uint32_t>,
-				UIntLock<uint32_t>,
+				UIntLock<uint32_t>,				
+				LockNodeMetaType,
 				UIntKey<uint32_t>::Hasher> LockNodeType;
 
-			typedef StepThread<LockNodeType, LockNodeType::Request, BlobNodeType, BlobNodeType::Request> StepThreadType;
+			typedef StepThread<LockNodeType, LockNodeType::Request, LockNodeMetaType, BlobNodeType, BlobNodeType::Request> StepThreadType;
 
 			StepThreadType*
 			_LockNodeStepThread(

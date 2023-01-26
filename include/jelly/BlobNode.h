@@ -76,21 +76,23 @@ namespace jelly
 				{
 					Item* item = i.second;
 
-					item->m_storeId = aStoreId;
-					item->m_storeOffset = aWriter->WriteItem(item);
-					item->m_storeSize = item->m_blob->GetSize();
+					typename Item::RuntimeState& runtimeState = item->GetRuntimeState();
 
-					if (item->m_pendingWAL != NULL)
+					runtimeState.m_storeId = aStoreId;
+					runtimeState.m_storeOffset = aWriter->WriteItem(item);
+					runtimeState.m_storeSize = item->GetBlob()->GetSize();
+
+					if (runtimeState.m_pendingWAL != NULL)
 					{
-						item->m_pendingWAL->RemoveReference();
-						item->m_pendingWAL = NULL;
+						runtimeState.m_pendingWAL->RemoveReference();
+						runtimeState.m_pendingWAL = NULL;
 					}
 
-					if (item->m_walInstanceCount > 0)
+					if (runtimeState.m_walInstanceCount > 0)
 					{
-						JELLY_ASSERT(item->m_walInstanceCount <= this->m_pendingStoreWALItemCount);
-						this->m_pendingStoreWALItemCount -= item->m_walInstanceCount;
-						item->m_walInstanceCount = 0;
+						JELLY_ASSERT(runtimeState.m_walInstanceCount <= this->m_pendingStoreWALItemCount);
+						this->m_pendingStoreWALItemCount -= runtimeState.m_walInstanceCount;
+						runtimeState.m_walInstanceCount = 0;
 					}
 
 					itemsProcessed++;
@@ -193,8 +195,8 @@ namespace jelly
 		GetResidentKeys(
 			std::vector<_KeyType>&							aOut)
 		{
-			for (Item* item = m_residentItems.m_head; item != NULL; item = item->m_next)
-				aOut.push_back(item->m_key);
+			for (Item* item = m_residentItems.m_head; item != NULL; item = item->GetNext())
+				aOut.push_back(item->GetKey());
 		}
 
 		// Testing: get size of all blobs stored in memory
@@ -237,9 +239,9 @@ namespace jelly
 				{
 					this->SetItem(aRequest->GetKey(), item = new Item(aRequest->GetKey(), aRequest->GetSeq()));				
 
-					item->m_blob = std::move(newBlob);
+					item->SetBlob(newBlob.release());
 
-					m_totalResidentBlobSize += item->m_blob->GetSize();
+					m_totalResidentBlobSize += item->GetBlob()->GetSize();
 					m_residentItems.Add(item);
 
 					obeyResidentBlobSizeLimit = true;
@@ -254,11 +256,11 @@ namespace jelly
 					return RESULT_OUTDATED;
 				}
 
-				if(item->m_blob)
+				if(item->HasBlob())
 				{
 					// Already has a blob and is resident
-					JELLY_ASSERT(m_totalResidentBlobSize >= item->m_blob->GetSize());
-					m_totalResidentBlobSize -= item->m_blob->GetSize();
+					JELLY_ASSERT(m_totalResidentBlobSize >= item->GetBlob()->GetSize());
+					m_totalResidentBlobSize -= item->GetBlob()->GetSize();
 
 					if(!aDelete)
 						m_totalResidentBlobSize += newBlob->GetSize();
@@ -287,12 +289,12 @@ namespace jelly
 				}
 
 				if(aDelete)
-					item->m_blob.reset();
+					item->SetBlob(NULL);
 				else
-					item->m_blob = std::move(newBlob);				
+					item->SetBlob(newBlob.release());				
 			}
 
-			item->m_isResident = true; 
+			item->GetRuntimeState().m_isResident = true; 
 
 			item->SetSeq(aRequest->GetSeq());
 			item->SetTimeStamp(aRequest->GetTimeStamp());
@@ -328,12 +330,14 @@ namespace jelly
 				return RESULT_OUTDATED;
 			}
 
-			if(!item->m_blob)
+			if(!item->HasBlob())
 			{
-				JELLY_ASSERT(item->m_storeId != UINT32_MAX);
+				typename Item::RuntimeState& runtimeState = item->GetRuntimeState();
 
-				uint32_t storeId = item->m_storeId;
-				size_t storeOffset = item->m_storeOffset;
+				JELLY_ASSERT(runtimeState.m_storeId != UINT32_MAX);
+
+				uint32_t storeId = runtimeState.m_storeId;
+				size_t storeOffset = runtimeState.m_storeOffset;
 				IStoreBlobReader* storeBlobReader = NULL;
 				
 				for(;;)
@@ -344,7 +348,7 @@ namespace jelly
 
 					// This store doesn't exist anymore, it was probably compacted away. Look up the compaction redirect.
 					uint32_t newStoreId;
-					if(!_GetCompactionRedirect(storeId, item->m_key, newStoreId, storeOffset))
+					if(!_GetCompactionRedirect(storeId, item->GetKey(), newStoreId, storeOffset))
 					{
 						JELLY_ASSERT(false);
 					}
@@ -354,11 +358,11 @@ namespace jelly
 
 				storeBlobReader->ReadItemBlob(storeOffset, item);
 
-				m_totalResidentBlobSize += item->m_blob->GetSize();
+				m_totalResidentBlobSize += item->GetBlob()->GetSize();
 
 				m_residentItems.Add(item);
 
-				aRequest->GetBlob().FromBuffer(this->m_host->GetCompressionProvider(), *item->m_blob);
+				aRequest->GetBlob().FromBuffer(this->m_host->GetCompressionProvider(), *item->GetBlob());
 
 				_ObeyResidentBlobLimits();
 			}
@@ -366,7 +370,7 @@ namespace jelly
 			{
 				m_residentItems.MoveToTail(item);
 
-				aRequest->GetBlob().FromBuffer(this->m_host->GetCompressionProvider(), *item->m_blob);
+				aRequest->GetBlob().FromBuffer(this->m_host->GetCompressionProvider(), *item->GetBlob());
 			}
 
 			aRequest->SetSeq(item->GetSeq());
@@ -440,11 +444,11 @@ namespace jelly
 				{
 					Item* item = i.second;
 
-					if (item->m_blob)
+					if (item->HasBlob())
 					{
-						timeStampSorter.insert(TimeStampSorterValue({ item->m_key, item->GetTimeStamp() }, item));
+						timeStampSorter.insert(TimeStampSorterValue({ item->GetKey(), item->GetTimeStamp() }, item));
 
-						totalSize += item->m_blob->GetSize();
+						totalSize += item->GetBlob()->GetSize();
 					}
 				};
 
@@ -483,52 +487,52 @@ namespace jelly
 				if(!item->Read(aReader, NULL))
 					break;
 
-				_KeyType key = item.get()->m_key;
+				_KeyType key = item.get()->GetKey();
 
 				Item* existing;
 				if (this->GetItem(key, existing))
 				{
 					if (item.get()->GetSeq() > existing->GetSeq())
 					{
-						if(existing->m_blob)
+						if(existing->HasBlob())
 						{
-							JELLY_ASSERT(m_totalResidentBlobSize >= existing->m_blob->GetSize());
-							m_totalResidentBlobSize -= existing->m_blob->GetSize();
+							JELLY_ASSERT(m_totalResidentBlobSize >= existing->GetBlob()->GetSize());
+							m_totalResidentBlobSize -= existing->GetBlob()->GetSize();
 						}
 
-						if(item->m_blob)
-							m_totalResidentBlobSize += item->m_blob->GetSize();
+						if(item->HasBlob())
+							m_totalResidentBlobSize += item->GetBlob()->GetSize();
 
 						existing->MoveFrom(item.get());
 
-						if(item->m_isResident)
+						if(item->GetRuntimeState().m_isResident)
 							m_residentItems.MoveToTail(existing);
 
-						if (existing->m_pendingWAL != NULL)
+						if (existing->GetRuntimeState().m_pendingWAL != NULL)
 						{
-							existing->m_pendingWAL->RemoveReference();
-							existing->m_pendingWAL = NULL;
+							existing->GetRuntimeState().m_pendingWAL->RemoveReference();
+							existing->GetRuntimeState().m_pendingWAL = NULL;
 						}
 						else
 						{
-							this->m_pendingStore.insert(std::pair<const _KeyType, Item*>(existing->m_key, existing));
+							this->m_pendingStore.insert(std::pair<const _KeyType, Item*>(existing->GetKey(), existing));
 						}
 
-						existing->m_pendingWAL = aWAL;
-						existing->m_pendingWAL->AddReference();
+						existing->GetRuntimeState().m_pendingWAL = aWAL;
+						existing->GetRuntimeState().m_pendingWAL->AddReference();
 					}
 				}
 				else
 				{
 					m_residentItems.Add(item.get());
 
-					item->m_pendingWAL = aWAL;
-					item->m_pendingWAL->AddReference();
+					item->GetRuntimeState().m_pendingWAL = aWAL;
+					item->GetRuntimeState().m_pendingWAL->AddReference();
 
-					this->m_pendingStore.insert(std::pair<const _KeyType, Item*>(item->m_key, item.get()));
+					this->m_pendingStore.insert(std::pair<const _KeyType, Item*>(item->GetKey(), item.get()));
 
-					if(item->m_blob)
-						m_totalResidentBlobSize += item->m_blob->GetSize();
+					if(item->HasBlob())
+						m_totalResidentBlobSize += item->GetBlob()->GetSize();
 
 					this->SetItem(key, item.release());
 				}
@@ -546,48 +550,50 @@ namespace jelly
 			{
 				std::unique_ptr<Item> item(new Item());
 
-				item->m_storeOffset = aReader->GetTotalBytesRead();
-				item->m_storeId = aStoreId;
+				typename Item::RuntimeState& itemRuntimeState = item->GetRuntimeState();
 
-				if(!item->Read(aReader, &item->m_storeOffset))
+				itemRuntimeState.m_storeOffset = aReader->GetTotalBytesRead();
+				itemRuntimeState.m_storeId = aStoreId;
+
+				if(!item->Read(aReader, &itemRuntimeState.m_storeOffset))
 					break;
 
-				item->m_storeSize = item->m_blob->GetSize();
+				itemRuntimeState.m_storeSize = item->GetBlob()->GetSize();
 
-				_KeyType key = item.get()->m_key;
+				_KeyType key = item->GetKey();
 
 				if(m_totalResidentBlobSize >= m_blobNodeConfig.m_maxResidentBlobSize || this->GetItemCount() >= m_blobNodeConfig.m_maxResidentBlobCount)
 				{
-					item->m_blob.reset();
-					item->m_isResident = false;
+					item->SetBlob(NULL);
+					itemRuntimeState.m_isResident = false;
 				}
 				else
 				{
-					item->m_isResident = true;
+					itemRuntimeState.m_isResident = true;
 
 				}
 
 				Item* existing;
 				if (this->GetItem(key, existing))
 				{
-					if (item.get()->GetSeq() > existing->GetSeq())
+					if (item->GetSeq() > existing->GetSeq())
 					{
-						if(existing->m_blob)
+						if(existing->HasBlob())
 						{
-							JELLY_ASSERT(m_totalResidentBlobSize >= existing->m_blob->GetSize());
-							m_totalResidentBlobSize -= existing->m_blob->GetSize();
+							JELLY_ASSERT(m_totalResidentBlobSize >= existing->GetBlob()->GetSize());
+							m_totalResidentBlobSize -= existing->GetBlob()->GetSize();
 						}
 
-						if(item->m_blob)
-							m_totalResidentBlobSize += item->m_blob->GetSize();
+						if(item->HasBlob())
+							m_totalResidentBlobSize += item->GetBlob()->GetSize();
 
 						existing->MoveFrom(item.get());
 					}
 				}
 				else
 				{
-					if(item->m_blob)
-						m_totalResidentBlobSize += item->m_blob->GetSize();
+					if(item->HasBlob())
+						m_totalResidentBlobSize += item->GetBlob()->GetSize();
 
 					this->SetItem(key, item.release());
 				}
@@ -621,20 +627,23 @@ namespace jelly
 			{
 				Item* head = m_residentItems.m_head;
 				JELLY_ASSERT(head != NULL);
-				JELLY_ASSERT(head->m_isResident);
 
-				if(head->m_pendingWAL != NULL)
+				typename Item::RuntimeState& runtimeState = head->GetRuntimeState();
+
+				JELLY_ASSERT(runtimeState.m_isResident);
+
+				if(runtimeState.m_pendingWAL != NULL)
 				{
 					// We can't expell things that are currently in a WAL
 					break;
 				}
 
-				JELLY_ASSERT(head->m_blob);
-				m_totalResidentBlobSize -= head->m_blob->GetSize();
-				head->m_blob.reset();
+				JELLY_ASSERT(head->HasBlob());
+				m_totalResidentBlobSize -= head->GetBlob()->GetSize();
+				head->SetBlob(NULL);
 				m_residentItems.Remove(head);
 
-				head->m_isResident = false;
+				runtimeState.m_isResident = false;
 			}
 		}
 

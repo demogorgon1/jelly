@@ -128,14 +128,13 @@ namespace jelly::Test::Sim
 				{
 				case RESULT_OK:
 					{
-						for (uint32_t i = 0; i < 4; i++)
-						{
-							uint32_t blobNodeId = (aClient->m_lockRequest->GetBlobNodeIds() & (0xFF << (i * 8))) >> (i * 8);
-							if (blobNodeId != 0xFF)
-								aClient->m_blobNodeIds.push_back(blobNodeId);
-						}
+						const LockServer::LockMetaDataType& meta = aClient->m_lockRequest->GetMeta();
 
-						aClient->m_blobSeq = aClient->m_lockRequest->GetBlobSeq();
+						for (uint32_t i = 0; i < meta.m_blobNodeIdCount; i++)
+							aClient->m_blobNodeIds.push_back(meta.m_blobNodeIds[i]);
+
+						aClient->m_blobSeq = meta.m_blobSeq;
+
 						aClient->m_nextBlobNodeIdIndex = 0;
 						_SetClientState(aClient, Client::STATE_NEED_BLOB);
 						aClient->m_timer.SetTimeout(0);

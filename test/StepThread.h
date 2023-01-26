@@ -34,6 +34,7 @@ namespace jelly
 		template <
 			typename _LockNodeType, 
 			typename _LockNodeRequestType,
+			typename _LockNodeMetaType,
 			typename _BlobNodeType,
 			typename _BlobNodeRequestType>
 		class StepThread
@@ -310,7 +311,7 @@ namespace jelly
 					m_unlockRequest = std::make_unique<_LockNodeRequestType>();
 					m_unlockRequest->SetKey(m_key);
 					m_unlockRequest->SetLock(m_lockId);
-					m_unlockRequest->SetBlobSeq(m_blobSeq);
+					m_unlockRequest->SetMeta(_LockNodeMetaType(m_blobSeq, { }));
 					m_lockNode->Unlock(m_unlockRequest.get());
 				});				
 			}
@@ -423,7 +424,7 @@ namespace jelly
 
 						default:
 							JELLY_ASSERT(m_lockRequest->GetResult() == RESULT_OK);
-							m_blobSeq = m_lockRequest->GetBlobSeq();
+							m_blobSeq = m_lockRequest->GetMeta().m_blobSeq;
 							m_lockRequest.reset();
 							break;
 						}
@@ -442,7 +443,7 @@ namespace jelly
 							m_unlockRequest = std::make_unique<_LockNodeRequestType>();
 							m_unlockRequest->SetKey(m_key);
 							m_unlockRequest->SetLock(m_lockId);
-							m_unlockRequest->SetBlobSeq(m_blobSeq);
+							m_unlockRequest->SetMeta(_LockNodeMetaType(m_blobSeq, { }));
 							m_lockNode->Unlock(m_unlockRequest.get());
 							break;
 

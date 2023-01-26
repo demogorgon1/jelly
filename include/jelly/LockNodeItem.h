@@ -2,7 +2,7 @@
 
 #include "ItemBase.h"
 #include "IWriter.h"
-#include "MetaData.h"
+#include "LockMetaData.h"
 
 namespace jelly
 {
@@ -10,17 +10,29 @@ namespace jelly
 	class WAL;
 
 	// Item stored by LockNode
-	template <typename _KeyType, typename _LockType>
-	struct LockNodeItem
+	template <typename _KeyType, typename _LockType, typename _LockMetaType>
+	class LockNodeItem
 		: public ItemBase
 	{		
+	public:
+		struct RuntimeState
+		{
+			RuntimeState()
+				: m_pendingWAL(NULL)
+				, m_walInstanceCount(0)
+			{
+
+			}
+
+			WAL*								m_pendingWAL;
+			uint32_t							m_walInstanceCount;
+		};
+
 		LockNodeItem(
 			const _KeyType&									aKey = _KeyType(),
 			const _LockType&								aLock = _LockType())
 			: m_key(aKey)
 			, m_lock(aLock)
-			, m_pendingWAL(NULL)
-			, m_walInstanceCount(0)
 		{
 
 		}
@@ -29,29 +41,25 @@ namespace jelly
 			const _KeyType&									aKey,
 			uint32_t										aSeq,
 			const _LockType&								aLock,			
-			uint32_t										aBlobSeq,
-			uint32_t										aBlobNodeIds,
+			const _LockMetaType&							aMeta,
 			uint32_t										aTombstoneStoreId = UINT32_MAX)
 			: m_key(aKey)
 			, m_lock(aLock)
-			, m_pendingWAL(NULL)
-			, m_walInstanceCount(0)
+			, m_meta(aMeta)
 		{
 			SetSeq(aSeq);
 			SetTombstoneStoreId(aTombstoneStoreId);
-
-			m_meta.m_blobSeq = aBlobSeq;
-			m_meta.m_blobNodeIds = aBlobNodeIds;
 		}
 
 		void
 		Reset()
 		{
-			JELLY_ASSERT(m_pendingWAL == NULL);
-			JELLY_ASSERT(m_walInstanceCount == 0);
+			JELLY_ASSERT(m_runtimeState.m_pendingWAL == NULL);
+			JELLY_ASSERT(m_runtimeState.m_walInstanceCount == 0);
 
 			m_key = _KeyType();
 			m_lock = _LockType();
+			m_meta = _LockMetaType();
 
 			ResetBase();
 		}
@@ -62,9 +70,7 @@ namespace jelly
 		{
 			m_key = aOther->m_key;
 			m_lock = aOther->m_lock;
-
-			m_meta.m_blobNodeIds = aOther->m_meta.m_blobNodeIds;
-			m_meta.m_blobSeq = aOther->m_meta.m_blobSeq;
+			m_meta = aOther->m_meta;
 
 			CopyBase(*aOther);
 		}
@@ -75,8 +81,7 @@ namespace jelly
 		{
 			return m_key == aOther->m_key 
 				&& m_lock == aOther->m_lock 
-				&& m_meta.m_blobNodeIds == aOther->m_meta.m_blobNodeIds
-				&& m_meta.m_blobSeq == aOther->m_meta.m_blobSeq 
+				&& m_meta == aOther->m_meta
 				&& CompareBase(*aOther);
 		}
 
@@ -96,6 +101,27 @@ namespace jelly
 				aStoreWriter->WriteItem(this);
 
 			return UINT64_MAX;
+		}
+
+		void
+		SetKey(
+			const _KeyType&									aKey)
+		{
+			m_key = aKey;
+		}
+
+		void
+		SetLock(
+			const _LockType&								aLock)
+		{
+			m_lock = aLock;
+		}
+
+		void
+		SetMeta(
+			const _LockMetaType&							aMeta)
+		{
+			m_meta = aMeta;
 		}
 
 		// IItem implementation
@@ -128,14 +154,20 @@ namespace jelly
 			return true;
 		}
 
-		// Public data
-		_KeyType							m_key;
-		_LockType							m_lock;	
-		MetaData::Lock						m_meta;
+		// Data access
+		const _KeyType&			GetKey() const { return m_key; }
+		const _LockType&		GetLock() const { return m_lock; }
+		_LockType&				GetLock() { return m_lock; }
+		const _LockMetaType&	GetMeta() const { return m_meta; }
+		const RuntimeState&		GetRuntimeState() const { return m_runtimeState; }
+		RuntimeState&			GetRuntimeState() { return m_runtimeState; }
 
-		// Runtime state, not serialized
-		WAL*								m_pendingWAL;
-		uint32_t							m_walInstanceCount;
+	private:
+
+		_KeyType							m_key;
+		_LockType							m_lock;
+		_LockMetaType						m_meta;
+		RuntimeState						m_runtimeState;
 	};
 
 }

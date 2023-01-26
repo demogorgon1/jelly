@@ -409,14 +409,16 @@ namespace jelly
 			CompletionEvent*		aCompletionEvent,
 			Result*					aResult)
 		{
-			if (aItem->m_pendingWAL != NULL)
+			typename _ItemType::RuntimeState& runtimeState = aItem->GetRuntimeState();
+
+			if (runtimeState.m_pendingWAL != NULL)
 			{
-				aItem->m_pendingWAL->RemoveReference();
-				aItem->m_pendingWAL = NULL;
+				runtimeState.m_pendingWAL->RemoveReference();
+				runtimeState.m_pendingWAL = NULL;
 			}
 			else
 			{
-				m_pendingStore.insert(std::pair<const _KeyType, _ItemType*>(aItem->m_key, aItem));
+				m_pendingStore.insert(std::pair<const _KeyType, _ItemType*>(aItem->GetKey(), aItem));
 			}
 
 			{
@@ -425,7 +427,7 @@ namespace jelly
 				// Pick a pending WAL to write to, using the hash of item key
 				{
 					_STLKeyHasher hasher;
-					size_t hash = hasher(aItem->m_key);
+					size_t hash = hasher(aItem->GetKey());
 					walConcurrencyIndex = (uint32_t)((size_t)m_config.m_walConcurrency * (hash >> 32) / 0x100000000);
 				}
 
@@ -434,12 +436,12 @@ namespace jelly
 				// Append to WAL
 				wal->GetWriter()->WriteItem(aItem, aCompletionEvent, aResult);
 								
-				aItem->m_pendingWAL = wal;
-				aItem->m_pendingWAL->AddReference();
+				runtimeState.m_pendingWAL = wal;
+				runtimeState.m_pendingWAL->AddReference();
 
 				// Number of instances that this item exists in different pending WALs (if an item is written repeatedly 
 				// (which is likely), many copies of it will exist in the same WALs)
-				aItem->m_walInstanceCount++;
+				runtimeState.m_walInstanceCount++;
 
 				// Total number of item instances across all pending WALs. This is a useful metric for deciding when to 
 				// flush pending store to disk.

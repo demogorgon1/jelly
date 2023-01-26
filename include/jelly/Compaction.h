@@ -55,7 +55,7 @@ namespace jelly
 					{
 						uint64_t offset = item1.CompactionWrite(aCompactionJob.m_oldestStoreId, fOut.get());
 						if(offset != UINT64_MAX)
-							compactionRedirect1->AddEntry(item1.m_key, newStoreId, offset);
+							compactionRedirect1->AddEntry(item1.GetKey(), newStoreId, offset);
 
 						item1.Reset();
 						hasItem1 = false;
@@ -64,7 +64,7 @@ namespace jelly
 					{
 						uint64_t offset = item2.CompactionWrite(aCompactionJob.m_oldestStoreId, fOut.get());
 						if (offset != UINT64_MAX)
-							compactionRedirect2->AddEntry(item2.m_key, newStoreId, offset);
+							compactionRedirect2->AddEntry(item2.GetKey(), newStoreId, offset);
 
 						item2.Reset();
 						hasItem2 = false;
@@ -73,20 +73,20 @@ namespace jelly
 					{
 						JELLY_ASSERT(hasItem1 && hasItem2);
 
-						if (item1.m_key < item2.m_key)
+						if (item1.GetKey() < item2.GetKey())
 						{
 							uint64_t offset = item1.CompactionWrite(aCompactionJob.m_oldestStoreId, fOut.get());
 							if (offset != UINT64_MAX)
-								compactionRedirect1->AddEntry(item1.m_key, newStoreId, offset);
+								compactionRedirect1->AddEntry(item1.GetKey(), newStoreId, offset);
 
 							item1.Reset();
 							hasItem1 = false;
 						}
-						else if (item2.m_key < item1.m_key)
+						else if (item2.GetKey() < item1.GetKey())
 						{
 							uint64_t offset = item2.CompactionWrite(aCompactionJob.m_oldestStoreId, fOut.get());
 							if (offset != UINT64_MAX)
-								compactionRedirect2->AddEntry(item2.m_key, newStoreId, offset);
+								compactionRedirect2->AddEntry(item2.GetKey(), newStoreId, offset);
 
 							item2.Reset();
 							hasItem2 = false;
@@ -103,8 +103,8 @@ namespace jelly
 
 							if (offset != UINT64_MAX)
 							{
-								compactionRedirect1->AddEntry(item1.m_key, newStoreId, offset);
-								compactionRedirect2->AddEntry(item2.m_key, newStoreId, offset);
+								compactionRedirect1->AddEntry(item1.GetKey(), newStoreId, offset);
+								compactionRedirect2->AddEntry(item2.GetKey(), newStoreId, offset);
 							}
 
 							hasItem1 = false;
@@ -203,8 +203,8 @@ namespace jelly
 
 					for (std::unique_ptr<SourceStore>& sourceStore : sourceStores)
 					{
-						if (sourceStore->m_hasItem && (!lowestKey.has_value() || sourceStore->m_item.m_key < lowestKey))
-							lowestKey = sourceStore->m_item.m_key;
+						if (sourceStore->m_hasItem && (!lowestKey.has_value() || sourceStore->m_item.GetKey() < lowestKey))
+							lowestKey = sourceStore->m_item.GetKey();
 					}
 
 					JELLY_ASSERT(lowestKey.has_value());
@@ -214,7 +214,7 @@ namespace jelly
 
 					for (std::unique_ptr<SourceStore>& sourceStore : sourceStores)
 					{
-						if (sourceStore->m_hasItem && sourceStore->m_item.m_key == lowestKey)
+						if (sourceStore->m_hasItem && sourceStore->m_item.GetKey() == lowestKey)
 							lowestKeySourceStores.push_back(sourceStore.get());
 					}
 
@@ -226,7 +226,7 @@ namespace jelly
 						const SourceStore* aRHS) -> bool
 						{
 							JELLY_ASSERT(aLHS->m_hasItem && aRHS->m_hasItem);
-							JELLY_ASSERT(aLHS->m_item.m_key == aRHS->m_item.m_key);
+							JELLY_ASSERT(aLHS->m_item.GetKey() == aRHS->m_item.GetKey());
 							return aLHS->m_item.GetSeq() > aRHS->m_item.GetSeq();
 						});
 

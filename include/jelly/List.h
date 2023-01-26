@@ -26,13 +26,13 @@ namespace jelly
 				JELLY_ASSERT(!Has(aItem));
 			#endif
 			
-			JELLY_ASSERT(aItem->m_next == NULL);
-			JELLY_ASSERT(aItem->m_prev == NULL);
+			JELLY_ASSERT(aItem->GetNext() == NULL);
+			JELLY_ASSERT(aItem->GetPrev() == NULL);
 
-			aItem->m_prev = m_tail;
+			aItem->SetPrev(m_tail);
 
 			if (m_tail != NULL)
-				m_tail->m_next = aItem;
+				m_tail->SetNext(aItem);
 			else
 				m_head = aItem;
 
@@ -49,18 +49,18 @@ namespace jelly
 				JELLY_ASSERT(Has(aItem));
 			#endif
 
-			if (aItem->m_next != NULL)
-				aItem->m_next->m_prev = aItem->m_prev;
+			if (aItem->GetNext() != NULL)
+				aItem->GetNext()->SetPrev(aItem->GetPrev());
 			else
-				m_tail = aItem->m_prev;
+				m_tail = aItem->GetPrev();
 
-			if (aItem->m_prev != NULL)
-				aItem->m_prev->m_next = aItem->m_next;
+			if (aItem->GetPrev() != NULL)
+				aItem->GetPrev()->SetNext(aItem->GetNext());
 			else
-				m_head = aItem->m_next;
+				m_head = aItem->GetNext();
 
-			aItem->m_next = NULL;
-			aItem->m_prev = NULL;
+			aItem->SetNext(NULL);
+			aItem->SetPrev(NULL);
 
 			JELLY_ASSERT(m_count > 0);
 			m_count--;
@@ -84,7 +84,7 @@ namespace jelly
 		Has(
 			const _Type*	aItem) const
 		{
-			for(_Type* i = m_head; i != NULL; i = i->m_next)
+			for(_Type* i = m_head; i != NULL; i = i->GetNext())
 			{
 				if(i == aItem)
 					return true;

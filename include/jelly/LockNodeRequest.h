@@ -10,14 +10,12 @@ namespace jelly
 	 *
 	 * You can use the LockNode::Request typedef as a shortcut to this.
 	 */
-	template <typename _KeyType, typename _LockType>
+	template <typename _KeyType, typename _LockType, typename _LockMetaType>
 	class LockNodeRequest
-		: public Request<LockNodeRequest<_KeyType, _LockType>>
+		: public Request<LockNodeRequest<_KeyType, _LockType, _LockMetaType>>
 	{	
 	public:
 		LockNodeRequest()
-			: m_blobSeq(0)
-			, m_blobNodeIds(UINT32_MAX)
 		{
 
 		}
@@ -38,34 +36,25 @@ namespace jelly
 			m_lock = aLock;
 		}
 
+		//! Set lock meta data
 		void
-		SetBlobSeq(
-			uint32_t				aBlobSeq)
+		SetMeta(
+			const _LockMetaType&	aMeta)
 		{
-			m_blobSeq = aBlobSeq;
-		}
-
-		void
-		SetBlobNodeIds(
-			uint32_t				aBlobNodeIds)
-		{
-			m_blobNodeIds = aBlobNodeIds;
+			m_meta = aMeta;
 		}
 
 		//---------------------------------------------------------------------------------
 		// Data access
-
-		const _KeyType&		GetKey() const { return m_key; }					//!< Returns lock key
-		const _LockType&	GetLock() const { return m_lock; }					//!< Returns lock identifier
-		uint32_t			GetBlobSeq() const { return m_blobSeq; }			
-		uint32_t			GetBlobNodeIds() const { return m_blobNodeIds; }
+		const _KeyType&			GetKey() const { return m_key; }					//!< Returns lock key
+		const _LockType&		GetLock() const { return m_lock; }					//!< Returns lock identifier
+		const _LockMetaType&	GetMeta() const { return m_meta; }					//!< Returns lock meta data
 
 	private:
 
 		_KeyType							m_key;
 		_LockType							m_lock;
-		uint32_t							m_blobSeq;
-		uint32_t							m_blobNodeIds;
+		_LockMetaType						m_meta;
 	};
 
 }

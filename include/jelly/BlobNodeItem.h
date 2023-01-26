@@ -8,7 +8,7 @@
 #include "ItemBase.h"
 #include "IStoreWriter.h"
 #include "IWriter.h"
-#include "MetaData.h"
+#include "LockMetaData.h"
 
 namespace jelly
 {
@@ -17,21 +17,41 @@ namespace jelly
 
 	// Blob node item
 	template <typename _KeyType, typename _BlobType>
-	struct BlobNodeItem
+	class BlobNodeItem
 		: public ItemBase
 	{
+	public:
+		struct RuntimeState
+		{
+			RuntimeState()
+				: m_pendingWAL(NULL)
+				, m_next(NULL)
+				, m_prev(NULL)
+				, m_storeId(0)
+				, m_storeOffset(0)
+				, m_storeSize(0)
+				, m_walInstanceCount(0)
+				, m_isResident(false)
+			{
+			
+			}
+
+			WAL*								m_pendingWAL;
+			uint32_t							m_walInstanceCount;
+			uint32_t							m_storeId;
+			size_t								m_storeOffset;
+			size_t								m_storeSize;
+			bool								m_isResident;
+
+			// Placement in timestamp-sorted linked list used to expell oldest items when memory limit is reached
+			BlobNodeItem<_KeyType, _BlobType>*	m_next;
+			BlobNodeItem<_KeyType, _BlobType>*	m_prev;
+		};
+
 		BlobNodeItem(
 			const _KeyType&									aKey = _KeyType(),
 			uint32_t										aSeq = 0)
 			: m_key(aKey)
-			, m_pendingWAL(NULL)
-			, m_next(NULL)
-			, m_prev(NULL)
-			, m_storeId(0)
-			, m_storeOffset(0)
-			, m_storeSize(0)
-			, m_walInstanceCount(0)
-			, m_isResident(false)
 		{
 			SetSeq(aSeq);
 		}
@@ -41,14 +61,6 @@ namespace jelly
 			uint32_t										aSeq,
 			BlobBuffer*										aBlob)
 			: m_key(aKey)
-			, m_pendingWAL(NULL)
-			, m_next(NULL)
-			, m_prev(NULL)
-			, m_storeId(0)
-			, m_storeOffset(0)
-			, m_storeSize(0)
-			, m_walInstanceCount(0)
-			, m_isResident(false)
 		{
 			SetSeq(aSeq);
 
@@ -56,18 +68,33 @@ namespace jelly
 		}
 
 		void
+		SetKey(
+			const _KeyType&									aKey)
+		{
+			m_key = aKey;
+		}
+
+		void
+		SetBlob(
+			BlobBuffer*										aBlob)
+		{
+			m_blob.reset(aBlob);
+		}
+
+		void
 		Reset()
 		{
-			JELLY_ASSERT(m_pendingWAL == NULL);
-			JELLY_ASSERT(m_next == NULL);
-			JELLY_ASSERT(m_prev == NULL);
-			JELLY_ASSERT(m_walInstanceCount == 0);
-			JELLY_ASSERT(!m_isResident);
+			JELLY_ASSERT(m_runtimeState.m_pendingWAL == NULL);
+			JELLY_ASSERT(m_runtimeState.m_next == NULL);
+			JELLY_ASSERT(m_runtimeState.m_prev == NULL);
+			JELLY_ASSERT(m_runtimeState.m_walInstanceCount == 0);
+			JELLY_ASSERT(!m_runtimeState.m_isResident);
 
 			m_key = _KeyType();
-			m_storeId = 0;
-			m_storeOffset = 0;
-			m_storeSize = 0;			
+
+			m_runtimeState.m_storeId = 0;
+			m_runtimeState.m_storeOffset = 0;
+			m_runtimeState.m_storeSize = 0;
 
 			ResetBase();
 		}
@@ -79,10 +106,11 @@ namespace jelly
 			m_blob = std::move(aOther->m_blob);
 
 			m_key = aOther->m_key;
-			m_storeId = aOther->m_storeId;
-			m_storeOffset = aOther->m_storeOffset;
-			m_storeSize = aOther->m_storeSize;
-			m_isResident = aOther->m_isResident;
+
+			m_runtimeState.m_storeId = aOther->m_runtimeState.m_storeId;
+			m_runtimeState.m_storeOffset = aOther->m_runtimeState.m_storeOffset;
+			m_runtimeState.m_storeSize = aOther->m_runtimeState.m_storeSize;
+			m_runtimeState.m_isResident = aOther->m_runtimeState.m_isResident;
 
 			CopyBase(*aOther);
 		}
@@ -102,9 +130,9 @@ namespace jelly
 		CompactionRead(
 			IFileStreamReader*								aStoreReader)
 		{
-			m_storeOffset = aStoreReader->GetTotalBytesRead();
+			m_runtimeState.m_storeOffset = aStoreReader->GetTotalBytesRead();
 
-			return Read(aStoreReader, &m_storeOffset);
+			return Read(aStoreReader, &m_runtimeState.m_storeOffset);
 		}
 
 		uint64_t
@@ -112,12 +140,38 @@ namespace jelly
 			uint32_t										aOldestStoreId,
 			IStoreWriter*									aStoreWriter)
 		{
-			m_storeOffset = UINT64_MAX;
+			m_runtimeState.m_storeOffset = UINT64_MAX;
 
 			if (!ShouldBePruned(aOldestStoreId))
-				m_storeOffset = aStoreWriter->WriteItem(this);
+				m_runtimeState.m_storeOffset = aStoreWriter->WriteItem(this);
 
-			return m_storeOffset;
+			return m_runtimeState.m_storeOffset;
+		}
+
+		BlobNodeItem<_KeyType, _BlobType>*
+		GetNext()
+		{
+			return m_runtimeState.m_next;
+		}
+
+		BlobNodeItem<_KeyType, _BlobType>*
+		GetPrev()
+		{
+			return m_runtimeState.m_prev;
+		}
+
+		void
+		SetNext(
+			BlobNodeItem<_KeyType, _BlobType>*				aNext)
+		{
+			m_runtimeState.m_next = aNext;
+		}
+
+		void
+		SetPrev(
+			BlobNodeItem<_KeyType, _BlobType>*				aPrev)
+		{
+			m_runtimeState.m_prev = aPrev;
 		}
 
 		// IItem implementation
@@ -179,7 +233,8 @@ namespace jelly
 					return false;
 
 				m_blob = std::move(blob);
-				m_storeSize = m_blob->GetSize();
+
+				m_runtimeState.m_storeSize = m_blob->GetSize();
 			}
 
 			return true;
@@ -189,32 +244,33 @@ namespace jelly
 		UpdateBlobBuffer(
 			std::unique_ptr<BlobBuffer>&					aBlobBuffer) override
 		{
-			JELLY_ASSERT(m_storeSize == aBlobBuffer->GetSize());
+			JELLY_ASSERT(m_runtimeState.m_storeSize == aBlobBuffer->GetSize());
 			m_blob = std::move(aBlobBuffer);
-			m_isResident = true;
+
+			m_runtimeState.m_isResident = true;
 		}
 
 		size_t	
 		GetStoredBlobSize() const
 		{
-			return m_storeSize;
+			return m_runtimeState.m_storeSize;
 		}
 
-		// Public data
+		// Data access
+		const _KeyType&			GetKey() const { return m_key; }
+		const BlobBuffer*		GetBlob() const { JELLY_ASSERT(m_blob); return m_blob.get(); }
+		BlobBuffer*				GetBlob() { JELLY_ASSERT(m_blob); return m_blob.get(); }
+		bool					HasBlob() const { return (bool)m_blob; }
+		const RuntimeState&		GetRuntimeState() const { return m_runtimeState; }
+		RuntimeState&			GetRuntimeState() { return m_runtimeState; }
+	
+	private:
+
 		_KeyType							m_key;
 		std::unique_ptr<BlobBuffer>			m_blob;
-	
-		// Remaining members are part of runtime state, not serialized
-		WAL*								m_pendingWAL;
-		uint32_t							m_walInstanceCount;
-		uint32_t							m_storeId;
-		size_t								m_storeOffset;
-		size_t								m_storeSize;
-		bool								m_isResident;
-		
-		// Placement in timestamp-sorted linked list used to expell oldest items when memory limit is reached
-		BlobNodeItem<_KeyType, _BlobType>*	m_next; 
-		BlobNodeItem<_KeyType, _BlobType>*	m_prev;
+
+		// Runtime state, not serialized
+		RuntimeState						m_runtimeState;
 	};
 
 }

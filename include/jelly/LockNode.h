@@ -11,36 +11,38 @@ namespace jelly
 {
 
 	/**
-	 * \brief A node for storing blobs.
+	 * \brief A node for locking 
 	 * 
-	 * \tparam _KeyType			Key type. For example \ref UIntKey.
-	 * \tparam _BlobType		Blob type. For example \ref Blob.
-	 * \tparam _STLKeyHasher	A way to hash a key. For example \ref UIntKey::Hasher.
+	 * \tparam _KeyType			Key type. For example UIntKey.
+	 * \tparam _LockType		Lock type. For example UIntLock.
+	 * \tparam _LockMetaType	Lock meta data type. For example LockMetaData::StaticSingleBlob.
+	 * \tparam _STLKeyHasher	A way to hash a key. For example UIntKey::Hasher.
 	 */	
 	template 
 	<
 		typename _KeyType,
 		typename _LockType,
+		typename _LockMetaType,
 		typename _STLKeyHasher
 	>
 	class LockNode
 		: public Node<
 			_KeyType, 
-			LockNodeRequest<_KeyType, _LockType>, 
-			LockNodeItem<_KeyType, _LockType>,
+			LockNodeRequest<_KeyType, _LockType, _LockMetaType>, 
+			LockNodeItem<_KeyType, _LockType, _LockMetaType>,
 			_STLKeyHasher,
 			true> // Enable streaming compression of WALs
 	{
 	public:
-		typedef Node<_KeyType, LockNodeRequest<_KeyType, _LockType>, LockNodeItem<_KeyType, _LockType>, _STLKeyHasher, true> NodeBase;
+		typedef Node<_KeyType, LockNodeRequest<_KeyType, _LockType, _LockMetaType>, LockNodeItem<_KeyType, _LockType, _LockMetaType>, _STLKeyHasher, true> NodeBase;
 
 		struct Config
 		{
 			NodeConfig		m_node;
 		};
 
-		typedef LockNodeRequest<_KeyType, _LockType> Request;
-		typedef LockNodeItem<_KeyType, _LockType> Item;
+		typedef LockNodeRequest<_KeyType, _LockType, _LockMetaType> Request;
+		typedef LockNodeItem<_KeyType, _LockType, _LockMetaType> Item;
 
 		LockNode(
 			IHost*												aHost,
@@ -61,20 +63,21 @@ namespace jelly
 				for (std::pair<const _KeyType, Item*>& i : this->m_pendingStore)
 				{
 					Item* item = i.second;
+					typename Item::RuntimeState& runtimeState = item->GetRuntimeState();
 
 					aWriter->WriteItem(item);
 
-					if (item->m_pendingWAL != NULL)
+					if (runtimeState.m_pendingWAL != NULL)
 					{
-						item->m_pendingWAL->RemoveReference();
-						item->m_pendingWAL = NULL;
+						runtimeState.m_pendingWAL->RemoveReference();
+						runtimeState.m_pendingWAL = NULL;
 					}
 
-					if(item->m_walInstanceCount > 0)
+					if(runtimeState.m_walInstanceCount > 0)
 					{
-						JELLY_ASSERT(item->m_walInstanceCount <= this->m_pendingStoreWALItemCount);
-						this->m_pendingStoreWALItemCount -= item->m_walInstanceCount;
-						item->m_walInstanceCount = 0;
+						JELLY_ASSERT(runtimeState.m_walInstanceCount <= this->m_pendingStoreWALItemCount);
+						this->m_pendingStoreWALItemCount -= runtimeState.m_walInstanceCount;
+						runtimeState.m_walInstanceCount = 0;
 					}
 				}
 
@@ -175,31 +178,28 @@ namespace jelly
 			}
 			else
 			{
-				if(!item->m_lock.IsSet())
+				if(!item->GetLock().IsSet())
 				{
 					// Not locked, just apply lock
-					item->m_lock = aRequest->GetLock();
+					item->SetLock(aRequest->GetLock());
 					aRequest->SetLock(_LockType());
-					aRequest->SetBlobNodeIds(item->m_meta.m_blobNodeIds);
 				}
-				else if(item->m_lock != aRequest->GetLock())
+				else if(item->GetLock() != aRequest->GetLock())
 				{
 					// Locked by someone else, fail
-					aRequest->SetLock(item->m_lock);
+					aRequest->SetLock(item->GetLock());
 					return RESULT_ALREADY_LOCKED;
 				}
 				else
 				{
-					// Same lock, no need to write anything
-					aRequest->SetBlobSeq(item->m_meta.m_blobSeq);
-					aRequest->SetBlobNodeIds(item->m_meta.m_blobNodeIds);
+					// Same lock, no need to write anything - return meta data and timestamp					
+					aRequest->SetMeta(item->GetMeta());
 					aRequest->SetTimeStamp(item->GetTimeStamp());
 					return RESULT_OK;
 				}
 			}
 
-			aRequest->SetBlobSeq(item->m_meta.m_blobSeq);
-			aRequest->SetBlobNodeIds(item->m_meta.m_blobNodeIds);
+ 			aRequest->SetMeta(item->GetMeta());
 
 			item->SetTimeStamp(aRequest->GetTimeStamp());
 			item->IncrementSeq();
@@ -221,22 +221,20 @@ namespace jelly
 				// Doesn't exist
 				return RESULT_DOES_NOT_EXIST;
 			}
-			else if(!item->m_lock.IsSet())
+			else if(!item->GetLock().IsSet())
 			{
 				// It wasn't locked, fail
 				return RESULT_NOT_LOCKED;
 			}
-			else if(item->m_lock != aRequest->GetLock())
+			else if(item->GetLock() != aRequest->GetLock())
 			{
 				// Locked by someone else, fail
 				return RESULT_ALREADY_LOCKED;
 			}
 			
-			item->m_lock.Clear();
+			item->GetLock().Clear();
 
-			item->m_meta.m_blobSeq = aRequest->GetBlobSeq();
-			item->m_meta.m_blobNodeIds = aRequest->GetBlobNodeIds();
-
+			item->SetMeta(aRequest->GetMeta());
 			item->SetTimeStamp(aRequest->GetTimeStamp());
 			item->IncrementSeq();
 	
@@ -255,15 +253,13 @@ namespace jelly
 				// Doesn't exist
 				return RESULT_DOES_NOT_EXIST;
 			}
-			else if (item->m_lock.IsSet())
+			else if (item->GetLock().IsSet())
 			{
 				// It is locked, fail
 				return RESULT_ALREADY_LOCKED;
 			}
 
-			item->m_meta.m_blobSeq = UINT32_MAX;
-			item->m_meta.m_blobNodeIds = UINT32_MAX;
-
+			item->SetMeta(_LockMetaType());
 			item->SetTimeStamp(aRequest->GetTimeStamp());
 			item->IncrementSeq();
 
@@ -330,35 +326,35 @@ namespace jelly
 				if(!item->Read(aReader, NULL))
 					break;
 
-				_KeyType key = item.get()->m_key;
+				_KeyType key = item->GetKey();
 
 				Item* existing;
 				if (this->GetItem(key, existing))
 				{
-					if (item.get()->GetSeq() > existing->GetSeq())
+					if (item->GetSeq() > existing->GetSeq())
 					{
 						existing->MoveFrom(item.get());
 
-						if (existing->m_pendingWAL != NULL)
+						if (existing->GetRuntimeState().m_pendingWAL != NULL)
 						{
-							existing->m_pendingWAL->RemoveReference();
-							existing->m_pendingWAL = NULL;
+							existing->GetRuntimeState().m_pendingWAL->RemoveReference();
+							existing->GetRuntimeState().m_pendingWAL = NULL;
 						}
 						else
 						{
-							this->m_pendingStore.insert(std::pair<const _KeyType, Item*>(existing->m_key, existing));
+							this->m_pendingStore.insert(std::pair<const _KeyType, Item*>(existing->GetKey(), existing));
 						}
 
-						existing->m_pendingWAL = aWAL;
-						existing->m_pendingWAL->AddReference();
+						existing->GetRuntimeState().m_pendingWAL = aWAL;
+						existing->GetRuntimeState().m_pendingWAL->AddReference();
 					}
 				}
 				else
 				{
-					item->m_pendingWAL = aWAL;
-					item->m_pendingWAL->AddReference();
+					item->GetRuntimeState().m_pendingWAL = aWAL;
+					item->GetRuntimeState().m_pendingWAL->AddReference();
 
-					this->m_pendingStore.insert(std::pair<const _KeyType, Item*>(item->m_key, item.get()));
+					this->m_pendingStore.insert(std::pair<const _KeyType, Item*>(item->GetKey(), item.get()));
 
 					this->SetItem(key, item.release());
 				}
@@ -378,12 +374,12 @@ namespace jelly
 				if(!item->Read(aReader, NULL))
 					break;
 
-				_KeyType key = item.get()->m_key;
+				_KeyType key = item->GetKey();
 
 				Item* existing;
 				if (this->GetItem(key, existing))
 				{
-					if (item.get()->GetSeq() > existing->GetSeq())
+					if (item->GetSeq() > existing->GetSeq())
 					{
 						existing->MoveFrom(item.get());
 					}

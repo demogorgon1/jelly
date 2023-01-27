@@ -66,11 +66,14 @@ namespace jelly
 		uint64_t							aValue,
 		const std::optional<Stat::Type>&	aExpectedType) 
 	{
-		const Stat::Info* info = _GetStatInfo(aId);
-		JELLY_ASSERT(!aExpectedType.has_value() || aExpectedType == info->m_type);
-		size_t typeIndex = m_typeIndices[aId];
+		if(aId != UINT32_MAX)
+		{
+			const Stat::Info* info = _GetStatInfo(aId);
+			JELLY_ASSERT(!aExpectedType.has_value() || aExpectedType == info->m_type);
+			size_t typeIndex = m_typeIndices[aId];
 
-		_GetCurrentThread()->Emit(aValue, info, typeIndex);
+			_GetCurrentThread()->Emit(aValue, info, typeIndex);
+		}
 	}
 
 	void				

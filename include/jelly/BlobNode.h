@@ -389,6 +389,12 @@ namespace jelly
 
 			aStatsContext->m_idWALCount = Stat::ID_BLOB_WAL_COUNT;
 			aStatsContext->m_idFlushPendingWALTime = Stat::ID_FLUSH_PENDING_BLOB_WAL_TIME;
+			aStatsContext->m_idProcessRequestsTime = Stat::ID_PROCESS_BLOB_REQUESTS_TIME;
+			aStatsContext->m_idFlushPendingStoreTime = Stat::ID_FLUSH_PENDING_BLOB_STORE_TIME;
+			aStatsContext->m_idCleanupWALsTime = Stat::ID_CLEANUP_BLOB_WALS_TIME;
+			aStatsContext->m_idPerformCompactionTime = Stat::ID_PERFORM_BLOB_COMPACTION_TIME;
+			aStatsContext->m_idPerformMajorCompactionTime = Stat::ID_PERFORM_MAJOR_BLOB_COMPACTION_TIME;
+			aStatsContext->m_idApplyCompactionTime = Stat::ID_APPLY_BLOB_COMPACTION_TIME;
 		}
 
 		void

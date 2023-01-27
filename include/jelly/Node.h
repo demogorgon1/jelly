@@ -109,6 +109,8 @@ namespace jelly
 		{
 			Queue<_RequestType>* queue = NULL;
 
+			ScopedTimeSampler timeSampler(m_host->GetStats(), m_statsContext.m_idProcessRequestsTime);
+
 			{
 				std::lock_guard lock(m_requestsLock);
 
@@ -143,8 +145,7 @@ namespace jelly
 
 			queue->Reset();
 
-			if(m_statsContext.m_idWALCount != UINT32_MAX)
-				m_host->GetStats()->Emit(m_statsContext.m_idWALCount, m_wals.size());
+			m_host->GetStats()->Emit(m_statsContext.m_idWALCount, m_wals.size());
 
 			return count;
 		}
@@ -218,7 +219,9 @@ namespace jelly
 		{			
 			if(m_pendingStore.size() == 0)
 				return 0;
-			
+
+			ScopedTimeSampler timeSampler(m_host->GetStats(), m_statsContext.m_idFlushPendingStoreTime);
+
 			{
 				uint32_t storeId = CreateStoreId();
 
@@ -232,6 +235,7 @@ namespace jelly
 
 			size_t count = m_pendingStore.size();
 			m_pendingStore.clear();
+
 			return count;
 		}
 
@@ -276,6 +280,8 @@ namespace jelly
 		size_t
 		CleanupWALs()
 		{
+			ScopedTimeSampler timeSampler(m_host->GetStats(), m_statsContext.m_idCleanupWALsTime);
+
 			size_t deletedWALs = 0;
 
 			for(size_t i = 0; i < m_wals.size(); i++)
@@ -313,6 +319,8 @@ namespace jelly
 			JELLY_ASSERT(aCompactionJob.m_storeId2 != UINT32_MAX);
 			JELLY_ASSERT(aCompactionJob.m_storeId1 != aCompactionJob.m_storeId2);
 
+			ScopedTimeSampler timeSampler(m_host->GetStats(), m_statsContext.m_idPerformCompactionTime);
+
 			std::unique_ptr<CompactionResultType> result(new CompactionResultType());
 
 			{
@@ -344,6 +352,8 @@ namespace jelly
 		CompactionResultType*
 		PerformMajorCompaction()
 		{
+			ScopedTimeSampler timeSampler(m_host->GetStats(), m_statsContext.m_idPerformMajorCompactionTime);
+
 			std::unique_ptr<CompactionResultType> result(new CompactionResultType());
 
 			{
@@ -370,6 +380,8 @@ namespace jelly
 		ApplyCompactionResult(
 			CompactionResultType*						aCompactionResult)
 		{
+			ScopedTimeSampler timeSampler(m_host->GetStats(), m_statsContext.m_idApplyCompactionTime);
+
 			std::vector<uint32_t> deletedStoreIds;
 
 			for(typename CompactionResultType::CompactedStore* compactedStore : aCompactionResult->GetCompactedStores())
@@ -491,8 +503,6 @@ namespace jelly
 				IStats*						aStats)
 				: m_fileStore(aStats)
 				, m_fileWAL(aStats)
-				, m_idWALCount(UINT32_MAX)
-				, m_idFlushPendingWALTime(UINT32_MAX)
 			{
 
 			}
@@ -500,8 +510,14 @@ namespace jelly
 			FileStatsContext		m_fileStore;
 			FileStatsContext		m_fileWAL;
 
-			uint32_t				m_idWALCount;
-			uint32_t				m_idFlushPendingWALTime;
+			uint32_t				m_idWALCount = UINT32_MAX;
+			uint32_t				m_idFlushPendingWALTime = UINT32_MAX;
+			uint32_t				m_idProcessRequestsTime = UINT32_MAX;
+			uint32_t				m_idFlushPendingStoreTime = UINT32_MAX;
+			uint32_t				m_idCleanupWALsTime = UINT32_MAX;
+			uint32_t				m_idPerformCompactionTime = UINT32_MAX;
+			uint32_t				m_idPerformMajorCompactionTime = UINT32_MAX;
+			uint32_t				m_idApplyCompactionTime = UINT32_MAX;
 		};
 
 		WAL*

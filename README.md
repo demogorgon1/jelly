@@ -6,9 +6,8 @@ ___WARNING: This is very much work in progress. Here be dragons.___
 _Jelly_ is a database system designed to function as blob-storage for online games. It's a C++ library that can either be embedded directly
 in a game server or as the inner-most moving parts of a larger distributed database system.
 
-* [Visit the wiki for discussion about the inner workings of _jelly_](https://github.com/demogorgon1/jelly/wiki)
-* [Doxygen-generated documentation](https://demogorgon1.github.io/jelly/annotated.html)
-* [Examples](https://demogorgon1.github.io/jelly/examples.html)
+* [Documentation and C++ examples](https://demogorgon1.github.io/jelly/index.html)
+* [More in-depth discussion of _jelly_ topics on the wiki](https://github.com/demogorgon1/jelly/wiki)
 
 ## In a nutshell
 

@@ -43,6 +43,9 @@ namespace jelly
 			ID_LOCK_WAL_COUNT,
 			ID_BLOB_WAL_COUNT,
 			ID_STATS_UPDATE_TIME,
+			ID_OBEY_RESIDENT_BLOB_LIMITS_TIME,
+			ID_TOTAL_RESIDENT_BLOB_SIZE,
+			ID_TOTAL_RESIDENT_BLOB_COUNT,
 
 			NUM_IDS
 		};
@@ -94,9 +97,12 @@ namespace jelly
 			/* ID_APPLY_BLOB_COMPACTION_TIME */         { TYPE_SAMPLER, "apply_blob_compaction_time",         0 },
 			/* ID_LOCK_WAL_COUNT */                     { TYPE_GAUGE,   "lock_wal_count",                     0 },
 			/* ID_BLOB_WAL_COUNT */                     { TYPE_GAUGE,   "blob_wal_count",                     0 },
-			/* ID_STATS_UPDATE_TIME */				    { TYPE_SAMPLER, "stats_update_time",                  0 }
+			/* ID_STATS_UPDATE_TIME */				    { TYPE_SAMPLER, "stats_update_time",                  0 },
+			/* ID_OBEY_RESIDENT_BLOB_LIMITS_TIME */		{ TYPE_SAMPLER, "obey_resident_blob_limits_time",     0 },
+			/* ID_TOTAL_RESIDENT_BLOB_SIZE */           { TYPE_GAUGE,   "total_resident_blob_size",           0 },
+			/* ID_TOTAL_RESIDENT_BLOB_COUNT */          { TYPE_GAUGE,   "total_resident_blob_count",          0 },
 		};
-
+		
 		static_assert(sizeof(INFO) == sizeof(Info) * (size_t)NUM_IDS);
 
 		//! Query information about a statistic

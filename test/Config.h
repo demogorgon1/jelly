@@ -1,5 +1,8 @@
 #pragma once
 
+#include "Sim/BlobServer.h"
+#include "Sim/LockServer.h"
+
 namespace jelly
 {
 
@@ -158,6 +161,42 @@ namespace jelly
 							m_simCSVOutputColumns.push_back(token);
 						i++;
 					}
+					else if (strcmp(arg, "-simlocknodewalsizelimit") == 0)
+					{
+						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
+						m_simLockNodeConfig.m_node.m_walSizeLimit = (size_t)atoi(aArgs[i + 1]);
+						i++;
+					}
+					else if (strcmp(arg, "-simlocknodewalconcurrency") == 0)
+					{
+						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
+						m_simLockNodeConfig.m_node.m_walConcurrency = (size_t)atoi(aArgs[i + 1]);
+						i++;
+					}
+					else if (strcmp(arg, "-simblobnodewalsizelimit") == 0)
+					{
+						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
+						m_simBlobNodeConfig.m_node.m_walSizeLimit = (size_t)atoi(aArgs[i + 1]);
+						i++;
+					}
+					else if (strcmp(arg, "-simblobnodewalconcurrency") == 0)
+					{
+						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
+						m_simBlobNodeConfig.m_node.m_walConcurrency = (size_t)atoi(aArgs[i + 1]);
+						i++;
+					}
+					else if (strcmp(arg, "-simblobnodemaxresidentblobcount") == 0)
+					{
+						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
+						m_simBlobNodeConfig.m_maxResidentBlobCount = (size_t)atoi(aArgs[i + 1]);
+						i++;
+					}
+					else if (strcmp(arg, "-simblobnodemaxresidentblobsize") == 0)
+					{
+						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
+						m_simBlobNodeConfig.m_maxResidentBlobSize = (size_t)atoi(aArgs[i + 1]);
+						i++;
+					}
 					else
 					{
 						JELLY_FATAL_ERROR("Syntax error.");
@@ -166,39 +205,41 @@ namespace jelly
 			}
 
 			// NodeTest
-			bool						m_hammerTest = false;
+			bool									m_hammerTest = false;
 
 			// StepTest
-			uint32_t					m_stepTestSeed = 0;
-			bool						m_stepTestRandom = false;
+			uint32_t								m_stepTestSeed = 0;
+			bool									m_stepTestRandom = false;
 
 			// Sim
-			bool						m_simTest = false;
-			uint32_t					m_simNumClients = 1;
-			uint32_t					m_simClientStartIntervalMS = 10;
-			uint32_t					m_simNumGameServers = 1;
-			uint32_t					m_simNumLockServers = 1;
-			uint32_t					m_simNumBlobServers = 1;
-			uint32_t					m_simNumClientThreads = 1;
-			uint32_t					m_simNumGameServerThreads = 1;
-			uint32_t					m_simNumLockServerThreads = 1;
-			uint32_t					m_simNumBlobServerThreads = 1;
-			uint32_t					m_simSetIntervalMS = 1000;
-			std::string					m_simCSVOutput;
-			std::vector<std::string>	m_simCSVOutputColumns;
-			bool						m_simTestStdOut = true;
-			uint32_t					m_simBufferCompressionLevel = 0;
+			bool									m_simTest = false;
+			uint32_t								m_simNumClients = 1;
+			uint32_t								m_simClientStartIntervalMS = 10;
+			uint32_t								m_simNumGameServers = 1;
+			uint32_t								m_simNumLockServers = 1;
+			uint32_t								m_simNumBlobServers = 1;
+			uint32_t								m_simNumClientThreads = 1;
+			uint32_t								m_simNumGameServerThreads = 1;
+			uint32_t								m_simNumLockServerThreads = 1;
+			uint32_t								m_simNumBlobServerThreads = 1;
+			uint32_t								m_simSetIntervalMS = 1000;
+			std::string								m_simCSVOutput;
+			std::vector<std::string>				m_simCSVOutputColumns;
+			bool									m_simTestStdOut = true;
+			uint32_t								m_simBufferCompressionLevel = 0;
+			Sim::LockServer::LockNodeType::Config	m_simLockNodeConfig;
+			Sim::BlobServer::BlobNodeType::Config	m_simBlobNodeConfig;
 
 			// WriteTest
-			bool						m_writeTest = false;
-			uint32_t					m_writeTestBlobCount = 10000;
-			uint32_t					m_writeTestBlobSize = 1024;
-			uint32_t					m_writeTestBufferCompressionLevel = 0;
+			bool									m_writeTest = false;
+			uint32_t								m_writeTestBlobCount = 10000;
+			uint32_t								m_writeTestBlobSize = 1024;
+			uint32_t								m_writeTestBufferCompressionLevel = 0;
 
 			// ReadTest
-			bool						m_readTest = false;
-			uint32_t					m_readTestBlobCount = 0;
-			uint32_t					m_readTestBlobCountMemoryLimit = UINT32_MAX;
+			bool									m_readTest = false;
+			uint32_t								m_readTestBlobCount = 0;
+			uint32_t								m_readTestBlobCountMemoryLimit = UINT32_MAX;
 		};
 
 	}

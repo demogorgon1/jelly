@@ -219,7 +219,7 @@ namespace jelly
 	Stats::Thread::SwapAndGetReadData()
 	{
 		if(m_readData)
-			m_readData->Reset();
+			m_readData->ResetThread();
 
 		{
 			std::lock_guard lock(m_lock);
@@ -282,7 +282,7 @@ namespace jelly
 			threadCount = m_threadCount;
 		}
 
-		m_collectedData.Reset();
+		m_collectedData.ResetCollected();
 
 		for (uint32_t i = 0; i < threadCount; i++)
 		{

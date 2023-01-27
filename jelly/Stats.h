@@ -158,7 +158,15 @@ namespace jelly
 			}
 
 			void
-			Reset()
+			ResetThread()
+			{
+				// Note that we don't reset gauges, they retain their values
+				std::fill(m_counterData.begin(), m_counterData.end(), CounterData());
+				std::fill(m_samplerData.begin(), m_samplerData.end(), SamplerData());
+			}
+
+			void
+			ResetCollected()
 			{
 				std::fill(m_counterData.begin(), m_counterData.end(), CounterData());
 				std::fill(m_samplerData.begin(), m_samplerData.end(), SamplerData());

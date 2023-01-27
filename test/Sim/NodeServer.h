@@ -40,15 +40,18 @@ namespace jelly::Test::Sim
 		}
 
 		NodeServer(
-			Network*						aNetwork,
-			IHost*							aHost,
-			uint32_t						aId)
+			Network*											aNetwork,
+			IHost*												aHost,
+			uint32_t											aId,
+			const typename _NodeType::Config&					aConfig)
 			: m_network(aNetwork)
 			, m_host(aHost)
 			, m_id(aId)
 			, m_state(STATE_INIT)
 			, m_hasNode(false)
 			, m_stateTimeSampler(NUM_STATES)
+			, m_config(aConfig)
+			, m_processRequestsTimer(50)
 		{
 			if constexpr(_Type == NODE_SERVER_TYPE_LOCK)
 			{
@@ -74,9 +77,7 @@ namespace jelly::Test::Sim
 			{
 			case STATE_INIT:
 				{
-					typename _NodeType::Config config;
-
-					m_node = std::make_unique<_NodeType>(m_host, m_id, config);
+					m_node = std::make_unique<_NodeType>(m_host, m_id, m_config);
 					m_hasNode = true;
 
 					typename HousekeepingAdvisor<_NodeType>::Config housekeepingAdvisorConfig;
@@ -88,8 +89,9 @@ namespace jelly::Test::Sim
 				break;
 
 			case STATE_RUNNING:
-				{
-					m_node->ProcessRequests();
+				{	
+					if(m_processRequestsTimer.HasExpired())
+						m_node->ProcessRequests();
 				
 					m_housekeepingAdvisor->Update([&](
 						const HousekeepingAdvisor<_NodeType>::Event& aEvent)
@@ -97,38 +99,21 @@ namespace jelly::Test::Sim
 						switch(aEvent.m_type)
 						{
 						case HousekeepingAdvisor<_NodeType>::Event::TYPE_FLUSH_PENDING_WAL:
-							{
-								size_t itemCount = m_node->FlushPendingWAL(aEvent.m_concurrentWALIndex);
-								JELLY_UNUSED(itemCount);
-							}
+							m_node->FlushPendingWAL(aEvent.m_concurrentWALIndex);
 							break;
 
 						case HousekeepingAdvisor<_NodeType>::Event::TYPE_FLUSH_PENDING_STORE:
-							{
-								size_t itemCount = m_node->FlushPendingStore();
-								JELLY_UNUSED(itemCount);
-
-								//if (itemCount > 0)
-								//	printf("[%u] FlushPendingStore: %llu\n", m_id, itemCount);
-							}
+							m_node->FlushPendingStore();
 							break;
 
 						case HousekeepingAdvisor<_NodeType>::Event::TYPE_CLEANUP_WALS:
-							{
-								size_t walCount = m_node->CleanupWALs();
-								JELLY_UNUSED(walCount);
-
-								//if (walCount > 0)
-								//	printf("[%u] CleanupWALs: %llu\n", m_id, walCount);
-							}
+							m_node->CleanupWALs();
 							break;
 
 						case HousekeepingAdvisor<_NodeType>::Event::TYPE_PERFORM_COMPACTION:
 							{
 								std::unique_ptr<typename _NodeType::CompactionResultType> compactionResult(m_node->PerformCompaction(aEvent.m_compactionJob));
 								m_node->ApplyCompactionResult(compactionResult.get());
-
-								//printf("[%u] PerformCompaction\n", m_id);
 							}
 							break;
 
@@ -164,10 +149,13 @@ namespace jelly::Test::Sim
 		Network*											m_network;
 		IHost*												m_host;
 		uint32_t											m_id;
+		_NodeType::Config									m_config;
 
 		std::atomic_bool									m_hasNode;
 		std::unique_ptr<_NodeType>							m_node;
 		std::unique_ptr<HousekeepingAdvisor<_NodeType>>		m_housekeepingAdvisor;
+
+		Timer												m_processRequestsTimer;
 
 		enum State : uint32_t
 		{

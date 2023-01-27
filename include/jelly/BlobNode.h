@@ -636,6 +636,8 @@ namespace jelly
 		void
 		_ObeyResidentBlobLimits()
 		{
+			ScopedTimeSampler timeSampler(this->m_host->GetStats(), Stat::ID_OBEY_RESIDENT_BLOB_LIMITS_TIME);
+
 			while(m_totalResidentBlobSize > m_blobNodeConfig.m_maxResidentBlobSize || m_residentItems.m_count > m_blobNodeConfig.m_maxResidentBlobCount)
 			{
 				Item* head = m_residentItems.m_head;
@@ -658,6 +660,9 @@ namespace jelly
 
 				runtimeState.m_isResident = false;
 			}
+
+			this->m_host->GetStats()->Emit(Stat::ID_TOTAL_RESIDENT_BLOB_SIZE, m_totalResidentBlobSize);
+			this->m_host->GetStats()->Emit(Stat::ID_TOTAL_RESIDENT_BLOB_COUNT, m_residentItems.m_count);
 		}
 
 	};

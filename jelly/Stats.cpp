@@ -31,10 +31,10 @@ namespace jelly
 			switch(info->m_type)
 			{
 			case Stat::TYPE_COUNTER:
-				if(info->m_counterRateMovingAverage > 0)
+				if(info->m_cRateMA > 0)
 				{
 					m_counterMovingAverages.push_back(std::make_unique<CounterMovingAverage>(
-						(size_t)info->m_counterRateMovingAverage,
+						(size_t)info->m_cRateMA,
 						typeIndex));
 				}
 				break;

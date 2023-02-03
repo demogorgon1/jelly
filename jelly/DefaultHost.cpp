@@ -132,6 +132,7 @@ namespace jelly
 						{
 						case PathUtils::FILE_TYPE_STORE:	aOutStoreIds.push_back(id); break;
 						case PathUtils::FILE_TYPE_WAL:		aOutWriteAheadLogIds.push_back(id); break;
+						default:							JELLY_ASSERT(false); 
 						}
 					}
 				}

@@ -33,6 +33,9 @@ namespace jelly
 									uint32_t					aExtraApplicationStatsCount = 0);
 		virtual					~DefaultHost();
 
+		//! Poll system stats.
+		void					PollSystemStats();
+
 		//! Deletes all database files associated with specified node id.
 		void					DeleteAllFiles(
 									uint32_t					aNodeId = UINT32_MAX);

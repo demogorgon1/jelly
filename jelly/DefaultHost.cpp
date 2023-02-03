@@ -50,6 +50,28 @@ namespace jelly
 
 	}
 
+	void					
+	DefaultHost::PollSystemStats()
+	{
+		// Determine total size on disk
+		size_t totalFileSizes[PathUtils::NUM_FILES_TYPES];
+		memset(totalFileSizes, 0, sizeof(totalFileSizes));
+		for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(m_root))
+		{
+			PathUtils::FileType fileType;
+			uint32_t id;
+			uint32_t nodeId;
+			if (entry.is_regular_file() && PathUtils::ParsePath(entry.path(), m_filePrefix.c_str(), fileType, nodeId, id))
+			{
+				JELLY_ASSERT(fileType < PathUtils::NUM_FILES_TYPES);
+				totalFileSizes[fileType] += (size_t)entry.file_size();
+			}
+		}
+
+		m_stats->Emit(Stat::ID_TOTAL_HOST_STORE_SIZE, totalFileSizes[PathUtils::FILE_TYPE_STORE]);
+		m_stats->Emit(Stat::ID_TOTAL_HOST_WAL_SIZE, totalFileSizes[PathUtils::FILE_TYPE_WAL]);
+	}
+
 	void		
 	DefaultHost::DeleteAllFiles(
 		uint32_t					aNodeId)

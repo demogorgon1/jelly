@@ -46,6 +46,8 @@ namespace jelly
 			ID_OBEY_RESIDENT_BLOB_LIMITS_TIME,
 			ID_TOTAL_RESIDENT_BLOB_SIZE,
 			ID_TOTAL_RESIDENT_BLOB_COUNT,
+			ID_TOTAL_HOST_WAL_SIZE,
+			ID_TOTAL_HOST_STORE_SIZE,
 
 			NUM_IDS
 		};
@@ -113,6 +115,8 @@ namespace jelly
 			/* ID_OBEY_RESIDENT_BLOB_LIMITS_TIME */		{ TYPE_SAMPLER, "obey_resident_blob_limits_time",     0,          TIME_SAMPLER_HISTOGRAM_BUCKETS },
 			/* ID_TOTAL_RESIDENT_BLOB_SIZE */           { TYPE_GAUGE,   "total_resident_blob_size",           0,          {} },
 			/* ID_TOTAL_RESIDENT_BLOB_COUNT */          { TYPE_GAUGE,   "total_resident_blob_count",          0,          {} },
+			/* ID_TOTAL_HOST_WAL_SIZE */				{ TYPE_GAUGE,   "total_host_wal_size",                0,          {} },
+			/* ID_TOTAL_HOST_STORE_SIZE */              { TYPE_GAUGE,   "total_host_store_size",		      0,          {} }
 		};
 		
 		static_assert(sizeof(INFO) == sizeof(Info) * (size_t)NUM_IDS);

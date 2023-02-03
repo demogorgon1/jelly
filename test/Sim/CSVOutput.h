@@ -29,6 +29,7 @@ namespace jelly::Test::Sim
 			COLUMN_TYPE_SAMPLE_AVG,
 			COLUMN_TYPE_SAMPLE_MIN,
 			COLUMN_TYPE_SAMPLE_MAX,
+			COLUMN_TYPE_SAMPLE_HIST,
 			COLUMN_TYPE_GAUGE,
 			COLUMN_TYPE_COUNTER,
 			COLUMN_TYPE_COUNTER_RATE,
@@ -41,11 +42,19 @@ namespace jelly::Test::Sim
 			std::string								m_string;
 			std::string								m_headerSuffix;
 			uint32_t								m_id;
+			const uint32_t*							m_histogramBucket;
 		};
 		
 		std::vector<Column>							m_columns;
 		FILE*										m_f;
 		bool										m_started;
+
+		void	_AddColumn(
+					const char*				aColumn,
+					const char*				aStatsString,
+					ColumnType				aColumnType,
+					const char*				aHeaderSuffix,
+					const uint32_t*			aHistogramBucket);
 	};
 
 }

@@ -12,6 +12,7 @@ namespace jelly
 		const ExtraApplicationStats& aExtraApplicationStats)
 		: m_threadCount(0)
 		, m_updateCount(0)
+		, m_totalSamplerHistogramBucketCount(0)
 		, m_extraApplicationStats(aExtraApplicationStats)
 	{
 		for(uint32_t i = 0; i < (uint32_t)Stat::NUM_TYPES; i++)
@@ -36,6 +37,20 @@ namespace jelly
 					m_counterMovingAverages.push_back(std::make_unique<CounterMovingAverage>(
 						(size_t)info->m_cRateMA,
 						typeIndex));
+				}
+				break;
+
+			case Stat::TYPE_SAMPLER:
+				if(info->m_sHistBuckets.size() > 0)
+				{
+					m_samplerHistograms.push_back(SamplerHistogram(&info->m_sHistBuckets, m_totalSamplerHistogramBucketCount));
+
+					m_totalSamplerHistogramBucketCount += info->m_sHistBuckets.size();
+				}
+				else
+				{
+					// Don't make histogram for this sampler
+					m_samplerHistograms.push_back(SamplerHistogram(NULL, 0));
 				}
 				break;
 
@@ -101,7 +116,7 @@ namespace jelly
 		const Stat::Info* info = _GetStatInfo(aId);
 		JELLY_ASSERT(info->m_type == Stat::TYPE_COUNTER);
 		size_t typeIndex = m_typeIndices[aId];
-		JELLY_ASSERT(typeIndex < (size_t)m_counters.size());
+		JELLY_ASSERT(typeIndex < m_counters.size());
 		return m_counters[typeIndex];
 	}
 	
@@ -112,8 +127,24 @@ namespace jelly
 		const Stat::Info* info = _GetStatInfo(aId);
 		JELLY_ASSERT(info->m_type == Stat::TYPE_SAMPLER);
 		size_t typeIndex = m_typeIndices[aId];
-		JELLY_ASSERT(typeIndex < (size_t)m_samplers.size());
+		JELLY_ASSERT(typeIndex < m_samplers.size());
 		return m_samplers[typeIndex];
+	}
+
+	Stats::SamplerHistogramView	
+	Stats::GetSamplerHistogramView(
+		uint32_t		aId) const 
+	{
+		const Stat::Info* info = _GetStatInfo(aId);
+		JELLY_ASSERT(info->m_type == Stat::TYPE_SAMPLER);
+		size_t typeIndex = m_typeIndices[aId];
+		JELLY_ASSERT(typeIndex < m_samplerHistograms.size());
+		const SamplerHistogram* samplerHistogram = &m_samplerHistograms[typeIndex];
+		if(!samplerHistogram->IsSet())
+			return SamplerHistogramView();
+
+		JELLY_ASSERT(samplerHistogram->m_offset + samplerHistogram->m_buckets->size() <= m_collectedData.m_samplerHistogramData.size());
+		return SamplerHistogramView(samplerHistogram->m_buckets, &m_collectedData.m_samplerHistogramData[samplerHistogram->m_offset]);
 	}
 
 	Stats::Gauge
@@ -123,7 +154,7 @@ namespace jelly
 		const Stat::Info* info = _GetStatInfo(aId);
 		JELLY_ASSERT(info->m_type == Stat::TYPE_GAUGE);
 		size_t typeIndex = m_typeIndices[aId];
-		JELLY_ASSERT(typeIndex < (size_t)m_gauges.size());
+		JELLY_ASSERT(typeIndex < m_gauges.size());
 		return m_gauges[typeIndex];
 	}
 
@@ -146,6 +177,7 @@ namespace jelly
 
 	Stats::Thread::Thread()
 		: m_initialized(false)
+		, m_samplerHistograms(NULL)
 	{
 
 	}
@@ -177,24 +209,39 @@ namespace jelly
 
 		case Stat::TYPE_SAMPLER:
 			{
-				std::lock_guard lock(m_lock);
+				JELLY_ASSERT(aTypeIndex < m_samplerHistograms->size());
+				const SamplerHistogram* samplerHistogram = &m_samplerHistograms->at(aTypeIndex);
+				size_t histogramBucketIndex = UINT64_MAX;
 
-				JELLY_ASSERT(aTypeIndex < m_writeData->m_samplerData.size());
-				SamplerData* sampler = &m_writeData->m_samplerData[aTypeIndex];
+				if (samplerHistogram->IsSet())
+					histogramBucketIndex = samplerHistogram->GetBucketIndex(aValue);
 
-				if(sampler->m_count > 0)
 				{
-					sampler->m_min = std::min<uint64_t>(sampler->m_min, aValue);
-					sampler->m_max = std::max<uint64_t>(sampler->m_max, aValue);
-				}
-				else
-				{
-					sampler->m_min = aValue;
-					sampler->m_max = aValue;
-				}
+					std::lock_guard lock(m_lock);
 
-				sampler->m_sum += aValue;
-				sampler->m_count++;
+					if(histogramBucketIndex != UINT64_MAX)
+					{
+						JELLY_ASSERT(histogramBucketIndex < m_writeData->m_samplerHistogramData.size());
+						m_writeData->m_samplerHistogramData[histogramBucketIndex]++;
+					}
+
+					JELLY_ASSERT(aTypeIndex < m_writeData->m_samplerData.size());
+					SamplerData* sampler = &m_writeData->m_samplerData[aTypeIndex];
+
+					if (sampler->m_count > 0)
+					{
+						sampler->m_min = std::min<uint64_t>(sampler->m_min, aValue);
+						sampler->m_max = std::max<uint64_t>(sampler->m_max, aValue);
+					}
+					else
+					{
+						sampler->m_min = aValue;
+						sampler->m_max = aValue;
+					}
+
+					sampler->m_sum += aValue;
+					sampler->m_count++;
+				}
 			}
 			break;
 
@@ -239,7 +286,8 @@ namespace jelly
 		aData.Init(
 			m_typeCount[Stat::TYPE_COUNTER],
 			m_typeCount[Stat::TYPE_SAMPLER],
-			m_typeCount[Stat::TYPE_GAUGE]);
+			m_typeCount[Stat::TYPE_GAUGE],
+			m_totalSamplerHistogramBucketCount);
 	}
 
 	Stats::Thread* 
@@ -256,6 +304,8 @@ namespace jelly
 
 			currentThread->m_writeData = std::make_unique<Data>();
 			_InitData(*currentThread->m_writeData);
+
+			currentThread->m_samplerHistograms = &m_samplerHistograms;
 
 			currentThread->m_initialized = true;
 
@@ -377,6 +427,5 @@ namespace jelly
 		JELLY_ASSERT(extraApplicationStatIndex < m_extraApplicationStats.m_infoCount);
 		return &m_extraApplicationStats.m_info[extraApplicationStatIndex];
 	}
-
 
 }

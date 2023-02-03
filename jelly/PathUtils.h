@@ -10,7 +10,9 @@ namespace jelly
 		enum FileType
 		{
 			FILE_TYPE_WAL,
-			FILE_TYPE_STORE
+			FILE_TYPE_STORE,
+
+			NUM_FILES_TYPES
 		};
 
 		std::string	MakePath(

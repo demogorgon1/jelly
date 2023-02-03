@@ -169,8 +169,9 @@ namespace jelly::Test::Sim
 			{
 				if(statsTimer.HasExpired())
 				{
-					IStats* stats = network.m_host.GetStats();
+					network.m_host.PollSystemStats();
 
+					IStats* stats = network.m_host.GetStats();
 					stats->Update();
 
 					if(csv)

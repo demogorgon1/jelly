@@ -44,10 +44,7 @@ namespace jelly::Test::Sim
 		ColumnType columnType = COLUMN_TYPE_UNDEFINED;
 
 		JELLY_CHECK(tokens.size() > 0, "CSV column syntax error: %s", aColumn);
-		std::string statsString;
 		
-		char headerSuffix[256];
-
 		if(tokens[0] == "s")
 		{
 			JELLY_CHECK(tokens.size() == 3, "CSV column syntax error: %s", aColumn);
@@ -58,19 +55,39 @@ namespace jelly::Test::Sim
 				columnType = COLUMN_TYPE_SAMPLE_MAX;
 			else if (tokens[1] == "min")
 				columnType = COLUMN_TYPE_SAMPLE_MIN;
+			else if(tokens[1] == "hist")
+				columnType = COLUMN_TYPE_SAMPLE_HIST;
 
-			snprintf(headerSuffix, sizeof(headerSuffix), " (%s)", tokens[1].c_str());
+			if(columnType != COLUMN_TYPE_SAMPLE_HIST)
+			{
+				char headerSuffix[256];
+				snprintf(headerSuffix, sizeof(headerSuffix), " (%s)", tokens[1].c_str());
 
-			statsString = tokens[2];
+				_AddColumn(aColumn, tokens[2].c_str(), columnType, headerSuffix, NULL);
+			}
+			else
+			{
+				uint32_t id = m_stats->GetIdByString(tokens[2].c_str());
+				JELLY_CHECK(id != UINT32_MAX, "Invalid sampler: %s", aColumn);
+				IStats::SamplerHistogramView histogram = m_stats->GetSamplerHistogramView(id);
+				JELLY_CHECK(histogram.m_buckets != NULL, "No histogram associated with sampler: %s", aColumn);
+				
+				for(size_t i = 0; i < histogram.m_buckets->size(); i++)
+				{
+					char headerSuffix[256];
+					snprintf(headerSuffix, sizeof(headerSuffix), "_hist_%u", (uint32_t)i);
+
+					_AddColumn(aColumn, tokens[2].c_str(), columnType, headerSuffix, &histogram.m_sampleCountsPerBucket[i]);
+				}
+			}
 		}
 		else if(tokens[0] == "g")
 		{
 			JELLY_CHECK(tokens.size() == 2, "CSV column syntax error: %s", aColumn);
 			
-			statsString = tokens[1];
 			columnType = COLUMN_TYPE_GAUGE;
 
-			headerSuffix[0] = '\0';
+			_AddColumn(aColumn, tokens[1].c_str(), columnType, "", NULL);
 		}
 		else if (tokens[0] == "c")
 		{
@@ -83,16 +100,15 @@ namespace jelly::Test::Sim
 			else if (tokens[1] == "rate_ma")
 				columnType = COLUMN_TYPE_COUNTER_RATE_MA;
 
+			char headerSuffix[256];
 			snprintf(headerSuffix, sizeof(headerSuffix), " (%s)", tokens[1].c_str());
 
-			statsString = tokens[2];
+			_AddColumn(aColumn, tokens[2].c_str(), columnType, headerSuffix, NULL);
 		}
-
-		JELLY_CHECK(columnType != COLUMN_TYPE_UNDEFINED, "CSV column syntax error %s", aColumn);
-
-		uint32_t id = m_stats->GetIdByString(statsString.c_str());
-		JELLY_CHECK(id != UINT32_MAX, "Invalid statistics: %s", aColumn);
-		m_columns.push_back({ columnType, statsString, headerSuffix, id });
+		else
+		{
+			JELLY_FATAL_ERROR("CSV column syntax error: %s", aColumn);
+		}
 	}
 
 	void	
@@ -123,6 +139,7 @@ namespace jelly::Test::Sim
 			case COLUMN_TYPE_COUNTER:			value = (float)m_stats->GetCounter(m_columns[i].m_id).m_value; break;
 			case COLUMN_TYPE_COUNTER_RATE:		value = (float)m_stats->GetCounter(m_columns[i].m_id).m_rate; break;
 			case COLUMN_TYPE_COUNTER_RATE_MA:	value = (float)m_stats->GetCounter(m_columns[i].m_id).m_rateMA; break;
+			case COLUMN_TYPE_SAMPLE_HIST:		value = (float)*(m_columns[i].m_histogramBucket); break; // õ_Ô
 
 			default:
 				JELLY_ASSERT(false);
@@ -161,6 +178,22 @@ namespace jelly::Test::Sim
 		fprintf(m_f, "\r\n");
 
 		fflush(m_f);
+	}
+
+	//-------------------------------------------------------------------------------------
+
+	void	
+	CSVOutput::_AddColumn(
+		const char*			aColumn,
+		const char*			aStatsString,
+		ColumnType			aColumnType,
+		const char*			aHeaderSuffix,
+		const uint32_t*		aHistogramBucket)
+	{
+		JELLY_CHECK(aColumnType != COLUMN_TYPE_UNDEFINED, "CSV column syntax error: %s", aColumn);
+		uint32_t id = m_stats->GetIdByString(aStatsString);
+		JELLY_CHECK(id != UINT32_MAX, "Invalid statistics: %s", aColumn);
+		m_columns.push_back({ aColumnType, aStatsString, aHeaderSuffix, id, aHistogramBucket });
 	}
 
 }

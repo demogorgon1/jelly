@@ -72,6 +72,24 @@ namespace jelly
 		};
 
 		/**
+		 * \brief Histogram of a sampler
+		 */
+		struct SamplerHistogramView
+		{
+			SamplerHistogramView(
+				const std::vector<uint64_t>*	aBuckets = NULL,
+				const uint32_t*					aSampleCountsPerBucket = NULL)
+				: m_buckets(aBuckets)
+				, m_sampleCountsPerBucket(aSampleCountsPerBucket)
+			{
+
+			}
+
+			const std::vector<uint64_t>*	m_buckets;					///< Description of buckets
+			const uint32_t*					m_sampleCountsPerBucket;	///< Samples per bucket
+		};
+
+		/**
 		 * \brief Describes the state of a gauge.
 		 */
 		struct Gauge
@@ -101,29 +119,33 @@ namespace jelly
 		//---------------------------------------------------------------------------
 		// Virtual methods
 
-		virtual void				Emit_UInt64(
-										uint32_t							/*aId*/,
-										uint64_t							/*aValue*/,
-										const std::optional<Stat::Type>&	/*aExpectedType*/) { }	
+		virtual void					Emit_UInt64(
+											uint32_t							/*aId*/,
+											uint64_t							/*aValue*/,
+											const std::optional<Stat::Type>&	/*aExpectedType*/) { }	
 
 		//! Update statistics. Counters and gauges will be reset.
-		virtual void				Update() { }
+		virtual void					Update() { }
 
 		//! Query a counter.
-		virtual Counter				GetCounter(
-										uint32_t		/*aId*/) const { return Counter(); }
+		virtual Counter					GetCounter(
+											uint32_t							/*aId*/) const { return Counter(); }
 
 		//! Query a sampler.
-		virtual Sampler				GetSampler(
-										uint32_t		/*aId*/) const { return Sampler(); }
+		virtual Sampler					GetSampler(
+											uint32_t							/*aId*/) const { return Sampler(); }
+
+		//! Query a sampler histogram.
+		virtual SamplerHistogramView	GetSamplerHistogramView(
+											uint32_t							/*aId*/) const { return SamplerHistogramView(); }
 
 		//! Query a gauge.		 
-		virtual Gauge				GetGauge(
-										uint32_t		/*aId*/) const { return Gauge(); }
+		virtual Gauge					GetGauge(
+											uint32_t							/*aId*/) const { return Gauge(); }
 
 		//! Get a statistic id from a string name.
-		virtual uint32_t			GetIdByString(
-										const char*							/*aString*/) const { return UINT32_MAX; }
+		virtual uint32_t				GetIdByString(
+											const char*							/*aString*/) const { return UINT32_MAX; }
 
 	};
 

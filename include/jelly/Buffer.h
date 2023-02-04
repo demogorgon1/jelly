@@ -175,6 +175,8 @@ namespace jelly
 
 					memcpy(newData, m_data, m_size);
 				}
+				
+				delete [] newData;
 
 				m_size = aSize;
 				m_bufferSize = newBufferSize;

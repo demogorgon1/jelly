@@ -37,7 +37,6 @@ namespace jelly
 				: m_head(NULL)
 				, m_tail(NULL)
 				, m_totalBytes(0)
-				, m_writeGuard(false)
 			{
 				
 			}
@@ -102,7 +101,6 @@ namespace jelly
 			MemoryBuffer*						m_head;
 			MemoryBuffer*						m_tail;
 			size_t								m_totalBytes;
-			std::atomic_bool					m_writeGuard;
 			std::vector<const MemoryBuffer*>	m_array;
 		};
 
@@ -271,7 +269,6 @@ namespace jelly
 					const BufferList*		aBufferList)
 					: m_bufferListReader(aBufferList->m_head, 0)
 				{
-					JELLY_ASSERT(!aBufferList->m_writeGuard);
 				}
 
 				virtual
@@ -360,14 +357,6 @@ namespace jelly
 					BufferList*	aBufferList)
 					: m_bufferList(aBufferList)
 				{
-					JELLY_ASSERT(!m_bufferList->m_writeGuard);
-					m_bufferList->m_writeGuard = true;
-				}
-
-				virtual 
-				~StoreWriter()
-				{
-					m_bufferList->m_writeGuard = false;
 				}
 
 				// IStoreWriter implementation
@@ -375,8 +364,6 @@ namespace jelly
 				WriteItem(
 					const ItemBase*					aItem) override
 				{
-					JELLY_ASSERT(m_bufferList->m_writeGuard);
-
 					size_t offset = m_bufferList->m_totalBytes;
 
 					BufferListWriter writer(m_bufferList);
@@ -469,14 +456,6 @@ namespace jelly
 					BufferList*		aBufferList)
 					: m_bufferList(aBufferList)
 				{
-					JELLY_ASSERT(!m_bufferList->m_writeGuard);
-					m_bufferList->m_writeGuard = true;
-				}
-
-				virtual
-				~WALWriter()
-				{
-					m_bufferList->m_writeGuard = false;
 				}
 
 				// IWALWriter implementation

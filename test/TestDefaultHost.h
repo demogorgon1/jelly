@@ -14,6 +14,7 @@ namespace jelly
 				const char*						aRoot,
 				Compression::Id					aCompressionId)
 				: DefaultHost(aRoot, "test", aCompressionId)
+				, m_timeStamp(0)
 			{
 
 			}

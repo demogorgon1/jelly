@@ -424,8 +424,8 @@ namespace jelly
 			{
 				struct TimeStampedKey
 				{
-					_KeyType	m_key;
-					uint64_t	m_timeStamp;
+					_KeyType	m_key = 0;
+					uint64_t	m_timeStamp = 0;
 
 					bool
 					operator<(

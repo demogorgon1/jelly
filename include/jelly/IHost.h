@@ -32,8 +32,8 @@ namespace jelly
 
 		struct StoreInfo
 		{
-			uint32_t		m_id;
-			size_t			m_size;
+			uint32_t		m_id = 0;
+			size_t			m_size = 0;
 
 			bool operator<(const StoreInfo& aOther) const { return m_id < aOther.m_id; }
 		};

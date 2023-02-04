@@ -320,10 +320,7 @@ namespace jelly
 		PerformCompaction(
 			const CompactionJob&						aCompactionJob)
 		{
-			JELLY_ASSERT(aCompactionJob.m_oldestStoreId != UINT32_MAX);
-			JELLY_ASSERT(aCompactionJob.m_storeId1 != UINT32_MAX);
-			JELLY_ASSERT(aCompactionJob.m_storeId2 != UINT32_MAX);
-			JELLY_ASSERT(aCompactionJob.m_storeId1 != aCompactionJob.m_storeId2);
+			JELLY_ASSERT(aCompactionJob.Validate());
 
 			ScopedTimeSampler timeSampler(m_host->GetStats(), m_statsContext.m_idPerformCompactionTime);
 
@@ -335,14 +332,14 @@ namespace jelly
 				if(m_currentCompactionIsMajor)
 					return result.release();
 
-				if (m_currentCompactionStoreIds.find(aCompactionJob.m_storeId1) != m_currentCompactionStoreIds.end())
-					return result.release();
+				for(uint32_t storeId : aCompactionJob.m_storeIds)
+				{
+					if (m_currentCompactionStoreIds.find(storeId) != m_currentCompactionStoreIds.end())
+						return result.release();
+				}
 
-				if (m_currentCompactionStoreIds.find(aCompactionJob.m_storeId2) != m_currentCompactionStoreIds.end())
-					return result.release();
-
-				m_currentCompactionStoreIds.insert(aCompactionJob.m_storeId1);
-				m_currentCompactionStoreIds.insert(aCompactionJob.m_storeId2);
+				for (uint32_t storeId : aCompactionJob.m_storeIds)		
+					m_currentCompactionStoreIds.insert(storeId);
 			}
 
 			Compaction::Perform<_KeyType, _ItemType, _STLKeyHasher>(this, aCompactionJob, result.get());

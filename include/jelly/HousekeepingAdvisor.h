@@ -64,70 +64,56 @@ namespace jelly
 		 */
 		struct Config
 		{	
-			Config()
-				: m_minWALFlushIntervalMS(500)
-				, m_cleanupWALIntervalMS(60 * 1000)
-				, m_minCompactionIntervalMS(5 * 1000)
-				, m_pendingStoreItemLimit(30000)
-				, m_pendingStoreWALItemLimit(300000)
-				, m_compactionAdvisorSizeMemory(10)
-				, m_compactionAdvisorSizeTrendMemory(10)
-				, m_compactionAdvisorStrategy(CompactionAdvisor::STRATEGY_SIZE_TIERED)
-				, m_compactionAdvisorStrategyUpdateIntervalMS(10 * 1000)
-			{
-
-			}
-
 			/**
 			 * Minimum WAL flushing interval in milliseconds. Minimum time between TYPE_FLUSH_PENDING_WAL events.
 			 * If requests are rare the interval might be longer.
 			 */
-			uint32_t							m_minWALFlushIntervalMS;
+			uint32_t							m_minWALFlushIntervalMS = 500;
 
 			/**
 			 * Base interval of TYPE_CLEANUP_WALS events.
 			 */
-			uint32_t							m_cleanupWALIntervalMS;		
+			uint32_t							m_cleanupWALIntervalMS = 60 * 1000;		
 
 			/**
 			 * Never suggest minor compactions more often than this. 
 			 */
 
-			uint32_t							m_minCompactionIntervalMS;
+			uint32_t							m_minCompactionIntervalMS = 5 * 1000;
 
 			/**
 			 * If number of pending store items exceed this number, a TYPE_FLUSH_PENDING_STORE event will be 
 			 * triggered. Note that if one item has multiple writes it still counts as one item.
 			 */
-			size_t								m_pendingStoreItemLimit;
+			size_t								m_pendingStoreItemLimit = 30000;
 
 			/**
 			 * If number of pending items written to WALs exceed this number, a TYPE_FLUSH_PENDING_STORE event
 			 * will be triggered. It doesn't matter how many different items we're talking about - it could all
 			 * be the same item written repeatedly.
 			 */
-			uint32_t							m_pendingStoreWALItemLimit;
+			uint32_t							m_pendingStoreWALItemLimit = 300000;
 
 			/**
 			 * Compaction advisor will monitor total store size on disk over time. This is the max time to look
 			 * back, measured in number of calls to Update().
 			 */
-			uint32_t							m_compactionAdvisorSizeMemory;
+			uint32_t							m_compactionAdvisorSizeMemory = 10;
 
 			/**
 			 * Like m_compactionAdvisorSizeMemory, but for the derivative (change) of total store size.
 			 */
-			uint32_t							m_compactionAdvisorSizeTrendMemory;
+			uint32_t							m_compactionAdvisorSizeTrendMemory = 10;
 
 			/**
 			 * Compaction strategy to use. 
 			 */
-			CompactionAdvisor::Strategy			m_compactionAdvisorStrategy;
+			CompactionAdvisor::Strategy			m_compactionAdvisorStrategy = CompactionAdvisor::STRATEGY_SIZE_TIERED;
 
 			/**
 			 * How often the compaction strategy should be updated.
 			 */
-			uint32_t							m_compactionAdvisorStrategyUpdateIntervalMS;
+			uint32_t							m_compactionAdvisorStrategyUpdateIntervalMS = 10 * 1000;
 		};
 			
 		/**

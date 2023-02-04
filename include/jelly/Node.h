@@ -63,6 +63,9 @@ namespace jelly
 
 			for(typename TableType::iterator i = m_table.begin(); i != m_table.end(); i++)
 				delete i->second;
+
+			for(typename CompactionRedirectMap::iterator i = m_compactionRedirectMap.begin(); i != m_compactionRedirectMap.end(); i++)
+				delete i->second;
 		}
 
 		/**

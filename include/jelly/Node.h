@@ -60,6 +60,9 @@ namespace jelly
 
 			for(WAL* wal : m_wals)
 				delete wal;
+
+			for(typename TableType::iterator i = m_table.begin(); i != m_table.end(); i++)
+				delete i->second;
 		}
 
 		/**
@@ -547,6 +550,8 @@ namespace jelly
 			const _KeyType&					aKey,
 			_ItemType*						aValue)
 		{
+			typename TableType::iterator i = m_table.find(aKey);
+			JELLY_ASSERT(i == m_table.end());
 			m_table[aKey] = aValue;
 		}
 

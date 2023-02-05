@@ -86,7 +86,7 @@ namespace jelly
 				_NodeType*											aNode,
 				IHost*												aHost)
 			{
-				CompactionAdvisor compactionAdvisor(aNode->GetNodeId(), aHost, 1, 1, 0, CompactionAdvisor::STRATEGY_SIZE_TIERED);
+				CompactionAdvisor compactionAdvisor(aNode->GetNodeId(), aHost, 1, 1, 0, 2, CompactionAdvisor::STRATEGY_SIZE_TIERED);
 				compactionAdvisor.Update();
 
 				CompactionJob compactionJob = compactionAdvisor.GetNextSuggestion();

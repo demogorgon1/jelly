@@ -114,6 +114,11 @@ namespace jelly
 			 * How often the compaction strategy should be updated.
 			 */
 			uint32_t							m_compactionAdvisorStrategyUpdateIntervalMS = 10 * 1000;
+
+			/**
+			 * Size-tiered compaction strategy minimum bucket size for compaction.
+			 */
+			uint32_t							m_stcsMinBucketSize = 4;
 		};
 			
 		/**
@@ -156,6 +161,7 @@ namespace jelly
 				aConfig.m_compactionAdvisorSizeMemory, 
 				aConfig.m_compactionAdvisorSizeTrendMemory,
 				aConfig.m_compactionAdvisorStrategyUpdateIntervalMS,
+				aConfig.m_stcsMinBucketSize,
 				aConfig.m_compactionAdvisorStrategy)
 		{
 			// Initialize concurrent WAL state

@@ -24,6 +24,7 @@ namespace jelly
 								uint32_t								aTotalSizeMemory,
 								uint32_t								aTotalSizeTrendMemory,
 								uint32_t								aMinCompactionStrategyUpdateIntervalMS,
+								uint32_t								aSTCSMinBucketSize,
 								Strategy								aStrategy);
 							~CompactionAdvisor();
 

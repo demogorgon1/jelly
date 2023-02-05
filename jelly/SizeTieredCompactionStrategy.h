@@ -10,7 +10,8 @@ namespace jelly
 		: public ICompactionStrategy
 	{
 	public:
-				SizeTieredCompactionStrategy();
+				SizeTieredCompactionStrategy(
+					uint32_t								aMinBucketSizeToCompact);
 		virtual	~SizeTieredCompactionStrategy();
 
 		// ICompactionStrategy implementation
@@ -21,7 +22,7 @@ namespace jelly
 
 	private:
 
-		std::mt19937	m_random;
+		uint32_t		m_minBucketSizeToCompact;
 	};
 	
 }

@@ -85,7 +85,9 @@ namespace jelly
 
 	}
 
-	SizeTieredCompactionStrategy::SizeTieredCompactionStrategy()
+	SizeTieredCompactionStrategy::SizeTieredCompactionStrategy(
+		uint32_t											aMinBucketSizeToCompact)
+		: m_minBucketSizeToCompact(aMinBucketSizeToCompact)
 	{
 
 	}
@@ -99,9 +101,9 @@ namespace jelly
 
 	void	
 	SizeTieredCompactionStrategy::Update(
-		const std::vector<IHost::StoreInfo>&	aStoreInfo,
-		const TotalStoreSize&					/*aTotalStoreSize*/,
-		SuggestionCallback						aSuggestionCallback)
+		const std::vector<IHost::StoreInfo>&				aStoreInfo,
+		const TotalStoreSize&								/*aTotalStoreSize*/,
+		SuggestionCallback									aSuggestionCallback)
 	{
 		JELLY_ASSERT(aStoreInfo.size() > 0);
 
@@ -111,28 +113,18 @@ namespace jelly
 			bucketList.AddStoreToSuitableBucket(storeInfo);
 
 		// Find buckets ripe for compaction
-		std::vector<const Bucket*> candidateBuckets;
-
 		for(const Bucket* bucket : bucketList.m_buckets)
 		{
-			if(bucket->m_stores.size() >= 2)
-				candidateBuckets.push_back(bucket);
-		}
-
-		if(candidateBuckets.size() > 0)
-		{
-			// Pick a random candidate bucket and compact two stores from it
-			// FIXME: do something more advanced
-
-			std::uniform_int_distribution<size_t> uniformDistribution(0, candidateBuckets.size() - 1);
-			const Bucket* bucket = candidateBuckets[uniformDistribution(m_random)];
-
-			const Store& store1 = bucket->m_stores[0];
-			const Store& store2 = bucket->m_stores[1];
-
-			uint32_t oldestStoreId = aStoreInfo[0].m_id;
-
-			aSuggestionCallback(CompactionJob(oldestStoreId, store1.m_storeId, store2.m_storeId));
+			if(bucket->m_stores.size() >= (size_t)m_minBucketSizeToCompact)
+			{
+				CompactionJob compactionJob;
+				compactionJob.m_oldestStoreId = aStoreInfo[0].m_id;
+				
+				for(const Store& store : bucket->m_stores)
+					compactionJob.m_storeIds.push_back(store.m_storeId);
+				
+				aSuggestionCallback(compactionJob);
+			}
 		}
 	}
 

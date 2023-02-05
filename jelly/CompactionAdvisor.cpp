@@ -49,13 +49,14 @@ namespace jelly
 		Internal(
 			uint32_t							aTotalSizeMemory,
 			uint32_t							aTotalSizeTrendMemory,
+			uint32_t							aSTCSMinBucketSize,
 			Strategy							aStrategy)
 			: m_totalSizeBuffer((size_t)aTotalSizeMemory)
 			, m_totalSizeTrendBuffer((size_t)aTotalSizeTrendMemory)
 		{
 			switch(aStrategy)
 			{
-			case STRATEGY_SIZE_TIERED:			m_compactionStrategy = std::make_unique<SizeTieredCompactionStrategy>(); break;
+			case STRATEGY_SIZE_TIERED:			m_compactionStrategy = std::make_unique<SizeTieredCompactionStrategy>(aSTCSMinBucketSize); break;
 			
 			default:				
 				JELLY_FATAL_ERROR("Invalid compaction strategy.");
@@ -75,6 +76,7 @@ namespace jelly
 		uint32_t								aTotalSizeMemory,
 		uint32_t								aTotalSizeTrendMemory,
 		uint32_t								aMinCompactionStrategyUpdateIntervalMS,
+		uint32_t								aSTCSMinBucketSize,
 		Strategy								aStrategy)
 		: m_host(aHost)
 		, m_nodeId(aNodeId)
@@ -84,7 +86,7 @@ namespace jelly
 	{
 		memset(m_suggestionBuffer, 0, sizeof(m_suggestionBuffer));
 
-		m_internal = std::make_unique<Internal>(aTotalSizeMemory, aTotalSizeTrendMemory, aStrategy);
+		m_internal = std::make_unique<Internal>(aTotalSizeMemory, aTotalSizeTrendMemory, aSTCSMinBucketSize, aStrategy);
 
 		m_compactionStrategyUpdateCooldown.SetTimeout(aMinCompactionStrategyUpdateIntervalMS);
 	}

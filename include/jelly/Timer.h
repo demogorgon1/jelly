@@ -38,6 +38,12 @@ namespace jelly
 			return true;
 		}
 
+		void
+		Reset()
+		{
+			m_expiresAt = std::chrono::steady_clock::now() + m_interval;
+		}
+
 	private:
 
 		std::chrono::milliseconds							m_interval;

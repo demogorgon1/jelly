@@ -71,9 +71,9 @@ namespace jelly
 			uint32_t							m_minWALFlushIntervalMS = 500;
 
 			/**
-			 * Base interval of TYPE_CLEANUP_WALS events.
+			 * Maximum time betweem TYPE_CLEANUP_WALS events.
 			 */
-			uint32_t							m_cleanupWALIntervalMS = 60 * 1000;		
+			uint32_t							m_maxCleanupWALIntervalMS = 2 * 60 * 1000;		
 
 			/**
 			 * Never suggest minor compactions more often than this. 
@@ -168,7 +168,7 @@ namespace jelly
 
 			// Initialize WAL cleanup timer
 			{
-				m_cleanupWALsCooldown.SetTimeout(m_config.m_cleanupWALIntervalMS);
+				m_cleanupWALsTimer.SetTimeout(m_config.m_maxCleanupWALIntervalMS);
 			}
 
 			// Initialize compaction timer
@@ -209,7 +209,7 @@ namespace jelly
 		};
 
 		std::vector<ConcurrentWALState>						m_concurrentWALState;
-		Timer												m_cleanupWALsCooldown;
+		Timer												m_cleanupWALsTimer;
 		Timer												m_compactionUpdateTimer;
 		CompactionAdvisor									m_compactionAdvisor;
 
@@ -238,14 +238,20 @@ namespace jelly
 			uint32_t pendingStoreWALItemCount = m_node->GetPendingStoreWALItemCount();
 
 			if(pendingStoreWALItemCount > m_config.m_pendingStoreWALItemLimit || pendingStoreItemCount > m_config.m_pendingStoreItemLimit)
+			{
 				aEventHandler(EventFlushPendingStore());
+
+				// Always do a cleanup WALs event after flushing pending store
+				aEventHandler(EventCleanupWALs());
+				m_cleanupWALsTimer.Reset();
+			}
 		}
 
 		void
 		_UpdateCleanupWALs(
 			EventHandler		aEventHandler)
 		{
-			if(m_cleanupWALsCooldown.HasExpired())
+			if(m_cleanupWALsTimer.HasExpired())
 				aEventHandler(EventCleanupWALs());
 		}
 		

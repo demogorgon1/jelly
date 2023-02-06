@@ -1,5 +1,6 @@
 #pragma once
 
+#include "SharedWorkQueue.h"
 #include "StateTimeSampler.h"
 #include "Stats.h"
 
@@ -41,10 +42,12 @@ namespace jelly::Test::Sim
 
 		NodeServer(
 			Network*											aNetwork,
+			SharedWorkQueue*									aSharedWorkQueue,
 			IHost*												aHost,
 			uint32_t											aId,
 			const typename _NodeType::Config&					aConfig)
 			: m_network(aNetwork)
+			, m_sharedWorkQueue(aSharedWorkQueue)
 			, m_host(aHost)
 			, m_id(aId)
 			, m_state(STATE_INIT)
@@ -127,7 +130,7 @@ namespace jelly::Test::Sim
 							break;
 
 						case HousekeepingAdvisor<_NodeType>::Event::TYPE_PERFORM_COMPACTION:
-							m_network->m_sharedWorkQueue.PostWork([&, compactionJob = aEvent.m_compactionJob]()
+							m_sharedWorkQueue->PostWork([&, compactionJob = aEvent.m_compactionJob]()
 							{
 								std::unique_ptr<CompactionResultType> compactionResult(m_node->PerformCompaction(compactionJob));
 
@@ -166,6 +169,7 @@ namespace jelly::Test::Sim
 	private:
 
 		Network*													m_network;
+		SharedWorkQueue*											m_sharedWorkQueue;
 		IHost*														m_host;
 		uint32_t													m_id;
 		_NodeType::Config											m_config;

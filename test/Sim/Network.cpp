@@ -22,7 +22,7 @@ namespace jelly::Test::Sim
 			Stats::GetExtraApplicationStats(),
 			Stats::GetExtraApplicationStatsCount())
 		, m_config(aConfig)
-		, m_clientLimit(aConfig->m_simNumClients)
+		, m_clientLimit(aConfig->m_simStartClientLimit)
 	{
 		for (uint32_t i = 0; i < aConfig->m_simNumSharedWorkerThreads; i++)
 			m_sharedWorkerThreads.push_back(std::make_unique<SharedWorkerThread>(&m_sharedWorkQueue));

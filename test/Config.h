@@ -86,6 +86,12 @@ namespace jelly
 						m_simNumClients = (uint32_t)atoi(aArgs[i + 1]);
 						i++;
 					}
+					else if (strcmp(arg, "-simstartclientlimit") == 0)
+					{
+						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
+						m_simStartClientLimit = (uint32_t)atoi(aArgs[i + 1]);
+						i++;
+					}
 					else if (strcmp(arg, "-simclientstartintervalms") == 0)
 					{
 						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
@@ -230,6 +236,7 @@ namespace jelly
 			uint32_t								m_simNumBlobServerThreads = 1;
 			uint32_t								m_simNumSharedWorkerThreads = 1;
 			uint32_t								m_simSetIntervalMS = 1000;
+			uint32_t								m_simStartClientLimit = 0;
 			std::string								m_simCSVOutput;
 			std::vector<std::string>				m_simCSVOutputColumns;
 			bool									m_simTestStdOut = true;

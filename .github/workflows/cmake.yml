@@ -4,6 +4,7 @@ on:
   push:
     branches: [ "master" ] 
     paths:
+        - .github/workflows/cmake.yml
         - include/**
         - jelly/**
         - test/**

@@ -139,8 +139,9 @@ main(
 	// while store id 1 and 2 contains the two new blobs we just flushed.
 
 	// We'll now do a "minor" compaction of store ids 0 and 1. Minor compactions 
-	// take just two stores and turn them into one. Major compactions will compact
-	// all stores, but should be considered more of an off-line process.
+	// take two or more specific stores and turn them into one. Major compactions 
+	// will compact all stores, but should be considered more of an off-line 
+	// process.
 	{
 		jelly::CompactionJob compactionJob;
 
@@ -149,8 +150,7 @@ main(
 		// some other time).
 		compactionJob.m_oldestStoreId = 0;	
 
-		compactionJob.m_storeId1 = 0; // First store id
-		compactionJob.m_storeId2 = 1; // Second store id
+		compactionJob.m_storeIds = { 0, 1 };
 
 		// Perform the minor compaction. Note that this can take a while and is a 
 		// blocking call (like everything else), but luckily you're free to call

@@ -1,3 +1,5 @@
+#include <thread>
+
 #include <jelly/API.h>
 
 #include "SharedWorkQueue.h"

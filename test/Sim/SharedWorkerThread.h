@@ -1,5 +1,7 @@
 #pragma once
 
+#include <thread>
+
 namespace jelly::Test::Sim
 {
 

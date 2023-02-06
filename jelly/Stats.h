@@ -242,7 +242,7 @@ namespace jelly
 				uint64_t						aValue) const
 			{
 				size_t bucketIndex = m_offset;
-				for(size_t i = 0; i < m_buckets->size() && aValue > m_buckets->at(i); i++)
+				for(size_t i = 0; i < m_buckets->size() - 1 && aValue > m_buckets->at(i); i++)
 					bucketIndex++;
 
 				return bucketIndex;

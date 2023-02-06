@@ -16,11 +16,13 @@ namespace jelly::Test::Sim
 		, m_id(aId)
 		, m_state(STATE_INIT)
 		, m_stateTimeSampler(NUM_STATES)
+		, m_currentGameServer(NULL)
 	{
 		m_stateTimeSampler.DefineState(STATE_INIT, Stats::ID_C_INIT_TIME, Stats::ID_C_INIT_CUR_TIME);
 		m_stateTimeSampler.DefineState(STATE_WAITING_TO_CONNECT, Stats::ID_C_WAITING_TO_CONNECT_TIME, Stats::ID_C_WAITING_TO_CONNECT_CUR_TIME);
 		m_stateTimeSampler.DefineState(STATE_WAITING_FOR_CONNECTION, Stats::ID_C_WAITING_FOR_CONNECTION_TIME, Stats::ID_C_WAITING_FOR_CONNECTION_CUR_TIME);
 		m_stateTimeSampler.DefineState(STATE_CONNECTED, Stats::ID_C_CONNECTED_TIME, Stats::ID_C_CONNECTED_CUR_TIME);
+		m_stateTimeSampler.DefineState(STATE_WAITING_FOR_DISCONNECTION, Stats::ID_C_WAITING_FOR_DISCONNECTION_TIME, Stats::ID_C_WAITING_FOR_DISCONNECTION_CUR_TIME);
 		m_stateTimeSampler.DefineState(STATE_DISCONNECTED, Stats::ID_C_DISCONNECTED_TIME, Stats::ID_C_DISCONNECTED_CUR_TIME);
 	}
 
@@ -50,15 +52,15 @@ namespace jelly::Test::Sim
 			break;
 
 		case STATE_WAITING_TO_CONNECT:
-			if(std::chrono::steady_clock::now() > m_startTimeStamp)
+			if(m_id < m_network->m_clientLimit && std::chrono::steady_clock::now() > m_startTimeStamp)
 			{
-				GameServer* gameServer = m_network->PickRandomGameServer();
+				m_currentGameServer = m_network->PickRandomGameServer();
 
 				m_disconnectEvent.Reset();
 
 				m_gameServerConnectRequest = std::make_unique<GameServer::ConnectRequest>(m_id, &m_disconnectEvent);
 
-				gameServer->Connect(m_gameServerConnectRequest.get());
+				m_currentGameServer->Connect(m_gameServerConnectRequest.get());
 
 				_SetState(STATE_WAITING_FOR_CONNECTION);
 			}
@@ -77,7 +79,22 @@ namespace jelly::Test::Sim
 
 		case STATE_CONNECTED:
 			if(m_disconnectEvent.Poll())
+			{
 				_SetState(STATE_DISCONNECTED);
+			}
+			else if(m_id >= m_network->m_clientLimit)	
+			{
+				m_currentGameServer->Disconnect(m_id);
+
+				_SetState(STATE_WAITING_FOR_DISCONNECTION);
+			}
+			break;
+
+		case STATE_WAITING_FOR_DISCONNECTION:
+			if(m_disconnectEvent.Poll())
+			{
+				_SetState(STATE_DISCONNECTED);
+			}
 			break;
 
 		case STATE_DISCONNECTED:

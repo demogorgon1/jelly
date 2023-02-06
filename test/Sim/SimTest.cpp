@@ -8,6 +8,7 @@
 #include "Client.h"
 #include "CSVOutput.h"
 #include "GameServer.h"
+#include "Interactive.h"
 #include "LockServer.h"
 #include "Network.h"
 #include "Stats.h"
@@ -164,14 +165,13 @@ namespace jelly::Test::Sim
 
 			Timer statsTimer(1000);
 
-			for(;;)
+			Interactive interactive(&network);
+
+			while(interactive.Update())
 			{
 				if(statsTimer.HasExpired())
 				{
-					network.m_host.PollSystemStats();
-
-					IStats* stats = network.m_host.GetStats();
-					stats->Update();
+					network.UpdateStats();
 
 					if(csv)
 						csv->WriteRow();

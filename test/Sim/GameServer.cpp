@@ -59,39 +59,74 @@ namespace jelly::Test::Sim
 		m_connectRequests.push_back(aConnectRequest);
 	}
 
+	void	
+	GameServer::Disconnect(
+		uint32_t				aClientId)
+	{
+		std::lock_guard lock(m_disconnectRequestsLock);
+		m_disconnectRequests.push_back(aClientId);
+	}
+
 	//-------------------------------------------------------------------------------------------
 
 	void	
 	GameServer::_ProcessRequests()
 	{
-		std::vector<ConnectRequest*> connectRequests;
-
+		// Connect requests
 		{
-			std::lock_guard lock(m_connectRequestsLock);
-			connectRequests = m_connectRequests;
-			m_connectRequests.clear();
+			std::vector<ConnectRequest*> connectRequests;
+
+			{
+				std::lock_guard lock(m_connectRequestsLock);
+				connectRequests = m_connectRequests;
+				m_connectRequests.clear();
+			}
+
+			for (ConnectRequest* connectRequest : connectRequests)
+			{
+				std::unordered_map<uint32_t, Client*>::iterator i = m_clients.find(connectRequest->m_clientId);
+				JELLY_ASSERT(i == m_clients.end());
+				m_clients.insert(std::make_pair(connectRequest->m_clientId, new Client(connectRequest->m_clientId, connectRequest, connectRequest->m_disconnectEvent)));
+			}
 		}
 
-		for(ConnectRequest* connectRequest : connectRequests)
+		// Disconnect requests
 		{
-			std::unordered_map<uint32_t, Client*>::iterator i = m_clients.find(connectRequest->m_clientId);
-			JELLY_ASSERT(i == m_clients.end());
-			m_clients.insert(std::make_pair(connectRequest->m_clientId, new Client(connectRequest->m_clientId, connectRequest, connectRequest->m_disconnectEvent)));
+			std::vector<uint32_t> disconnectRequests;
+
+			{
+				std::lock_guard lock(m_disconnectRequestsLock);
+				disconnectRequests = m_disconnectRequests;
+				m_disconnectRequests.clear();
+			}
+
+			for(uint32_t clientId : disconnectRequests)
+			{
+				std::unordered_map<uint32_t, Client*>::iterator i = m_clients.find(clientId);
+				JELLY_ASSERT(i != m_clients.end());
+				JELLY_ASSERT(!i->second->m_disconnectRequested);
+				i->second->m_disconnectRequested = true;								
+			}
 		}
 	}
 	
 	void	
 	GameServer::_UpdateClients()
 	{
+		std::vector<uint32_t> deletedClientIds;
+
 		for (std::pair<uint32_t, Client*> i : m_clients)
 		{
 			if (!_UpdateClient(i.second))
 			{
 				i.second->m_disconnectEvent->Signal();
 				delete i.second;
-				m_clients.erase(i.first);
+				deletedClientIds.push_back(i.first);
 			}
 		}
+
+		for(uint32_t deletedClientId : deletedClientIds)
+			m_clients.erase(deletedClientId);
 	}
 
 	bool	
@@ -204,7 +239,7 @@ namespace jelly::Test::Sim
 			break;
 
 		case Client::STATE_CONNECTED:
-			if(aClient->m_setTimer.HasExpired())
+			if(aClient->m_setTimer.HasExpired() || aClient->m_disconnectRequested)
 			{
 				aClient->m_setRequest = std::make_unique<BlobServer::BlobNodeType::Request>();
 				aClient->m_setRequest->SetKey(aClient->m_id);
@@ -233,6 +268,9 @@ namespace jelly::Test::Sim
 				switch (aClient->m_setRequest->GetResult())
 				{
 				case RESULT_OK:
+					if(aClient->m_disconnectRequested)
+						return false;
+
 					_SetClientState(aClient, Client::STATE_CONNECTED);
 					break;
 

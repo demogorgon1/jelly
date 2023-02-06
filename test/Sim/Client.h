@@ -29,6 +29,7 @@ namespace jelly::Test::Sim
 				Stats::ID_C_WAITING_TO_CONNECT_NUM, 
 				Stats::ID_C_WAITING_FOR_CONNECTION_NUM, 
 				Stats::ID_C_CONNECTED_NUM, 
+				Stats::ID_C_WAITING_FOR_DISCONNECTION_NUM,
 				Stats::ID_C_DISCONNECTED_NUM
 			};
 			static_assert(sizeof(IDS) == sizeof(uint32_t) * (size_t)NUM_STATES);
@@ -56,6 +57,7 @@ namespace jelly::Test::Sim
 			STATE_WAITING_TO_CONNECT,
 			STATE_WAITING_FOR_CONNECTION,
 			STATE_CONNECTED,
+			STATE_WAITING_FOR_DISCONNECTION,
 			STATE_DISCONNECTED,
 
 			NUM_STATES
@@ -68,6 +70,7 @@ namespace jelly::Test::Sim
 
 		CompletionEvent										m_disconnectEvent;
 		std::chrono::time_point<std::chrono::steady_clock>	m_startTimeStamp;
+		GameServer*											m_currentGameServer;
 
 		void		_SetState(
 						State									aState);

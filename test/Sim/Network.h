@@ -26,11 +26,12 @@ namespace jelly::Test
 											const Config*	aConfig);
 										~Network();
 
+			void						UpdateStats();
 			GameServer*					PickRandomGameServer();
 			LockServer::LockServerType* GetMasterLockServer();
 			BlobServer::BlobServerType*	GetBlobServer(
 											uint32_t		aBlobNodeId);
-			uint32_t					PickRandomBlobNodeId();
+			uint32_t					PickRandomBlobNodeId();			
 
 			// Public data
 			const Config*										m_config;
@@ -48,6 +49,8 @@ namespace jelly::Test
 
 			std::mutex											m_randomLock;
 			std::mt19937										m_random;
+
+			std::atomic_uint32_t								m_clientLimit;
 		};
 
 	}

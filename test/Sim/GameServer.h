@@ -63,6 +63,8 @@ namespace jelly::Test::Sim
 					std::vector<uint32_t>&		aStateCounters);
 		void	Connect(
 					ConnectRequest*				aConnectRequest);
+		void	Disconnect(
+					uint32_t					aClientId);
 
 	private:
 
@@ -81,6 +83,7 @@ namespace jelly::Test::Sim
 				, m_disconnectEvent(aDisconnectEvent)
 				, m_blobSeq(0)
 				, m_stateTimeSampler(NUM_STATES)
+				, m_disconnectRequested(false)
 			{
 				m_stateTimeSampler.DefineState(STATE_INIT, Stats::ID_GS_C_INIT_TIME, Stats::ID_GS_C_INIT_CUR_TIME);
 				m_stateTimeSampler.DefineState(STATE_NEED_LOCK, Stats::ID_GS_C_NEED_LOCK_TIME, Stats::ID_GS_C_NEED_LOCK_CUR_TIME);
@@ -112,6 +115,7 @@ namespace jelly::Test::Sim
 
 			ConnectRequest*											m_pendingConnectRequest;
 			CompletionEvent*										m_disconnectEvent;
+			bool													m_disconnectRequested;
 			std::unique_ptr<LockServer::LockNodeType::Request>		m_lockRequest;
 			std::unique_ptr<BlobServer::BlobNodeType::Request>		m_getRequest;
 			std::unique_ptr<BlobServer::BlobNodeType::Request>		m_setRequest;
@@ -133,6 +137,9 @@ namespace jelly::Test::Sim
 
 		std::mutex													m_connectRequestsLock;
 		std::vector<ConnectRequest*>								m_connectRequests;
+
+		std::mutex													m_disconnectRequestsLock;
+		std::vector<uint32_t>										m_disconnectRequests;
 
 		void		_ProcessRequests();
 		void		_UpdateClients();

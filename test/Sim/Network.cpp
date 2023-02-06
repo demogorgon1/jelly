@@ -22,6 +22,7 @@ namespace jelly::Test::Sim
 			Stats::GetExtraApplicationStats(),
 			Stats::GetExtraApplicationStatsCount())
 		, m_config(aConfig)
+		, m_clientLimit(aConfig->m_simNumClients)
 	{
 		for (uint32_t i = 0; i < aConfig->m_simNumSharedWorkerThreads; i++)
 			m_sharedWorkerThreads.push_back(std::make_unique<SharedWorkerThread>(&m_sharedWorkQueue));
@@ -56,6 +57,16 @@ namespace jelly::Test::Sim
 
 		for (BlobServer::BlobServerType* t : m_blobServers)
 			delete t;
+	}
+
+	void						
+	Network::UpdateStats()
+	{	
+		m_host.PollSystemStats();
+
+		m_host.GetStats()->Emit(Stats::ID_CLIENT_LIMIT, (uint32_t)m_clientLimit);
+
+		m_host.GetStats()->Update();
 	}
 
 	GameServer* 

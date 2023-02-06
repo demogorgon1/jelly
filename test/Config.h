@@ -134,6 +134,12 @@ namespace jelly
 						m_simNumBlobServerThreads = (uint32_t)atoi(aArgs[i + 1]);
 						i++;
 					}
+					else if (strcmp(arg, "-simnumsharedworkerthreads") == 0)
+					{
+						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
+						m_simNumSharedWorkerThreads = (uint32_t)atoi(aArgs[i + 1]);
+						i++;
+					}
 					else if (strcmp(arg, "-simsetintervalms") == 0)
 					{
 						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
@@ -222,6 +228,7 @@ namespace jelly
 			uint32_t								m_simNumGameServerThreads = 1;
 			uint32_t								m_simNumLockServerThreads = 1;
 			uint32_t								m_simNumBlobServerThreads = 1;
+			uint32_t								m_simNumSharedWorkerThreads = 1;
 			uint32_t								m_simSetIntervalMS = 1000;
 			std::string								m_simCSVOutput;
 			std::vector<std::string>				m_simCSVOutputColumns;

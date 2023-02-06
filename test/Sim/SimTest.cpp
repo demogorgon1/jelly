@@ -16,8 +16,7 @@ namespace jelly::Test::Sim
 {
 	
 	namespace
-	{
-
+	{	
 		template <typename _T>
 		class Thread
 		{

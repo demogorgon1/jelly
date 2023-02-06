@@ -5,6 +5,7 @@
 #include "Client.h"
 #include "GameServer.h"
 #include "Network.h"
+#include "SharedWorkerThread.h"
 #include "Stats.h"
 
 namespace jelly::Test::Sim
@@ -22,6 +23,9 @@ namespace jelly::Test::Sim
 			Stats::GetExtraApplicationStatsCount())
 		, m_config(aConfig)
 	{
+		for (uint32_t i = 0; i < aConfig->m_simNumSharedWorkerThreads; i++)
+			m_sharedWorkerThreads.push_back(std::make_unique<SharedWorkerThread>(&m_sharedWorkQueue));
+
 		for(uint32_t i = 0; i < aConfig->m_simNumClients; i++)
 			m_clients.push_back(new Client(this, i));
 
@@ -37,7 +41,6 @@ namespace jelly::Test::Sim
 
 		for (uint32_t i = 0; i < aConfig->m_simNumBlobServers; i++)
 			m_blobServers.push_back(new BlobServer::BlobServerType(this, &m_host, nodeId++, aConfig->m_simBlobNodeConfig));
-
 	}
 	
 	Network::~Network()

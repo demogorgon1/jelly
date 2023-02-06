@@ -35,7 +35,7 @@ namespace jelly::Test::Sim
 			uint32_t		aNewState)
 		{
 			std::chrono::time_point<std::chrono::steady_clock> currentTime = std::chrono::steady_clock::now();
-			uint32_t millisecondsSpentInState = (uint32_t)std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - m_stateTimeStamp).count();
+			uint32_t millisecondsSpentInState = (uint32_t)std::chrono::duration_cast<std::chrono::microseconds>(currentTime - m_stateTimeStamp).count();
 
 			JELLY_ASSERT((size_t)m_currentState < m_definitions.size());
 			uint32_t statsId = m_definitions[m_currentState].m_idTime;
@@ -51,7 +51,7 @@ namespace jelly::Test::Sim
 		GetCurrentStateTime(
 			std::chrono::time_point<std::chrono::steady_clock>	aCurrentTime) const
 		{
-			return (uint32_t)std::chrono::duration_cast<std::chrono::milliseconds>(aCurrentTime - m_stateTimeStamp).count();
+			return (uint32_t)std::chrono::duration_cast<std::chrono::microseconds>(aCurrentTime - m_stateTimeStamp).count();
 		}
 
 		void
@@ -59,7 +59,7 @@ namespace jelly::Test::Sim
 			IStats*												aStats,
 			std::chrono::time_point<std::chrono::steady_clock>	aCurrentTime) const
 		{
-			uint32_t millisecondsSpentInState = (uint32_t)std::chrono::duration_cast<std::chrono::milliseconds>(aCurrentTime - m_stateTimeStamp).count();
+			uint32_t millisecondsSpentInState = (uint32_t)std::chrono::duration_cast<std::chrono::microseconds>(aCurrentTime - m_stateTimeStamp).count();
 
 			JELLY_ASSERT((size_t)m_currentState < m_definitions.size());
 			uint32_t statsId = m_definitions[m_currentState].m_idCurTime;

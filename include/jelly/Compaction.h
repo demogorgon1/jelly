@@ -26,6 +26,9 @@ namespace jelly
 			std::unique_ptr<IFileStreamReader> f1(aNode->GetHost()->ReadStoreStream(aNode->GetNodeId(), aStoreId1, aNode->GetStoreFileStatsContext()));
 			std::unique_ptr<IFileStreamReader> f2(aNode->GetHost()->ReadStoreStream(aNode->GetNodeId(), aStoreId2, aNode->GetStoreFileStatsContext()));
 
+			if(!f1 || !f2)
+				return; // Could be that the stores no longer exists, just don't do anything then
+
 			std::unique_ptr<CompactionRedirect<_KeyType, _STLKeyHasher>> compactionRedirect1(new CompactionRedirect<_KeyType, _STLKeyHasher>());
 			std::unique_ptr<CompactionRedirect<_KeyType, _STLKeyHasher>> compactionRedirect2(new CompactionRedirect<_KeyType, _STLKeyHasher>());
 
@@ -33,8 +36,7 @@ namespace jelly
 				uint32_t newStoreId = aNode->CreateStoreId();
 
 				std::unique_ptr<IStoreWriter> fOut(aNode->GetHost()->CreateStore(aNode->GetNodeId(), newStoreId, aNode->GetStoreFileStatsContext()));
-
-				JELLY_ASSERT(f1 && f2 && fOut);
+				JELLY_CHECK(fOut, "Failed to open compaction store for output: %u", newStoreId);
 
 				_ItemType item1;
 				bool hasItem1 = false;
@@ -164,7 +166,8 @@ namespace jelly
 			{
 				sourceStores.push_back(std::make_unique<SourceStore>(storeId, aNode->GetHost()->ReadStoreStream(aNode->GetNodeId(), storeId, aNode->GetStoreFileStatsContext())));
 
-				JELLY_CHECK(sourceStores[sourceStores.size() - 1]->m_fileStreamReader, "Failed to open store for compaction: %u", storeId);
+				if(!sourceStores[sourceStores.size() - 1]->m_fileStreamReader)
+					return; // One of the source stores doesn't exist
 			}
 
 			// Open output store
@@ -264,9 +267,7 @@ namespace jelly
 				PerformOnStoreList<_KeyType, _ItemType, _STLKeyHasher, _NodeType>(aNode, aCompactionJob.m_oldestStoreId, aCompactionJob.m_storeIds, aOut);
 		}
 		
-		// Do a "major" compaction of everything. This is a more generalized version of PerformCompaction as 
-		// it takes a list of stores instead of always 2. This is slightly slower though, hence having 2
-		// different functions.
+		// Do a "major" compaction of everything.
 		template <typename _KeyType, typename _ItemType, typename _STLKeyHasher, typename _NodeType>
 		void
 		PerformMajorCompaction(

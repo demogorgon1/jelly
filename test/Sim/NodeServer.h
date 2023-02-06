@@ -90,9 +90,25 @@ namespace jelly::Test::Sim
 
 			case STATE_RUNNING:
 				{	
+					// Process incoming requests
 					if(m_processRequestsTimer.HasExpired())
 						m_node->ProcessRequests();
+					
+					// Apply compaction results, if any
+					{
+						std::vector<std::unique_ptr<CompactionResultType>> compactionResults;
+						
+						{
+							std::lock_guard lock(m_compactionResultsLock);
+							if(m_compactionResults.size() > 0)
+								compactionResults = std::move(m_compactionResults);
+						}
+
+						for(std::unique_ptr<CompactionResultType>& compactionResult : compactionResults)
+							m_node->ApplyCompactionResult(compactionResult.get());
+					}
 				
+					// Do what housekeeping advisor tells us
 					m_housekeepingAdvisor->Update([&](
 						const HousekeepingAdvisor<_NodeType>::Event& aEvent)
 					{
@@ -111,10 +127,13 @@ namespace jelly::Test::Sim
 							break;
 
 						case HousekeepingAdvisor<_NodeType>::Event::TYPE_PERFORM_COMPACTION:
+							m_network->m_sharedWorkQueue.PostWork([&, compactionJob = aEvent.m_compactionJob]()
 							{
-								std::unique_ptr<typename _NodeType::CompactionResultType> compactionResult(m_node->PerformCompaction(aEvent.m_compactionJob));
-								m_node->ApplyCompactionResult(compactionResult.get());
-							}
+								std::unique_ptr<CompactionResultType> compactionResult(m_node->PerformCompaction(compactionJob));
+
+								std::lock_guard lock(m_compactionResultsLock);
+								m_compactionResults.push_back(std::move(compactionResult));
+							});								
 							break;
 
 						default:
@@ -146,16 +165,20 @@ namespace jelly::Test::Sim
 
 	private:
 
-		Network*											m_network;
-		IHost*												m_host;
-		uint32_t											m_id;
-		_NodeType::Config									m_config;
+		Network*													m_network;
+		IHost*														m_host;
+		uint32_t													m_id;
+		_NodeType::Config											m_config;
 
-		std::atomic_bool									m_hasNode;
-		std::unique_ptr<_NodeType>							m_node;
-		std::unique_ptr<HousekeepingAdvisor<_NodeType>>		m_housekeepingAdvisor;
+		std::atomic_bool											m_hasNode;
+		std::unique_ptr<_NodeType>									m_node;
+		std::unique_ptr<HousekeepingAdvisor<_NodeType>>				m_housekeepingAdvisor;
 
-		Timer												m_processRequestsTimer;
+		typedef _NodeType::CompactionResultType CompactionResultType;
+		std::mutex													m_compactionResultsLock;
+		std::vector<std::unique_ptr<CompactionResultType>>			m_compactionResults;
+
+		Timer														m_processRequestsTimer;
 
 		enum State : uint32_t
 		{
@@ -165,8 +188,8 @@ namespace jelly::Test::Sim
 			NUM_STATES
 		};
 
-		State												m_state;
-		StateTimeSampler									m_stateTimeSampler;
+		State														m_state;
+		StateTimeSampler											m_stateTimeSampler;
 
 		void
 		_SetState(

@@ -45,6 +45,7 @@ namespace jelly
 		IStats*					GetStats() override;
 		Compression::IProvider* GetCompressionProvider() override;
 		uint64_t				GetTimeStamp() override;
+		size_t					GetAvailableDiskSpace() override;
 		void					EnumerateFiles(
 									uint32_t					aNodeId,
 									std::vector<uint32_t>&		aOutWriteAheadLogIds,

@@ -50,6 +50,9 @@ namespace jelly
 		//! Get current system time stamp. 
 		virtual uint64_t				GetTimeStamp() = 0;
 
+		//! Get available disk space (in root directory) in bytes.
+		virtual size_t					GetAvailableDiskSpace() = 0;
+
 		//! Find database files for the specified node id. Returns two arrays: one with WAL ids and one with store ids.
 		virtual void					EnumerateFiles(
 											uint32_t				aNodeId,

@@ -41,6 +41,7 @@ namespace jelly
 		virtual void	 Update(
 							const std::vector<IHost::StoreInfo>&	aStoreInfo,
 							const TotalStoreSize&					aTotalStoreSize,
+							size_t									aAvailableDiskSpace,
 							SuggestionCallback						aSuggestionCallback) = 0;
 
 	};

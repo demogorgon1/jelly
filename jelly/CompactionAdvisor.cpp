@@ -128,7 +128,7 @@ namespace jelly
 		// Generate suggestions (if we have room for more and have enough stores)
 		if(m_suggestionCount < MAX_SUGGESTIONS && storeInfo.size() >= 2 && m_compactionStrategyUpdateCooldown.HasExpired())
 		{
-			m_internal->m_compactionStrategy->Update(storeInfo, totalStoreSize, [&](
+			m_internal->m_compactionStrategy->Update(storeInfo, totalStoreSize, m_host->GetAvailableDiskSpace(), [&](
 				const CompactionJob& aSuggestion)
 			{
 				_AddSuggestion(aSuggestion);

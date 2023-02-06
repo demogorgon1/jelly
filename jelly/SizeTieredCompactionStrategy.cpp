@@ -51,16 +51,18 @@ namespace jelly
 
 			Bucket*
 			FindSuitableBucketBySize(
-				size_t										aSize)
+				size_t										aSize,
+				size_t										aAvailableDiskSpace)
 			{
 				for(Bucket* t : m_buckets)
 				{
 					JELLY_ASSERT(t->m_stores.size() > 0);
+
 					size_t bucketAverageSize = t->m_size / t->m_stores.size();
 					size_t bucketRangeMin = bucketAverageSize / 2;
 					size_t bucketRangeMax = (bucketAverageSize * 3) / 2;
 					
-					if(aSize > bucketRangeMin && aSize < bucketRangeMax)
+					if(t->m_size + aSize < aAvailableDiskSpace && aSize > bucketRangeMin && aSize < bucketRangeMax)
 						return t;
 				}
 
@@ -69,11 +71,16 @@ namespace jelly
 
 			void
 			AddStoreToSuitableBucket(
-				const Store&								aStore)
+				const Store&								aStore,
+				size_t										aAvailableDiskSpace)
 			{
-				Bucket* bucket = FindSuitableBucketBySize(aStore.m_size);
+				if(aStore.m_size > aAvailableDiskSpace)
+					return;
+
+				Bucket* bucket = FindSuitableBucketBySize(aStore.m_size, aAvailableDiskSpace);
 				if(bucket == NULL)
 					m_buckets.push_back(bucket = new Bucket());
+
 
 				bucket->m_stores.push_back(aStore);
 				bucket->m_size += aStore.m_size;
@@ -103,6 +110,7 @@ namespace jelly
 	SizeTieredCompactionStrategy::Update(
 		const std::vector<IHost::StoreInfo>&				aStoreInfo,
 		const TotalStoreSize&								/*aTotalStoreSize*/,
+		size_t												aAvailableDiskSpace,
 		SuggestionCallback									aSuggestionCallback)
 	{
 		JELLY_ASSERT(aStoreInfo.size() > 0);
@@ -110,7 +118,7 @@ namespace jelly
 		// Divide stores into buckets of roughly equal sizes
 		BucketList bucketList;
 		for(const IHost::StoreInfo& storeInfo : aStoreInfo)
-			bucketList.AddStoreToSuitableBucket(storeInfo);
+			bucketList.AddStoreToSuitableBucket(storeInfo, aAvailableDiskSpace);
 
 		// Find buckets ripe for compaction
 		for(const Bucket* bucket : bucketList.m_buckets)
@@ -119,7 +127,7 @@ namespace jelly
 			{
 				CompactionJob compactionJob;
 				compactionJob.m_oldestStoreId = aStoreInfo[0].m_id;
-				
+
 				for(const Store& store : bucket->m_stores)
 					compactionJob.m_storeIds.push_back(store.m_storeId);
 				

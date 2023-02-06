@@ -567,6 +567,12 @@ namespace jelly
 			return m_timeStamp++;
 		}
 
+		size_t					
+		MemoryHost::GetAvailableDiskSpace() 
+		{
+			return SIZE_MAX;
+		}
+
 		void					
 		MemoryHost::EnumerateFiles(
 			uint32_t					aNodeId,

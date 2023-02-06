@@ -54,22 +54,26 @@ namespace jelly
 	DefaultHost::PollSystemStats()
 	{
 		// Determine total size on disk
-		size_t totalFileSizes[PathUtils::NUM_FILES_TYPES];
-		memset(totalFileSizes, 0, sizeof(totalFileSizes));
-		for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(m_root))
 		{
-			PathUtils::FileType fileType;
-			uint32_t id;
-			uint32_t nodeId;
-			if (entry.is_regular_file() && PathUtils::ParsePath(entry.path(), m_filePrefix.c_str(), fileType, nodeId, id))
+			size_t totalFileSizes[PathUtils::NUM_FILES_TYPES];
+			memset(totalFileSizes, 0, sizeof(totalFileSizes));
+			for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(m_root))
 			{
-				JELLY_ASSERT(fileType < PathUtils::NUM_FILES_TYPES);
-				totalFileSizes[fileType] += (size_t)entry.file_size();
+				PathUtils::FileType fileType;
+				uint32_t id;
+				uint32_t nodeId;
+				if (entry.is_regular_file() && PathUtils::ParsePath(entry.path(), m_filePrefix.c_str(), fileType, nodeId, id))
+				{
+					JELLY_ASSERT(fileType < PathUtils::NUM_FILES_TYPES);
+					totalFileSizes[fileType] += (size_t)entry.file_size();
+				}
 			}
+
+			m_stats->Emit(Stat::ID_TOTAL_HOST_STORE_SIZE, totalFileSizes[PathUtils::FILE_TYPE_STORE]);
+			m_stats->Emit(Stat::ID_TOTAL_HOST_WAL_SIZE, totalFileSizes[PathUtils::FILE_TYPE_WAL]);
 		}
 
-		m_stats->Emit(Stat::ID_TOTAL_HOST_STORE_SIZE, totalFileSizes[PathUtils::FILE_TYPE_STORE]);
-		m_stats->Emit(Stat::ID_TOTAL_HOST_WAL_SIZE, totalFileSizes[PathUtils::FILE_TYPE_WAL]);
+		m_stats->Emit(Stat::ID_AVAILABLE_DISK_SPACE, GetAvailableDiskSpace());
 	}
 
 	void		
@@ -111,6 +115,25 @@ namespace jelly
 		return (uint64_t)time(NULL);
 	}
 
+	size_t					
+	DefaultHost::GetAvailableDiskSpace() 
+	{
+		size_t available = 0;
+
+		try
+		{
+			std::filesystem::space_info si = std::filesystem::space(m_root);
+
+			available = (size_t)si.available;
+		}
+		catch (std::exception& e)
+		{
+			JELLY_FATAL_ERROR("DefaultHost: Failed to determine available disk space for: %s (%s)", m_root.c_str(), e.what());
+		}
+
+		return available;
+	}
+
 	void		
 	DefaultHost::EnumerateFiles(
 		uint32_t					aNodeId,
@@ -143,7 +166,7 @@ namespace jelly
 		}
 		catch (std::exception& e)
 		{
-			JELLY_FATAL_ERROR("Host: Failed to enumerate files for node id: %u (%s)", aNodeId, e.what());
+			JELLY_FATAL_ERROR("DefaultHost: Failed to enumerate files for node id: %u (%s)", aNodeId, e.what());
 		}
 	}
 
@@ -175,7 +198,7 @@ namespace jelly
 		}
 		catch (std::exception& e)
 		{
-			JELLY_FATAL_ERROR("Host: Failed to get store info fornode id: %u (%s)", aNodeId, e.what());
+			JELLY_FATAL_ERROR("DefaultHost: Failed to get store info fornode id: %u (%s)", aNodeId, e.what());
 		}
 	}
 
@@ -226,7 +249,7 @@ namespace jelly
 		}
 		catch (std::exception& e)
 		{
-			JELLY_FATAL_ERROR("Host: Failed to delete WAL (%u) for node id: %u (%s)", aId, aNodeId, e.what());
+			JELLY_FATAL_ERROR("DefaultHost: Failed to delete WAL (%u) for node id: %u (%s)", aId, aNodeId, e.what());
 		}
 	}
 	

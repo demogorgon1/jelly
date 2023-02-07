@@ -101,7 +101,7 @@ namespace jelly
 		{
 			for(uint32_t i = 0; i < (uint32_t)NUM_IDS; i++)
 			{
-				if(strcmp(INFO[i].m_id, aString) == NULL)
+				if(strcmp(INFO[i].m_id, aString) == 0)
 					return i;
 			}
 			return UINT32_MAX;

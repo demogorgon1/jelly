@@ -38,8 +38,10 @@ namespace jelly
 		JELLY_ASSERT(info->m_type == Config::TYPE_INTERVAL);
 
 		CacheItem& cacheItem = m_cache[aId];
+
+		bool hasStaticValue = cacheItem.m_version != UINT32_MAX && info->m_requiresRestart;
 		
-		if (m_source->GetVersion() != cacheItem.m_version)
+		if (!hasStaticValue && m_source->GetVersion() != cacheItem.m_version)
 		{
 			const char* p = m_source->Get(info->m_id);
 
@@ -59,7 +61,9 @@ namespace jelly
 
 		CacheItem& cacheItem = m_cache[aId];
 
-		if (m_source->GetVersion() != cacheItem.m_version)
+		bool hasStaticValue = cacheItem.m_version != UINT32_MAX && info->m_requiresRestart;
+
+		if (!hasStaticValue && m_source->GetVersion() != cacheItem.m_version)
 		{
 			const char* p = m_source->Get(info->m_id);
 
@@ -79,7 +83,9 @@ namespace jelly
 
 		CacheItem& cacheItem = m_cache[aId];
 
-		if (m_source->GetVersion() != cacheItem.m_version)
+		bool hasStaticValue = cacheItem.m_version != UINT32_MAX && info->m_requiresRestart;
+
+		if (!hasStaticValue && m_source->GetVersion() != cacheItem.m_version)
 		{
 			const char* p = m_source->Get(info->m_id);
 
@@ -99,7 +105,9 @@ namespace jelly
 
 		CacheItem& cacheItem = m_cache[aId];
 
-		if (m_source->GetVersion() != cacheItem.m_version)
+		bool hasStaticValue = cacheItem.m_version != UINT32_MAX && info->m_requiresRestart;
+
+		if (!hasStaticValue && m_source->GetVersion() != cacheItem.m_version)
 		{
 			const char* p = m_source->Get(info->m_id);
 

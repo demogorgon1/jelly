@@ -72,7 +72,7 @@ namespace jelly
 			/* ID_COMPRESSION_METHOD */				        { TYPE_STRING,  "compression_method",                      "zstd",        true },
 			/* ID_COMPRESSION_LEVEL */                      { TYPE_UINT32,  "compression_level",				       "1",           true },
 
-			/* ID_WAL_SIZE_LIMIT */                         { TYPE_SIZE,     "wal_size_limit",                         "64MB",        true },
+			/* ID_WAL_SIZE_LIMIT */                         { TYPE_SIZE,     "wal_size_limit",                         "64MB",        false },
 			/* ID_WAL_CONCURRENCY */                        { TYPE_UINT32,   "wal_concurrency",                        "1",           true },
 											                				  					                  				     
 			/* ID_MAX_RESIDENT_BLOB_SIZE */                 { TYPE_SIZE,     "max_resident_blob_size",                 "1GB",         false },
@@ -86,8 +86,8 @@ namespace jelly
 			/* ID_COMPACTION_SIZE_MEMORY */                 { TYPE_SIZE,     "compaction_size_memory",                 "10",          true },
 			/* ID_COMPACTION_SIZE_TREND_MEMORY */           { TYPE_SIZE,     "compaction_size_trend_memory",           "10",          true },
 			/* ID_COMPACTION_STRATEGY */                    { TYPE_STRING,   "compaction_strategy",                    "stcs",        true },
-			/* ID_COMPACTION_STRATEGY_UPDATE_INTERVAL_MS */ { TYPE_INTERVAL, "compaction_strategy_update_interval",    "10s",		  true },
-			/* ID_STCS_MIN_BUCKET_SIZE */                   { TYPE_UINT32,   "stcs_min_bucket_size",                   "4",           true }
+			/* ID_COMPACTION_STRATEGY_UPDATE_INTERVAL_MS */ { TYPE_INTERVAL, "compaction_strategy_update_interval",    "10s",		  false },
+			/* ID_STCS_MIN_BUCKET_SIZE */                   { TYPE_SIZE,     "stcs_min_bucket_size",                   "4",           false }
 		};
 
 		static_assert(sizeof(INFO) == sizeof(Info) * (size_t)NUM_IDS);

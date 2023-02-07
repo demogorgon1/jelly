@@ -103,10 +103,10 @@ namespace jelly
 				m_compactionAdvisor = std::make_unique<CompactionAdvisor>(
 					m_node->GetNodeId(),
 					aHost,
-					m_config.Get<size_t>(Config::ID_COMPACTION_SIZE_MEMORY),
-					m_config.Get<size_t>(Config::ID_COMPACTION_SIZE_TREND_MEMORY),
+					m_config.GetSize(Config::ID_COMPACTION_SIZE_MEMORY),
+					m_config.GetSize(Config::ID_COMPACTION_SIZE_TREND_MEMORY),
 					m_config.GetInterval(Config::ID_COMPACTION_STRATEGY_UPDATE_INTERVAL_MS),
-					m_config.Get<uint32_t>(Config::ID_STCS_MIN_BUCKET_SIZE),
+					m_config.GetUInt32(Config::ID_STCS_MIN_BUCKET_SIZE),
 					compactionStrategy);
 			}
 
@@ -192,8 +192,8 @@ namespace jelly
 			size_t pendingStoreItemCount = m_node->GetPendingStoreItemCount();	
 			uint32_t pendingStoreWALItemCount = m_node->GetPendingStoreWALItemCount();
 
-			if(pendingStoreWALItemCount > m_config.Get<uint32_t>(Config::ID_PENDING_STORE_WAL_ITEM_LIMIT) 
-				|| pendingStoreItemCount > m_config.Get<uint32_t>(Config::ID_PENDING_STORE_ITEM_LIMIT)) 
+			if(pendingStoreWALItemCount > m_config.GetUInt32(Config::ID_PENDING_STORE_WAL_ITEM_LIMIT) 
+				|| pendingStoreItemCount > m_config.GetUInt32(Config::ID_PENDING_STORE_ITEM_LIMIT)) 
 			{
 				aEventHandler(EventFlushPendingStore());
 				

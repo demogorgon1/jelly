@@ -542,8 +542,8 @@ namespace jelly
 			IFileStreamReader*			aReader,
 			uint32_t					aStoreId)
 		{			
-			size_t maxResidentBlobSize = this->m_config.Get<size_t>(Config::ID_MAX_RESIDENT_BLOB_SIZE);
-			size_t maxResidentBlobCount = this->m_config.Get<size_t>(Config::ID_MAX_RESIDENT_BLOB_COUNT);
+			size_t maxResidentBlobSize = this->m_config.GetSize(Config::ID_MAX_RESIDENT_BLOB_SIZE);
+			size_t maxResidentBlobCount = this->m_config.GetSize(Config::ID_MAX_RESIDENT_BLOB_COUNT);
 
 			while (!aReader->IsEnd())
 			{
@@ -623,8 +623,8 @@ namespace jelly
 		{
 			ScopedTimeSampler timeSampler(this->m_host->GetStats(), Stat::ID_OBEY_RESIDENT_BLOB_LIMITS_TIME);
 
-			size_t maxResidentBlobSize = this->m_config.Get<size_t>(Config::ID_MAX_RESIDENT_BLOB_SIZE);
-			size_t maxResidentBlobCount = this->m_config.Get<size_t>(Config::ID_MAX_RESIDENT_BLOB_COUNT);
+			size_t maxResidentBlobSize = this->m_config.GetSize(Config::ID_MAX_RESIDENT_BLOB_SIZE);
+			size_t maxResidentBlobCount = this->m_config.GetSize(Config::ID_MAX_RESIDENT_BLOB_COUNT);
 
 			while(m_totalResidentBlobSize > maxResidentBlobSize || m_residentItems.m_count > maxResidentBlobCount)
 			{

@@ -49,7 +49,7 @@ namespace jelly
 			, m_currentCompactionIsMajor(false)
 			, m_config(aHost)
 		{
-			uint32_t walConcurrency = m_config.Get<uint32_t>(Config::ID_WAL_CONCURRENCY);
+			uint32_t walConcurrency = m_config.GetUInt32(Config::ID_WAL_CONCURRENCY);
 			for(uint32_t i = 0; i < walConcurrency; i++)
 				m_pendingWALs.push_back(NULL);
 		}
@@ -640,7 +640,7 @@ namespace jelly
 
 			if (pendingWAL != NULL)
 			{
-				if (pendingWAL->GetWriter()->GetSize() > m_config.Get<size_t>(Config::ID_WAL_SIZE_LIMIT))
+				if (pendingWAL->GetWriter()->GetSize() > m_config.GetSize(Config::ID_WAL_SIZE_LIMIT))
 				{
 					pendingWAL->Close();
 					pendingWAL = NULL;

@@ -42,10 +42,8 @@ namespace jelly
 		return StringUtils::ParseInterval(p);
 	}
 
-	//----------------------------------------------------------------------------------------
-
 	uint32_t	
-	ConfigProxy::_GetUInt32(
+	ConfigProxy::GetUInt32(
 		Config::Id		aId)
 	{
 		const Config::Info* info = Config::GetInfo(aId);
@@ -56,7 +54,7 @@ namespace jelly
 	}
 	
 	size_t		
-	ConfigProxy::_GetSize(
+	ConfigProxy::GetSize(
 		Config::Id		aId)
 	{
 		const Config::Info* info = Config::GetInfo(aId);
@@ -67,7 +65,7 @@ namespace jelly
 	}
 	
 	bool		
-	ConfigProxy::_GetBool(
+	ConfigProxy::GetBool(
 		Config::Id		aId)
 	{
 		const Config::Info* info = Config::GetInfo(aId);

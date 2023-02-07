@@ -18,18 +18,16 @@ namespace jelly
 				typedef BlobNode<UIntKey<uint32_t>, Blob<1>> BlobNodeType;
 
 				#if defined(JELLY_ZSTD)
-					DefaultHost host(".", "wrtest", Compression::ID_ZSTD);
+					DefaultHost host(".", "wrtest", NULL, Compression::ID_ZSTD);
 				#else
-					DefaultHost host(".", "wrtest", Compression::ID_NO_COMPRESSION);
+					DefaultHost host(".", "wrtest", NULL, Compression::ID_NO_COMPRESSION);
 				#endif
 
-				BlobNodeType::Config config;					
-
 				if(aConfig->m_readTestBlobCountMemoryLimit != UINT32_MAX)
-					config.m_maxResidentBlobCount = aConfig->m_readTestBlobCountMemoryLimit;
+					host.GetDefaultConfigSource()->Set(jelly::Config::ID_MAX_RESIDENT_BLOB_SIZE, StringUtils::Format("%u", aConfig->m_readTestBlobCountMemoryLimit).c_str());
 
 				PerfTimer restartTimer;
-				BlobNodeType blobNode(&host, 0, config);
+				BlobNodeType blobNode(&host, 0);
 				printf("Restarted node in %u ms...\n", (uint32_t)restartTimer.GetElapsedMilliseconds());
 
 				if(aConfig->m_readTestBlobCount > 0)

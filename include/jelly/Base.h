@@ -6,6 +6,7 @@
 	#include <signal.h>
 #endif
 
+#include <inttypes.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>

@@ -47,12 +47,12 @@ namespace jelly
 	struct CompactionAdvisor::Internal
 	{
 		Internal(
-			uint32_t							aTotalSizeMemory,
-			uint32_t							aTotalSizeTrendMemory,
+			size_t								aTotalSizeMemory,
+			size_t								aTotalSizeTrendMemory,
 			uint32_t							aSTCSMinBucketSize,
 			Strategy							aStrategy)
-			: m_totalSizeBuffer((size_t)aTotalSizeMemory)
-			, m_totalSizeTrendBuffer((size_t)aTotalSizeTrendMemory)
+			: m_totalSizeBuffer(aTotalSizeMemory)
+			, m_totalSizeTrendBuffer(aTotalSizeTrendMemory)
 		{
 			switch(aStrategy)
 			{
@@ -73,8 +73,8 @@ namespace jelly
 	CompactionAdvisor::CompactionAdvisor(
 		uint32_t								aNodeId,
 		IHost*									aHost,
-		uint32_t								aTotalSizeMemory,
-		uint32_t								aTotalSizeTrendMemory,
+		size_t									aTotalSizeMemory,
+		size_t									aTotalSizeTrendMemory,
 		uint32_t								aMinCompactionStrategyUpdateIntervalMS,
 		uint32_t								aSTCSMinBucketSize,
 		Strategy								aStrategy)

@@ -57,7 +57,7 @@ namespace jelly
 
 				t->SetVerbose(false);
 
-				t->RestartBlobNode(1024 * 1024);
+				t->RestartBlobNode();
 				t->ProcessBlobNodeRequests();
 				t->FlushPendingBlobNodeWAL();
 				t->FlushPendingBlobNodeStore();

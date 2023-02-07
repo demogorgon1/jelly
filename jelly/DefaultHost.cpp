@@ -1,6 +1,7 @@
 #include <jelly/Base.h>
 
 #include <jelly/Compression.h>
+#include <jelly/DefaultConfigSource.h>
 #include <jelly/DefaultHost.h>
 #include <jelly/ErrorUtils.h>
 #include <jelly/IStats.h>
@@ -19,13 +20,21 @@ namespace jelly
 	DefaultHost::DefaultHost(
 		const char*					aRoot,
 		const char*					aFilePrefix,
+		IConfigSource*				aConfigSource,
 		Compression::Id				aCompressionId,
 		uint32_t					aBufferCompressionLevel,
 		const Stat::Info*			aExtraApplicationStats,
 		uint32_t					aExtraApplicationStatsCount)
 		: m_root(aRoot)
 		, m_filePrefix(aFilePrefix)
+		, m_configSource(aConfigSource)
 	{
+		if(m_configSource == NULL)
+		{
+			m_defaultConfigSource = std::make_unique<DefaultConfigSource>();
+			m_configSource = m_defaultConfigSource.get();
+		}
+
 		m_storeManager = std::make_unique<StoreManager>(aRoot, aFilePrefix);
 		m_stats = std::make_unique<Stats>(Stats::ExtraApplicationStats(aExtraApplicationStats, aExtraApplicationStatsCount));
 
@@ -101,6 +110,12 @@ namespace jelly
 	DefaultHost::GetStats() 
 	{
 		return m_stats.get();
+	}
+
+	IConfigSource* 
+	DefaultHost::GetConfigSource() 
+	{
+		return m_configSource;
 	}
 
 	Compression::IProvider* 

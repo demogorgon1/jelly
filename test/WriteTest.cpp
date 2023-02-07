@@ -41,15 +41,14 @@ namespace jelly
 					typedef BlobNode<UIntKey<uint32_t>, Blob<1>> BlobNodeType;
 
 					#if defined(JELLY_ZSTD)
-						DefaultHost host(".", "wrtest", Compression::ID_ZSTD, aConfig->m_writeTestBufferCompressionLevel);
+						DefaultHost host(".", "wrtest", NULL, Compression::ID_ZSTD, aConfig->m_writeTestBufferCompressionLevel);
 					#else
-						DefaultHost host(".", "wrtest", Compression::ID_NO_COMPRESSION);
+						DefaultHost host(".", "wrtest", NULL, Compression::ID_NO_COMPRESSION);
 					#endif
 
 					host.DeleteAllFiles(UINT32_MAX);
 
-					BlobNodeType::Config config;					
-					BlobNodeType blobNode(&host, 0, config);
+					BlobNodeType blobNode(&host, 0);
 
 					// Queue up all requests
 					std::vector<std::unique_ptr<BlobNodeType::Request>> requests;

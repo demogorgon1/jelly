@@ -18,6 +18,7 @@ namespace jelly
 
 			// IHost implementation
 			IStats*					GetStats() override;
+			IConfigSource*			GetConfigSource() override;
 			Compression::IProvider* GetCompressionProvider() override;
 			uint64_t				GetTimeStamp() override;
 			size_t					GetAvailableDiskSpace() override;
@@ -57,6 +58,9 @@ namespace jelly
 										uint32_t					aNodeId,
 										uint32_t					aId) override;
 
+			// Data access
+			DefaultConfigSource*	GetDefaultConfigSource() { return &m_defaultConfigSource; }
+
 		private:
 
 			struct Store;
@@ -68,6 +72,8 @@ namespace jelly
 			StoreMap								m_storeMap;
 			WALMap									m_walMap;
 			std::atomic_uint64_t					m_timeStamp;
+
+			DefaultConfigSource						m_defaultConfigSource;
 		};
 
 	}

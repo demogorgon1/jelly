@@ -554,6 +554,12 @@ namespace jelly
 			return &dummyStats;
 		}
 
+		IConfigSource* 
+		MemoryHost::GetConfigSource() 
+		{
+			return &m_defaultConfigSource;
+		}
+
 		Compression::IProvider* 
 		MemoryHost::GetCompressionProvider() 
 		{

@@ -34,20 +34,13 @@ namespace jelly
 	public:
 		typedef Node<_KeyType, LockNodeRequest<_KeyType, _LockType, _LockMetaType>, LockNodeItem<_KeyType, _LockType, _LockMetaType>, typename _KeyType::Hasher, true> NodeBase;
 
-		struct Config
-		{
-			NodeConfig		m_node;
-		};
-
 		typedef LockNodeRequest<_KeyType, _LockType, _LockMetaType> Request;
 		typedef LockNodeItem<_KeyType, _LockType, _LockMetaType> Item;
 
 		LockNode(
 			IHost*												aHost,
-			uint32_t											aNodeId,
-			const Config&										aConfig = Config())
-			: NodeBase(aHost, aNodeId, aConfig.m_node)
-			, m_lockNodeConfig(aConfig)
+			uint32_t											aNodeId)
+			: NodeBase(aHost, aNodeId)
 		{
 			_InitStatsContext(&this->m_statsContext);
 
@@ -160,8 +153,6 @@ namespace jelly
 
 	private:
 		
-		Config			m_lockNodeConfig;
-
 		Result
 		_Lock(
 			Request*											aRequest)

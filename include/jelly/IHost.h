@@ -10,6 +10,7 @@ namespace jelly
 
 	struct FileStatsContext;
 
+	class IConfigSource;
 	class IFileStreamReader;
 	class IStats;
 	class IStoreBlobReader;
@@ -43,6 +44,9 @@ namespace jelly
 
 		//! Get statistics object for querying or emitting database metrics.
 		virtual IStats*					GetStats() = 0;
+
+		//! Get config source.
+		virtual IConfigSource*			GetConfigSource() = 0;
 
 		//! Get compression provider for managing compression.
 		virtual Compression::IProvider*	GetCompressionProvider() = 0;

@@ -13,7 +13,7 @@ namespace jelly
 			TestDefaultHost(
 				const char*						aRoot,
 				Compression::Id					aCompressionId)
-				: DefaultHost(aRoot, "test", aCompressionId)
+				: DefaultHost(aRoot, "test", NULL, aCompressionId)
 				, m_timeStamp(0)
 			{
 
@@ -34,7 +34,7 @@ namespace jelly
 
 		private:
 
-			std::atomic_uint64_t	m_timeStamp;
+			std::atomic_uint64_t		m_timeStamp;
 		};
 
 	}

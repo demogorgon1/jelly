@@ -453,11 +453,19 @@ namespace jelly
 
 			void
 			_HammerTest(
-				DefaultHost*	aHost,
-				uint32_t		aKeyCount,
-				HammerTestMode	aHammerTestMode)
+				TestDefaultHost*	aHost,
+				uint32_t			aKeyCount,
+				HammerTestMode		aHammerTestMode)
 			{
 				aHost->DeleteAllFiles(UINT32_MAX);
+
+				aHost->GetDefaultConfigSource()->Clear();
+				
+				uint32_t walConcurrency = 4;
+				aHost->GetDefaultConfigSource()->Set(jelly::Config::ID_WAL_CONCURRENCY, "4");
+
+				if (aHammerTestMode == HAMMER_TEST_MODE_DISK_READ)
+					aHost->GetDefaultConfigSource()->Set(jelly::Config::ID_MAX_RESIDENT_BLOB_SIZE, "0");
 
 				// Run the whole thing twice (without cleaning up inbetween), so the second time it will have to restore everything
 
@@ -534,19 +542,11 @@ namespace jelly
 
 					std::chrono::steady_clock::time_point initT0 = std::chrono::steady_clock::now();
 
-					LockNodeType::Config lockNodeConfig;
-					lockNodeConfig.m_node.m_walConcurrency = 4;
-					LockNodeType lockNode(aHost, 0, lockNodeConfig);
+					LockNodeType lockNode(aHost, 0);
 
 					std::chrono::steady_clock::time_point initT1 = std::chrono::steady_clock::now();
 
-					BlobNodeType::Config blobNodeConfig;
-					blobNodeConfig.m_node.m_walConcurrency = 4;
-
-					if (aHammerTestMode == HAMMER_TEST_MODE_DISK_READ)
-						blobNodeConfig.m_maxResidentBlobSize = 0;
-
-					BlobNodeType blobNode(aHost, 1, blobNodeConfig);
+					BlobNodeType blobNode(aHost, 1);
 
 					std::chrono::steady_clock::time_point initT2 = std::chrono::steady_clock::now();
 
@@ -603,7 +603,7 @@ namespace jelly
 						JELLY_ASSERT(false);
 					}
 
-					ThreadPool threadPool(lockNodeConfig.m_node.m_walConcurrency + blobNodeConfig.m_node.m_walConcurrency);
+					ThreadPool threadPool(walConcurrency * 2);
 
 					std::chrono::steady_clock::time_point lastInfoPrintTime = std::chrono::steady_clock::now();
 
@@ -614,12 +614,12 @@ namespace jelly
 						lockNode.ProcessRequests();
 						blobNode.ProcessRequests();
 
-						std::atomic_uint32_t waiting = lockNodeConfig.m_node.m_walConcurrency + blobNodeConfig.m_node.m_walConcurrency;
+						std::atomic_uint32_t waiting = walConcurrency * 2;
 
-						for (uint32_t i = 0; i < lockNodeConfig.m_node.m_walConcurrency; i++)
+						for (uint32_t i = 0; i < walConcurrency; i++)
 							threadPool.Post([i, &lockNode, &waiting]() mutable { lockNode.FlushPendingWAL(i); waiting--; });
 
-						for (uint32_t i = 0; i < blobNodeConfig.m_node.m_walConcurrency; i++)
+						for (uint32_t i = 0; i < walConcurrency; i++)
 							threadPool.Post([i, &blobNode, &waiting]() mutable { blobNode.FlushPendingWAL(i); waiting--; });
 
 						while(waiting > 0)
@@ -696,9 +696,10 @@ namespace jelly
 			
 			void
 			_TestBlobNode(
-				DefaultHost*	aHost)
+				TestDefaultHost*	aHost)
 			{
 				aHost->DeleteAllFiles(UINT32_MAX);
+				aHost->GetDefaultConfigSource()->Clear();
 
 				{
 					BlobNodeType blobNode(aHost, 0);
@@ -860,10 +861,8 @@ namespace jelly
 
 				// Perform compaction, removing two of the store files and create a new one
 				{
-					BlobNodeType::Config config;
-					config.m_maxResidentBlobSize = 0;
-
-					BlobNodeType blobNode(aHost, 0, config);
+					aHost->GetDefaultConfigSource()->Set(jelly::Config::ID_MAX_RESIDENT_BLOB_SIZE, "0");
+					BlobNodeType blobNode(aHost, 0);
 					_VerifyResidentKeys(&blobNode, { });
 
 					{
@@ -897,8 +896,8 @@ namespace jelly
 
 				// Make a bunch of stores for major compaction
 				{
-					BlobNodeType::Config config;
-					BlobNodeType blobNode(aHost, 0, config);
+					aHost->GetDefaultConfigSource()->Clear();
+					BlobNodeType blobNode(aHost, 0);
 
 					for(uint32_t i = 0; i < 5; i++)
 					{
@@ -925,8 +924,7 @@ namespace jelly
 
 				// Perform major compaction - this should turn all stores (except latest) into a single new store
 				{
-					BlobNodeType::Config config;
-					BlobNodeType blobNode(aHost, 0, config);
+					BlobNodeType blobNode(aHost, 0);
 
 					{
 						std::unique_ptr<CompactionResultType> compactionResult(blobNode.PerformMajorCompaction());
@@ -948,10 +946,11 @@ namespace jelly
 
 			void
 			_TestLockNode(
-				DefaultHost*		aHost)
+				TestDefaultHost*		aHost)
 			{
 				aHost->DeleteAllFiles(UINT32_MAX);
-		
+				aHost->GetDefaultConfigSource()->Clear();
+
 				{
 					LockNodeType lockNode(aHost, 0);					
 				
@@ -1115,9 +1114,10 @@ namespace jelly
 
 			void
 			_TestCancel(
-				DefaultHost*		aHost)
+				TestDefaultHost*		aHost)
 			{
 				aHost->DeleteAllFiles(UINT32_MAX);
+				aHost->GetDefaultConfigSource()->Clear();
 
 				// Do a little request without canceling it
 				{
@@ -1197,9 +1197,10 @@ namespace jelly
 
 			void
 			_TestLockNodeDelete(
-				DefaultHost*		aHost)
+				TestDefaultHost*		aHost)
 			{
 				aHost->DeleteAllFiles(UINT32_MAX);
+				aHost->GetDefaultConfigSource()->Clear();
 
 				{
 					LockNodeType lockNode(aHost, 0);
@@ -1345,9 +1346,10 @@ namespace jelly
 
 			void
 			_TestBlobNodeDelete(
-				DefaultHost*		aHost)
+				TestDefaultHost*		aHost)
 			{
 				aHost->DeleteAllFiles(UINT32_MAX);
+				aHost->GetDefaultConfigSource()->Clear();
 
 				// Not gonna test tombstone removal through compaction as it works exactly the same way as for lock nodes
 
@@ -1425,15 +1427,16 @@ namespace jelly
 
 			void
 			_TestBlobNodeMemoryLimit(
-				DefaultHost*		aHost)
+				TestDefaultHost*		aHost)
 			{
 				aHost->DeleteAllFiles(UINT32_MAX);
+				aHost->GetDefaultConfigSource()->Clear();
 
 				{
-					BlobNodeType::Config config;
-					config.m_maxResidentBlobCount = 5; // Using count limit as we can't really predict compressed blob sizes 
+					// Using count limit as we can't really predict compressed blob sizes 
+					aHost->GetDefaultConfigSource()->Set(jelly::Config::ID_MAX_RESIDENT_BLOB_COUNT, "5");
 
-					BlobNodeType blobNode(aHost, 0, config);
+					BlobNodeType blobNode(aHost, 0);
 					
 					// Do a bunch of sets with different keys
 					for(uint32_t key = 1; key <= 5; key++)
@@ -1535,10 +1538,10 @@ namespace jelly
 				// Do a different test now, with memory limit being hit from the get-go
 
 				{
-					BlobNodeType::Config config;
-					config.m_maxResidentBlobSize = 0; // No space for anything
+					// No space for anything
+					aHost->GetDefaultConfigSource()->Set(jelly::Config::ID_MAX_RESIDENT_BLOB_COUNT, "0");
 
-					BlobNodeType blobNode(aHost, 1, config);
+					BlobNodeType blobNode(aHost, 1);
 					
 					// Set a few keys
 					for(uint32_t i = 1; i <= 3; i++)
@@ -1566,10 +1569,10 @@ namespace jelly
 				// Do a restart
 
 				{
-					BlobNodeType::Config config;
-					config.m_maxResidentBlobSize = 0; // Still no space for anything
+					// Still no space for anything
+					aHost->GetDefaultConfigSource()->Set(jelly::Config::ID_MAX_RESIDENT_BLOB_COUNT, "0");
 
-					BlobNodeType blobNode(aHost, 1, config);
+					BlobNodeType blobNode(aHost, 1);
 
 					// We should no longer have any resident keys as memory limit caused nothing to be loaded from stores and there is no
 					// fresh updates in WALs
@@ -1579,10 +1582,9 @@ namespace jelly
 				// Again with the memory limit being immediate, but make two copies of the same blob across two stores
 
 				{
-					BlobNodeType::Config config;
-					config.m_maxResidentBlobSize = 0; 
+					aHost->GetDefaultConfigSource()->Set(jelly::Config::ID_MAX_RESIDENT_BLOB_SIZE, "0");
 
-					BlobNodeType blobNode(aHost, 2, config);
+					BlobNodeType blobNode(aHost, 2);
 
 					// Store the same key twice
 					for (uint32_t i = 1; i <= 2; i++)
@@ -1607,10 +1609,9 @@ namespace jelly
 				// Restart
 
 				{
-					BlobNodeType::Config config;
-					config.m_maxResidentBlobSize = 0;
+					aHost->GetDefaultConfigSource()->Set(jelly::Config::ID_MAX_RESIDENT_BLOB_SIZE, "0");
 
-					BlobNodeType blobNode(aHost, 2, config);
+					BlobNodeType blobNode(aHost, 2);
 
 					// Check nothing is resident
 					_VerifyResidentKeys(&blobNode, { });

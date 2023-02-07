@@ -173,42 +173,6 @@ namespace jelly
 							m_simCSVOutputColumns.push_back(token);
 						i++;
 					}
-					else if (strcmp(arg, "-simlocknodewalsizelimit") == 0)
-					{
-						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
-						m_simLockNodeConfig.m_node.m_walSizeLimit = (size_t)atoi(aArgs[i + 1]);
-						i++;
-					}
-					else if (strcmp(arg, "-simlocknodewalconcurrency") == 0)
-					{
-						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
-						m_simLockNodeConfig.m_node.m_walConcurrency = (size_t)atoi(aArgs[i + 1]);
-						i++;
-					}
-					else if (strcmp(arg, "-simblobnodewalsizelimit") == 0)
-					{
-						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
-						m_simBlobNodeConfig.m_node.m_walSizeLimit = (size_t)atoi(aArgs[i + 1]);
-						i++;
-					}
-					else if (strcmp(arg, "-simblobnodewalconcurrency") == 0)
-					{
-						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
-						m_simBlobNodeConfig.m_node.m_walConcurrency = (size_t)atoi(aArgs[i + 1]);
-						i++;
-					}
-					else if (strcmp(arg, "-simblobnodemaxresidentblobcount") == 0)
-					{
-						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
-						m_simBlobNodeConfig.m_maxResidentBlobCount = (size_t)atoi(aArgs[i + 1]);
-						i++;
-					}
-					else if (strcmp(arg, "-simblobnodemaxresidentblobsize") == 0)
-					{
-						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
-						m_simBlobNodeConfig.m_maxResidentBlobSize = (size_t)atoi(aArgs[i + 1]);
-						i++;
-					}
 					else
 					{
 						JELLY_FATAL_ERROR("Syntax error.");
@@ -241,8 +205,6 @@ namespace jelly
 			std::vector<std::string>				m_simCSVOutputColumns;
 			bool									m_simTestStdOut = true;
 			uint32_t								m_simBufferCompressionLevel = 0;
-			Sim::LockServer::LockNodeType::Config	m_simLockNodeConfig;
-			Sim::BlobServer::BlobNodeType::Config	m_simBlobNodeConfig;
 
 			// WriteTest
 			bool									m_writeTest = false;

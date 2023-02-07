@@ -7,6 +7,8 @@
 namespace jelly
 {
 
+	class DefaultConfigSource;
+
 	/**
 	 * \brief Default implementation of the IHost interface, which nodes use to interact with the system.
 	 * 
@@ -19,6 +21,7 @@ namespace jelly
 		/**
 		 * \param aRoot				          Path to directory where database files should be stored.
 		 * \param aFilePrefix		          String the will prefixed to database files. Useful if you're storing multiple databases in the same directory.
+		 * \param aConfigSource				  Configuration source interface.
 		 * \param aCompressionId	          Specifies compression algorithm.
 		 * \param aBufferCompressionLevel	  Blob compression level in the range of 1 (lowest, fastest) to 9 (highest, slowest). A compression level of 1 is usually plenty when using ZSTD and is very fast.
 		 * \param aExtraApplicationStats      Pointer to application-defined statistics.
@@ -27,6 +30,7 @@ namespace jelly
 								DefaultHost(	
 									const char*					aRoot,
 									const char*					aFilePrefix,
+									IConfigSource*				aConfigSource,
 									Compression::Id				aCompressionId,
 									uint32_t					aBufferCompressionLevel = 0,
 									const Stat::Info*			aExtraApplicationStats = NULL,
@@ -42,7 +46,8 @@ namespace jelly
 
 		//----------------------------------------------------------------------------------------------
 		// IHost implementation
-		IStats*					GetStats() override;
+		IStats*					GetStats() override;		
+		IConfigSource*			GetConfigSource() override;
 		Compression::IProvider* GetCompressionProvider() override;
 		uint64_t				GetTimeStamp() override;
 		size_t					GetAvailableDiskSpace() override;
@@ -82,13 +87,18 @@ namespace jelly
 									uint32_t					aNodeId,
 									uint32_t					aId) override;
 
+		// Data access
+		DefaultConfigSource*	GetDefaultConfigSource() { JELLY_ASSERT(m_defaultConfigSource); return m_defaultConfigSource.get(); }
+
 	private:
 		
 		std::string								m_root;
 		std::string								m_filePrefix;
+		IConfigSource*							m_configSource;
 		std::unique_ptr<Compression::IProvider>	m_compressionProvider;
 		std::unique_ptr<StoreManager>			m_storeManager;
 		std::unique_ptr<IStats>					m_stats;
+		std::unique_ptr<DefaultConfigSource>	m_defaultConfigSource;
 	};
 
 }

@@ -46,12 +46,11 @@ namespace jelly
 				// I feel SimTest provides ample testing of this.
 
 				MemoryHost host;
+				host.GetDefaultConfigSource()->Set(jelly::Config::ID_MIN_WAL_FLUSH_INTERVAL_MS, "0");
+
 				BlobNodeType blobNode(&host, 0);				
 
-				HousekeepingAdvisorType::Config config;
-				config.m_minWALFlushIntervalMS = 0; // Want an immediate WAL flush
-
-				HousekeepingAdvisorType housekeepingAdvisor(&host, &blobNode, config);
+				HousekeepingAdvisorType housekeepingAdvisor(&host, &blobNode);
 
 				// No events expected 
 				_UpdateHousekeepingAdvisor(housekeepingAdvisor, {});

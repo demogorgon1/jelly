@@ -120,43 +120,38 @@ namespace jelly
 			{
 				_AddStep(__FUNCTION__, 0, 0, [&]()
 				{
-					typename _LockNodeType::Config config;
-						
 					if (!m_lockNode)
 					{
 						_Message("Start lock node");
 
-						m_lockNode.reset(new _LockNodeType(m_host, 0, config));
+						m_lockNode.reset(new _LockNodeType(m_host, 0));
 					}
 					else if(m_random() % 100 < 5)
 					{
 						_Message("Restart lock node");
 
-						m_lockNode.reset(new _LockNodeType(m_host, 0, config));
+						m_lockNode.reset(new _LockNodeType(m_host, 0));
 					}
 				});
 			}
 
 			void
-			RestartBlobNode(
-				size_t			aMaxResidentBlobSize)
+			RestartBlobNode()
 			{
-				_AddStep(__FUNCTION__, 0, 0, [&, aMaxResidentBlobSize]()
+				_AddStep(__FUNCTION__, 0, 0, [&]()
 				{
-					typename _BlobNodeType::Config config;
-					config.m_maxResidentBlobSize = aMaxResidentBlobSize;
-						
+	
 					if (!m_blobNode)
 					{
-						_Message("Start blob node: max resident blob size=%llu", aMaxResidentBlobSize);
+						_Message("Start blob node");
 
-						m_blobNode.reset(new _BlobNodeType(m_host, 1, config));
+						m_blobNode.reset(new _BlobNodeType(m_host, 1));
 					}
 					else if (m_random() % 100 < 5)
 					{
-						_Message("Restart blob node: max resident blob size=%llu", aMaxResidentBlobSize);
+						_Message("Restart blob node");
 
-						m_blobNode.reset(new _BlobNodeType(m_host, 1, config));
+						m_blobNode.reset(new _BlobNodeType(m_host, 1));
 					}
 				});
 			}

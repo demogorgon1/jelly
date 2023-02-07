@@ -34,29 +34,13 @@ namespace jelly
 	public:
 		typedef Node<_KeyType, BlobNodeRequest<_KeyType, _BlobType>, BlobNodeItem<_KeyType, _BlobType>, typename _KeyType::Hasher, false> NodeBase;
 
-		struct Config
-		{
-			Config()
-				: m_maxResidentBlobSize(1024 * 1024 * 1024)
-				, m_maxResidentBlobCount(1024 * 1024 * 1024)
-			{
-
-			}
-
-			size_t			m_maxResidentBlobSize;
-			size_t			m_maxResidentBlobCount;
-			NodeConfig		m_node;
-		};
-
 		typedef BlobNodeRequest<_KeyType, _BlobType> Request;
 		typedef BlobNodeItem<_KeyType, _BlobType> Item;
 
 		BlobNode(
 			IHost*												aHost,
-			uint32_t											aNodeId,
-			const Config&										aConfig = Config())
-			: NodeBase(aHost, aNodeId, aConfig.m_node)
-			, m_blobNodeConfig(aConfig)
+			uint32_t											aNodeId)
+			: NodeBase(aHost, aNodeId)
 			, m_totalResidentBlobSize(0)
 		{
 			_InitStatsContext(&this->m_statsContext);
@@ -205,8 +189,6 @@ namespace jelly
 		}
 
 	private:
-
-		Config									m_blobNodeConfig;
 
 		size_t									m_totalResidentBlobSize;
 
@@ -560,6 +542,9 @@ namespace jelly
 			IFileStreamReader*			aReader,
 			uint32_t					aStoreId)
 		{			
+			size_t maxResidentBlobSize = this->m_config.Get<size_t>(Config::ID_MAX_RESIDENT_BLOB_SIZE);
+			size_t maxResidentBlobCount = this->m_config.Get<size_t>(Config::ID_MAX_RESIDENT_BLOB_COUNT);
+
 			while (!aReader->IsEnd())
 			{
 				std::unique_ptr<Item> item(new Item());
@@ -576,7 +561,7 @@ namespace jelly
 
 				_KeyType key = item->GetKey();
 
-				if(m_totalResidentBlobSize >= m_blobNodeConfig.m_maxResidentBlobSize || this->GetItemCount() >= m_blobNodeConfig.m_maxResidentBlobCount)
+				if(m_totalResidentBlobSize >= maxResidentBlobSize || this->GetItemCount() >= maxResidentBlobCount)
 				{
 					item->SetBlob(NULL);
 					itemRuntimeState.m_isResident = false;
@@ -638,7 +623,10 @@ namespace jelly
 		{
 			ScopedTimeSampler timeSampler(this->m_host->GetStats(), Stat::ID_OBEY_RESIDENT_BLOB_LIMITS_TIME);
 
-			while(m_totalResidentBlobSize > m_blobNodeConfig.m_maxResidentBlobSize || m_residentItems.m_count > m_blobNodeConfig.m_maxResidentBlobCount)
+			size_t maxResidentBlobSize = this->m_config.Get<size_t>(Config::ID_MAX_RESIDENT_BLOB_SIZE);
+			size_t maxResidentBlobCount = this->m_config.Get<size_t>(Config::ID_MAX_RESIDENT_BLOB_COUNT);
+
+			while(m_totalResidentBlobSize > maxResidentBlobSize || m_residentItems.m_count > maxResidentBlobCount)
 			{
 				Item* head = m_residentItems.m_head;
 				JELLY_ASSERT(head != NULL);

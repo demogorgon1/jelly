@@ -2,10 +2,10 @@
 
 #include "CompactionJob.h"
 #include "CompactionResult.h"
+#include "ConfigProxy.h"
 #include "FileStatsContext.h"
 #include "IHost.h"
 #include "IStoreWriter.h"
-#include "NodeConfig.h"
 #include "PerfTimer.h"
 #include "Queue.h"
 #include "Result.h"
@@ -37,20 +37,20 @@ namespace jelly
 
 		Node(
 			IHost*				aHost,
-			uint32_t			aNodeId,
-			const NodeConfig&	aConfig)
+			uint32_t			aNodeId)
 			: m_statsContext(aHost->GetStats())
 			, m_requestsWriteIndex(0)
 			, m_nextWALId(0)
 			, m_nextStoreId(0)
 			, m_host(aHost)
 			, m_nodeId(aNodeId)
-			, m_config(aConfig)
 			, m_stopped(false)
 			, m_pendingStoreWALItemCount(0)
 			, m_currentCompactionIsMajor(false)
+			, m_config(aHost)
 		{
-			for(uint32_t i = 0; i < m_config.m_walConcurrency; i++)
+			uint32_t walConcurrency = m_config.Get<uint32_t>(Config::ID_WAL_CONCURRENCY);
+			for(uint32_t i = 0; i < walConcurrency; i++)
 				m_pendingWALs.push_back(NULL);
 		}
 
@@ -462,7 +462,7 @@ namespace jelly
 				{
 					_STLKeyHasher hasher;
 					size_t hash = hasher(aItem->GetKey());
-					walConcurrencyIndex = (uint32_t)((size_t)m_config.m_walConcurrency * (hash >> 32) / 0x100000000);
+					walConcurrencyIndex = (uint32_t)(m_pendingWALs.size() * (hash >> 32) / 0x100000000);
 				}
 
 				WAL* wal = _GetPendingWAL(walConcurrencyIndex);
@@ -602,7 +602,7 @@ namespace jelly
 
 		IHost*														m_host;
 		uint32_t													m_nodeId;
-		NodeConfig													m_config;
+		ConfigProxy													m_config;
 		TableType													m_table;
 		uint32_t													m_nextWALId;		
 		FlushPendingStoreCallback									m_flushPendingStoreCallback;
@@ -640,7 +640,7 @@ namespace jelly
 
 			if (pendingWAL != NULL)
 			{
-				if (pendingWAL->GetWriter()->GetSize() > m_config.m_walSizeLimit)
+				if (pendingWAL->GetWriter()->GetSize() > m_config.Get<size_t>(Config::ID_WAL_SIZE_LIMIT))
 				{
 					pendingWAL->Close();
 					pendingWAL = NULL;

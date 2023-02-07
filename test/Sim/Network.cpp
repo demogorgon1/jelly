@@ -17,6 +17,7 @@ namespace jelly::Test::Sim
 		: m_host(
 			aWorkingDirectory, 
 			"simtest", 
+			NULL,
 			Compression::ID_ZSTD, 
 			aConfig->m_simBufferCompressionLevel, 
 			Stats::GetExtraApplicationStats(),
@@ -36,12 +37,12 @@ namespace jelly::Test::Sim
 		uint32_t nodeId = 0;
 
 		for (uint32_t i = 0; i < aConfig->m_simNumLockServers; i++)
-			m_lockServers.push_back(new LockServer::LockServerType(this, &m_sharedWorkQueue, &m_host, nodeId++, aConfig->m_simLockNodeConfig));
+			m_lockServers.push_back(new LockServer::LockServerType(this, &m_sharedWorkQueue, &m_host, nodeId++));
 
 		m_firstBlobNodeId = nodeId;
 
 		for (uint32_t i = 0; i < aConfig->m_simNumBlobServers; i++)
-			m_blobServers.push_back(new BlobServer::BlobServerType(this, &m_sharedWorkQueue, &m_host, nodeId++, aConfig->m_simBlobNodeConfig));
+			m_blobServers.push_back(new BlobServer::BlobServerType(this, &m_sharedWorkQueue, &m_host, nodeId++));
 	}
 	
 	Network::~Network()

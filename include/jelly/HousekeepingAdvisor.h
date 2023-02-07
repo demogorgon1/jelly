@@ -60,68 +60,6 @@ namespace jelly
 	{
 	public:
 		/**
-		 * \brief Housekeeping advisor configuration passed to its constructor.
-		 */
-		struct Config
-		{	
-			/**
-			 * Minimum WAL flushing interval in milliseconds. Minimum time between TYPE_FLUSH_PENDING_WAL events.
-			 * If requests are rare the interval might be longer.
-			 */
-			uint32_t							m_minWALFlushIntervalMS = 500;
-
-			/**
-			 * Maximum time betweem TYPE_CLEANUP_WALS events.
-			 */
-			uint32_t							m_maxCleanupWALIntervalMS = 2 * 60 * 1000;		
-
-			/**
-			 * Never suggest minor compactions more often than this. 
-			 */
-
-			uint32_t							m_minCompactionIntervalMS = 5 * 1000;
-
-			/**
-			 * If number of pending store items exceed this number, a TYPE_FLUSH_PENDING_STORE event will be 
-			 * triggered. Note that if one item has multiple writes it still counts as one item.
-			 */
-			size_t								m_pendingStoreItemLimit = 30000;
-
-			/**
-			 * If number of pending items written to WALs exceed this number, a TYPE_FLUSH_PENDING_STORE event
-			 * will be triggered. It doesn't matter how many different items we're talking about - it could all
-			 * be the same item written repeatedly.
-			 */
-			uint32_t							m_pendingStoreWALItemLimit = 300000;
-
-			/**
-			 * Compaction advisor will monitor total store size on disk over time. This is the max time to look
-			 * back, measured in number of calls to Update().
-			 */
-			uint32_t							m_compactionAdvisorSizeMemory = 10;
-
-			/**
-			 * Like m_compactionAdvisorSizeMemory, but for the derivative (change) of total store size.
-			 */
-			uint32_t							m_compactionAdvisorSizeTrendMemory = 10;
-
-			/**
-			 * Compaction strategy to use. 
-			 */
-			CompactionAdvisor::Strategy			m_compactionAdvisorStrategy = CompactionAdvisor::STRATEGY_SIZE_TIERED;
-
-			/**
-			 * How often the compaction strategy should be updated.
-			 */
-			uint32_t							m_compactionAdvisorStrategyUpdateIntervalMS = 10 * 1000;
-
-			/**
-			 * Size-tiered compaction strategy minimum bucket size for compaction.
-			 */
-			uint32_t							m_stcsMinBucketSize = 4;
-		};
-			
-		/**
 		 * \brief Event structure passed to application EventHandler callback during Update().
 		 */
 		struct Event
@@ -151,35 +89,43 @@ namespace jelly
 
 		HousekeepingAdvisor(
 			IHost*				aHost,
-			const _NodeType*	aNode,
-			const Config&		aConfig = Config())
+			const _NodeType*	aNode)
 			: m_node(aNode)
-			, m_config(aConfig)
-			, m_compactionAdvisor(
-				aNode->GetNodeId(), 
-				aHost, 
-				aConfig.m_compactionAdvisorSizeMemory, 
-				aConfig.m_compactionAdvisorSizeTrendMemory,
-				aConfig.m_compactionAdvisorStrategyUpdateIntervalMS,
-				aConfig.m_stcsMinBucketSize,
-				aConfig.m_compactionAdvisorStrategy)
+			, m_config(aHost)
 		{
+			// Initialize compaction advisor
+			{
+				CompactionAdvisor::Strategy compactionStrategy;
+				const char* compactionStrategyName = m_config.GetString(Config::ID_COMPACTION_STRATEGY);				
+				if(strcmp(compactionStrategyName, "stcs") == 0)
+					compactionStrategy = CompactionAdvisor::STRATEGY_SIZE_TIERED;
+
+				m_compactionAdvisor = std::make_unique<CompactionAdvisor>(
+					m_node->GetNodeId(),
+					aHost,
+					m_config.Get<size_t>(Config::ID_COMPACTION_SIZE_MEMORY),
+					m_config.Get<size_t>(Config::ID_COMPACTION_SIZE_TREND_MEMORY),
+					m_config.GetInterval(Config::ID_COMPACTION_STRATEGY_UPDATE_INTERVAL_MS),
+					m_config.Get<uint32_t>(Config::ID_STCS_MIN_BUCKET_SIZE),
+					compactionStrategy);
+			}
+
 			// Initialize concurrent WAL state
 			{
 				m_concurrentWALState.resize(m_node->GetPendingWALCount());
 
 				for(ConcurrentWALState& concurrentWALState : m_concurrentWALState)
-					concurrentWALState.m_flushCooldown.SetTimeout(m_config.m_minWALFlushIntervalMS);
+					concurrentWALState.m_flushCooldown.SetTimeout(m_config.GetInterval(Config::ID_MIN_WAL_FLUSH_INTERVAL_MS));
 			}
 
 			// Initialize WAL cleanup timer
 			{
-				m_cleanupWALsTimer.SetTimeout(m_config.m_maxCleanupWALIntervalMS);
+				m_cleanupWALsTimer.SetTimeout(m_config.GetInterval(Config::ID_MAX_CLEANUP_WAL_INTERVAL_MS));
 			}
 
 			// Initialize compaction timer
 			{
-				m_compactionUpdateTimer.SetTimeout(m_config.m_minCompactionIntervalMS);
+				m_compactionUpdateTimer.SetTimeout(m_config.GetInterval(Config::ID_MIN_COMPACTION_INTERVAL_MS));
 			}
 		}
 
@@ -207,7 +153,8 @@ namespace jelly
 		static Event EventPerformCompaction(const CompactionJob& aCompactionJob) { Event t; t.m_type = Event::TYPE_PERFORM_COMPACTION; t.m_compactionJob = aCompactionJob; return t; }
 
 		const _NodeType*									m_node;
-		Config												m_config;
+
+		ConfigProxy											m_config;
 
 		struct ConcurrentWALState
 		{	
@@ -217,7 +164,7 @@ namespace jelly
 		std::vector<ConcurrentWALState>						m_concurrentWALState;
 		Timer												m_cleanupWALsTimer;
 		Timer												m_compactionUpdateTimer;
-		CompactionAdvisor									m_compactionAdvisor;
+		std::unique_ptr<CompactionAdvisor>					m_compactionAdvisor;
 
 		void
 		_UpdateConcurrentWALState(
@@ -232,6 +179,8 @@ namespace jelly
 				if(pendingRequests > 0 && concurrentWALState.m_flushCooldown.HasExpired())
 				{
 					aEventHandler(EventFlushPendingWAL((uint32_t)i));
+
+					concurrentWALState.m_flushCooldown.SetTimeout(m_config.GetInterval(Config::ID_MIN_WAL_FLUSH_INTERVAL_MS));
 				}
 			}
 		}
@@ -243,13 +192,14 @@ namespace jelly
 			size_t pendingStoreItemCount = m_node->GetPendingStoreItemCount();	
 			uint32_t pendingStoreWALItemCount = m_node->GetPendingStoreWALItemCount();
 
-			if(pendingStoreWALItemCount > m_config.m_pendingStoreWALItemLimit || pendingStoreItemCount > m_config.m_pendingStoreItemLimit)
+			if(pendingStoreWALItemCount > m_config.Get<uint32_t>(Config::ID_PENDING_STORE_WAL_ITEM_LIMIT) 
+				|| pendingStoreItemCount > m_config.Get<uint32_t>(Config::ID_PENDING_STORE_ITEM_LIMIT)) 
 			{
 				aEventHandler(EventFlushPendingStore());
-
+				
 				// Always do a cleanup WALs event after flushing pending store
 				aEventHandler(EventCleanupWALs());
-				m_cleanupWALsTimer.Reset();
+				m_cleanupWALsTimer.SetTimeout(m_config.GetInterval(Config::ID_MAX_CLEANUP_WAL_INTERVAL_MS));
 			}
 		}
 
@@ -258,7 +208,11 @@ namespace jelly
 			EventHandler		aEventHandler)
 		{
 			if(m_cleanupWALsTimer.HasExpired())
+			{
 				aEventHandler(EventCleanupWALs());
+
+				m_cleanupWALsTimer.SetTimeout(m_config.GetInterval(Config::ID_MAX_CLEANUP_WAL_INTERVAL_MS));
+			}
 		}
 		
 		void
@@ -267,11 +221,13 @@ namespace jelly
 		{
 			if(m_compactionUpdateTimer.HasExpired())
 			{
-				m_compactionAdvisor.Update();
+				m_compactionAdvisor->Update();
 
 				CompactionJob suggestion;
-				while((suggestion = m_compactionAdvisor.GetNextSuggestion()).IsSet())
+				while((suggestion = m_compactionAdvisor->GetNextSuggestion()).IsSet())
 					aEventHandler(EventPerformCompaction(suggestion));
+
+				m_compactionUpdateTimer.SetTimeout(m_config.GetInterval(Config::ID_MIN_COMPACTION_INTERVAL_MS));
 			}
 		}
 

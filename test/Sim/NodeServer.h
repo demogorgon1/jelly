@@ -44,8 +44,7 @@ namespace jelly::Test::Sim
 			Network*											aNetwork,
 			SharedWorkQueue*									aSharedWorkQueue,
 			IHost*												aHost,
-			uint32_t											aId,
-			const typename _NodeType::Config&					aConfig)
+			uint32_t											aId)
 			: m_network(aNetwork)
 			, m_sharedWorkQueue(aSharedWorkQueue)
 			, m_host(aHost)
@@ -53,7 +52,6 @@ namespace jelly::Test::Sim
 			, m_state(STATE_INIT)
 			, m_hasNode(false)
 			, m_stateTimeSampler(NUM_STATES)
-			, m_config(aConfig)
 			, m_processRequestsTimer(50)
 		{
 			if constexpr(_Type == NODE_SERVER_TYPE_LOCK)
@@ -80,12 +78,10 @@ namespace jelly::Test::Sim
 			{
 			case STATE_INIT:
 				{
-					m_node = std::make_unique<_NodeType>(m_host, m_id, m_config);
+					m_node = std::make_unique<_NodeType>(m_host, m_id);
 					m_hasNode = true;
 
-					typename HousekeepingAdvisor<_NodeType>::Config housekeepingAdvisorConfig;
-
-					m_housekeepingAdvisor = std::make_unique<HousekeepingAdvisor<_NodeType>>(m_host, m_node.get(), housekeepingAdvisorConfig);
+					m_housekeepingAdvisor = std::make_unique<HousekeepingAdvisor<_NodeType>>(m_host, m_node.get());
 
 					m_state = STATE_RUNNING;
 				}
@@ -172,7 +168,6 @@ namespace jelly::Test::Sim
 		SharedWorkQueue*											m_sharedWorkQueue;
 		IHost*														m_host;
 		uint32_t													m_id;
-		_NodeType::Config											m_config;
 
 		std::atomic_bool											m_hasNode;
 		std::unique_ptr<_NodeType>									m_node;

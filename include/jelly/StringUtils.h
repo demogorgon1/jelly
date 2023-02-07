@@ -25,3 +25,25 @@
 		}
 
 #endif
+
+namespace jelly
+{
+
+	namespace StringUtils
+	{
+
+		std::string	Format(
+						const char*		aFormat,
+						...);
+		uint32_t	ParseUInt32(
+						const char*		aString);
+		size_t		ParseSize(
+						const char*		aString);
+		bool		ParseBool(
+						const char*		aString);
+		uint32_t	ParseInterval(
+						const char*		aString);
+
+	}
+
+}

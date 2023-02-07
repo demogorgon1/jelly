@@ -2,15 +2,14 @@
 
 #include <jelly/ConfigProxy.h>
 #include <jelly/IConfigSource.h>
-#include <jelly/IHost.h>
 #include <jelly/StringUtils.h>
 
 namespace jelly
 {
 
 	ConfigProxy::ConfigProxy(
-		IHost*			aHost)
-		: m_host(aHost)
+		IConfigSource*	aSource)
+		: m_source(aSource)
 	{
 
 	}
@@ -26,7 +25,7 @@ namespace jelly
 	{
 		const Config::Info* info = Config::GetInfo(aId);
 		JELLY_ASSERT(info->m_type == Config::TYPE_STRING);
-		const char* p = m_host->GetConfigSource()->Get(info->m_id);
+		const char* p = m_source->Get(info->m_id);
 		JELLY_ASSERT(p != NULL);
 		return p;
 	}
@@ -37,9 +36,18 @@ namespace jelly
 	{
 		const Config::Info* info = Config::GetInfo(aId);
 		JELLY_ASSERT(info->m_type == Config::TYPE_INTERVAL);
-		const char* p = m_host->GetConfigSource()->Get(info->m_id);
-		JELLY_ASSERT(p != NULL);
-		return StringUtils::ParseInterval(p);
+
+		CacheItem& cacheItem = m_cache[aId];
+		
+		if (m_source->GetVersion() != cacheItem.m_version)
+		{
+			const char* p = m_source->Get(info->m_id);
+
+			cacheItem.m_version = m_source->GetVersion();
+			cacheItem.m_u.m_uint32 = StringUtils::ParseInterval(p);
+		}
+
+		return cacheItem.m_u.m_uint32;
 	}
 
 	uint32_t	
@@ -48,9 +56,18 @@ namespace jelly
 	{
 		const Config::Info* info = Config::GetInfo(aId);
 		JELLY_ASSERT(info->m_type == Config::TYPE_UINT32);
-		const char* p = m_host->GetConfigSource()->Get(info->m_id);
-		JELLY_ASSERT(p != NULL);
-		return StringUtils::ParseUInt32(p);
+
+		CacheItem& cacheItem = m_cache[aId];
+
+		if (m_source->GetVersion() != cacheItem.m_version)
+		{
+			const char* p = m_source->Get(info->m_id);
+
+			cacheItem.m_version = m_source->GetVersion();
+			cacheItem.m_u.m_uint32 = StringUtils::ParseUInt32(p);
+		}
+
+		return cacheItem.m_u.m_uint32;
 	}
 	
 	size_t		
@@ -59,9 +76,18 @@ namespace jelly
 	{
 		const Config::Info* info = Config::GetInfo(aId);
 		JELLY_ASSERT(info->m_type == Config::TYPE_SIZE);
-		const char* p = m_host->GetConfigSource()->Get(info->m_id);
-		JELLY_ASSERT(p != NULL);
-		return StringUtils::ParseSize(p);
+
+		CacheItem& cacheItem = m_cache[aId];
+
+		if (m_source->GetVersion() != cacheItem.m_version)
+		{
+			const char* p = m_source->Get(info->m_id);
+
+			cacheItem.m_version = m_source->GetVersion();
+			cacheItem.m_u.m_size = StringUtils::ParseSize(p);
+		}
+
+		return cacheItem.m_u.m_size;
 	}
 	
 	bool		
@@ -70,9 +96,18 @@ namespace jelly
 	{
 		const Config::Info* info = Config::GetInfo(aId);
 		JELLY_ASSERT(info->m_type == Config::TYPE_BOOL);
-		const char* p = m_host->GetConfigSource()->Get(info->m_id);
-		JELLY_ASSERT(p != NULL);
-		return StringUtils::ParseBool(p);
+
+		CacheItem& cacheItem = m_cache[aId];
+
+		if (m_source->GetVersion() != cacheItem.m_version)
+		{
+			const char* p = m_source->Get(info->m_id);
+
+			cacheItem.m_version = m_source->GetVersion();
+			cacheItem.m_u.m_bool = StringUtils::ParseBool(p);
+		}
+
+		return cacheItem.m_u.m_bool;
 	}
 
 }

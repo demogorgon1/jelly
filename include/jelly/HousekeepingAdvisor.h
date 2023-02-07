@@ -91,7 +91,9 @@ namespace jelly
 			IHost*				aHost,
 			const _NodeType*	aNode)
 			: m_node(aNode)
-			, m_config(aHost)
+			, m_config(aHost->GetConfigSource())
+			, m_cleanupWALsTimer(&m_config, Config::ID_MAX_CLEANUP_WAL_INTERVAL_MS)
+			, m_compactionUpdateTimer(&m_config, Config::ID_MIN_COMPACTION_INTERVAL_MS)
 		{
 			// Initialize compaction advisor
 			{
@@ -103,10 +105,7 @@ namespace jelly
 				m_compactionAdvisor = std::make_unique<CompactionAdvisor>(
 					m_node->GetNodeId(),
 					aHost,
-					m_config.GetSize(Config::ID_COMPACTION_SIZE_MEMORY),
-					m_config.GetSize(Config::ID_COMPACTION_SIZE_TREND_MEMORY),
-					m_config.GetInterval(Config::ID_COMPACTION_STRATEGY_UPDATE_INTERVAL_MS),
-					m_config.GetUInt32(Config::ID_STCS_MIN_BUCKET_SIZE),
+					&m_config,
 					compactionStrategy);
 			}
 
@@ -116,16 +115,6 @@ namespace jelly
 
 				for(ConcurrentWALState& concurrentWALState : m_concurrentWALState)
 					concurrentWALState.m_flushCooldown.SetTimeout(m_config.GetInterval(Config::ID_MIN_WAL_FLUSH_INTERVAL_MS));
-			}
-
-			// Initialize WAL cleanup timer
-			{
-				m_cleanupWALsTimer.SetTimeout(m_config.GetInterval(Config::ID_MAX_CLEANUP_WAL_INTERVAL_MS));
-			}
-
-			// Initialize compaction timer
-			{
-				m_compactionUpdateTimer.SetTimeout(m_config.GetInterval(Config::ID_MIN_COMPACTION_INTERVAL_MS));
 			}
 		}
 
@@ -199,7 +188,7 @@ namespace jelly
 				
 				// Always do a cleanup WALs event after flushing pending store
 				aEventHandler(EventCleanupWALs());
-				m_cleanupWALsTimer.SetTimeout(m_config.GetInterval(Config::ID_MAX_CLEANUP_WAL_INTERVAL_MS));
+				m_cleanupWALsTimer.Reset();
 			}
 		}
 
@@ -208,11 +197,7 @@ namespace jelly
 			EventHandler		aEventHandler)
 		{
 			if(m_cleanupWALsTimer.HasExpired())
-			{
 				aEventHandler(EventCleanupWALs());
-
-				m_cleanupWALsTimer.SetTimeout(m_config.GetInterval(Config::ID_MAX_CLEANUP_WAL_INTERVAL_MS));
-			}
 		}
 		
 		void
@@ -226,8 +211,6 @@ namespace jelly
 				CompactionJob suggestion;
 				while((suggestion = m_compactionAdvisor->GetNextSuggestion()).IsSet())
 					aEventHandler(EventPerformCompaction(suggestion));
-
-				m_compactionUpdateTimer.SetTimeout(m_config.GetInterval(Config::ID_MIN_COMPACTION_INTERVAL_MS));
 			}
 		}
 

@@ -5,13 +5,15 @@
 namespace jelly
 {
 
-	class IHost;
+	class IConfigSource;
 
+	// This acts as a cache of an IConfigSource. Contents get invalidated when
+	// IConfigSource::GetVersion() is bumped.
 	class ConfigProxy
 	{
 	public:
 								ConfigProxy(
-									IHost*			aHost);
+									IConfigSource*	aSource);
 								~ConfigProxy();
 				
 		const char*				GetString(
@@ -27,7 +29,27 @@ namespace jelly
 
 	private:					
 
-		IHost*		m_host;
+		IConfigSource*		m_source;
+
+		struct CacheItem
+		{
+			CacheItem()
+				: m_version(UINT32_MAX)
+			{
+
+			}
+
+			uint32_t		m_version;
+			
+			union _CacheItem_u
+			{
+				size_t		m_size;
+				uint32_t	m_uint32;
+				bool		m_bool;
+			} m_u;
+		};
+
+		CacheItem			m_cache[Config::NUM_IDS];
 	};
 
 }

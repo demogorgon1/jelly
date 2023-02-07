@@ -47,7 +47,7 @@ namespace jelly
 			, m_stopped(false)
 			, m_pendingStoreWALItemCount(0)
 			, m_currentCompactionIsMajor(false)
-			, m_config(aHost)
+			, m_config(aHost->GetConfigSource())
 		{
 			uint32_t walConcurrency = m_config.GetUInt32(Config::ID_WAL_CONCURRENCY);
 			for(uint32_t i = 0; i < walConcurrency; i++)

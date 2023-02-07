@@ -6,7 +6,9 @@ namespace jelly
 {
 
 	DefaultConfigSource::DefaultConfigSource()
+		: m_version(0)
 	{
+
 		for (uint32_t i = 0; i < (uint32_t)Config::NUM_IDS; i++)
 		{
 			const jelly::Config::Info* info = jelly::Config::GetInfo(i);
@@ -29,6 +31,8 @@ namespace jelly
 	{
 		JELLY_ASSERT(aConfigId < Config::NUM_IDS);
 		m_config[aConfigId] = aValue;
+
+		m_version++;
 	}
 
 	void
@@ -36,9 +40,17 @@ namespace jelly
 	{
 		for (uint32_t i = 0; i < (uint32_t)Config::NUM_IDS; i++)
 			m_config[i].reset();
+
+		m_version++;
 	}
 
 	//--------------------------------------------------------------------------
+
+	uint32_t	
+	DefaultConfigSource::GetVersion() 
+	{
+		return m_version;
+	}
 
 	const char* 
 	DefaultConfigSource::Get(

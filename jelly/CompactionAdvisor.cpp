@@ -12,6 +12,8 @@ namespace jelly
 	namespace
 	{
 
+		// Calculates the absolute difference between two size_t values,
+		// capped at INT32_MIN/INT32_MAX.
 		constexpr int32_t
 		_GetSizeDifference(
 			size_t								aSize1,
@@ -47,16 +49,14 @@ namespace jelly
 	struct CompactionAdvisor::Internal
 	{
 		Internal(
-			size_t								aTotalSizeMemory,
-			size_t								aTotalSizeTrendMemory,
-			uint32_t							aSTCSMinBucketSize,
+			ConfigProxy*						aConfig,
 			Strategy							aStrategy)
-			: m_totalSizeBuffer(aTotalSizeMemory)
-			, m_totalSizeTrendBuffer(aTotalSizeTrendMemory)
+			: m_totalSizeBuffer(aConfig->GetSize(Config::ID_COMPACTION_SIZE_MEMORY))
+			, m_totalSizeTrendBuffer(aConfig->GetSize(Config::ID_COMPACTION_SIZE_TREND_MEMORY))
 		{
 			switch(aStrategy)
 			{
-			case STRATEGY_SIZE_TIERED:			m_compactionStrategy = std::make_unique<SizeTieredCompactionStrategy>(aSTCSMinBucketSize); break;
+			case STRATEGY_SIZE_TIERED:			m_compactionStrategy = std::make_unique<SizeTieredCompactionStrategy>(aConfig); break;
 			
 			default:				
 				JELLY_FATAL_ERROR("Invalid compaction strategy.");
@@ -73,12 +73,11 @@ namespace jelly
 	CompactionAdvisor::CompactionAdvisor(
 		uint32_t								aNodeId,
 		IHost*									aHost,
-		size_t									aTotalSizeMemory,
-		size_t									aTotalSizeTrendMemory,
-		uint32_t								aMinCompactionStrategyUpdateIntervalMS,
-		uint32_t								aSTCSMinBucketSize,
+		ConfigProxy*							aConfig,
 		Strategy								aStrategy)
 		: m_host(aHost)
+		, m_config(aConfig)
+		, m_compactionStrategyUpdateCooldown(aConfig, Config::ID_COMPACTION_STRATEGY_UPDATE_INTERVAL_MS)
 		, m_nodeId(aNodeId)
 		, m_suggestionBufferReadOffset(0)
 		, m_suggestionBufferWriteOffset(0)
@@ -86,9 +85,7 @@ namespace jelly
 	{
 		memset(m_suggestionBuffer, 0, sizeof(m_suggestionBuffer));
 
-		m_internal = std::make_unique<Internal>(aTotalSizeMemory, aTotalSizeTrendMemory, aSTCSMinBucketSize, aStrategy);
-
-		m_compactionStrategyUpdateCooldown.SetTimeout(aMinCompactionStrategyUpdateIntervalMS);
+		m_internal = std::make_unique<Internal>(aConfig, aStrategy);
 	}
 	
 	CompactionAdvisor::~CompactionAdvisor()

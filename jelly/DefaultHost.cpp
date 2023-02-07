@@ -34,7 +34,7 @@ namespace jelly
 			m_configSource = m_defaultConfigSource.get();
 		}
 
-		m_config = std::make_unique<ConfigProxy>(this);
+		m_config = std::make_unique<ConfigProxy>(m_configSource);
 
 		m_storeManager = std::make_unique<StoreManager>(aRoot, aFilePrefix);
 		m_stats = std::make_unique<Stats>(Stats::ExtraApplicationStats(aExtraApplicationStats, aExtraApplicationStatsCount));

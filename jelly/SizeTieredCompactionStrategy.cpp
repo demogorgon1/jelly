@@ -1,5 +1,6 @@
 #include <jelly/Base.h>
 
+#include <jelly/ConfigProxy.h>
 #include <jelly/ErrorUtils.h>
 
 #include "SizeTieredCompactionStrategy.h"
@@ -93,8 +94,8 @@ namespace jelly
 	}
 
 	SizeTieredCompactionStrategy::SizeTieredCompactionStrategy(
-		uint32_t											aMinBucketSizeToCompact)
-		: m_minBucketSizeToCompact(aMinBucketSizeToCompact)
+		ConfigProxy*										aConfig)
+		: m_config(aConfig)
 	{
 
 	}
@@ -115,6 +116,8 @@ namespace jelly
 	{
 		JELLY_ASSERT(aStoreInfo.size() > 0);
 
+		size_t minBucketSizeToCompact = m_config->GetSize(Config::ID_STCS_MIN_BUCKET_SIZE);
+
 		// Divide stores into buckets of roughly equal sizes
 		BucketList bucketList;
 		for(const IHost::StoreInfo& storeInfo : aStoreInfo)
@@ -123,7 +126,7 @@ namespace jelly
 		// Find buckets ripe for compaction
 		for(const Bucket* bucket : bucketList.m_buckets)
 		{
-			if(bucket->m_stores.size() >= (size_t)m_minBucketSizeToCompact)
+			if(bucket->m_stores.size() >= (size_t)minBucketSizeToCompact)
 			{
 				CompactionJob compactionJob;
 				compactionJob.m_oldestStoreId = aStoreInfo[0].m_id;

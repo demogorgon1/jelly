@@ -86,7 +86,15 @@ namespace jelly
 				_NodeType*											aNode,
 				IHost*												aHost)
 			{
-				CompactionAdvisor compactionAdvisor(aNode->GetNodeId(), aHost, 1, 1, 0, 2, CompactionAdvisor::STRATEGY_SIZE_TIERED);
+				DefaultConfigSource configSource;
+				configSource.Set(jelly::Config::ID_COMPACTION_SIZE_MEMORY, "1");
+				configSource.Set(jelly::Config::ID_COMPACTION_SIZE_TREND_MEMORY, "1");
+				configSource.Set(jelly::Config::ID_COMPACTION_STRATEGY_UPDATE_INTERVAL_MS, "0");
+				configSource.Set(jelly::Config::ID_STCS_MIN_BUCKET_SIZE, "2");
+
+				ConfigProxy config(&configSource);
+
+				CompactionAdvisor compactionAdvisor(aNode->GetNodeId(), aHost, &config, CompactionAdvisor::STRATEGY_SIZE_TIERED);
 				compactionAdvisor.Update();
 
 				CompactionJob compactionJob = compactionAdvisor.GetNextSuggestion();

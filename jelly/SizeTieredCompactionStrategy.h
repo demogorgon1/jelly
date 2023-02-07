@@ -5,13 +5,15 @@
 namespace jelly
 {
 
+	class ConfigProxy;
+
 	// Size-tiered compaction strategy (STCS) for use with the compaction advisor	
 	class SizeTieredCompactionStrategy
 		: public ICompactionStrategy
 	{
 	public:
 				SizeTieredCompactionStrategy(
-					uint32_t								aMinBucketSizeToCompact);
+					ConfigProxy*							aConfig);
 		virtual	~SizeTieredCompactionStrategy();
 
 		// ICompactionStrategy implementation
@@ -23,7 +25,7 @@ namespace jelly
 
 	private:
 
-		uint32_t		m_minBucketSizeToCompact;
+		ConfigProxy*	m_config;
 	};
 	
 }

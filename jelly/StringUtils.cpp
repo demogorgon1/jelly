@@ -103,7 +103,7 @@ namespace jelly
 			const char* aString)
 		{
 			size_t len = strlen(aString);
-			JELLY_CHECK(len != 1, "Invalid bool: %s", aString);
+			JELLY_CHECK(len == 1, "Invalid bool: %s", aString);
 
 			bool value = false;
 

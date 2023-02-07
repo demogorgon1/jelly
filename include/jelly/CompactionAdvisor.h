@@ -21,10 +21,7 @@ namespace jelly
 							CompactionAdvisor(
 								uint32_t								aNodeId,
 								IHost*									aHost,
-								size_t									aTotalSizeMemory,
-								size_t									aTotalSizeTrendMemory,
-								uint32_t								aMinCompactionStrategyUpdateIntervalMS,
-								uint32_t								aSTCSMinBucketSize,
+								ConfigProxy*							aConfig,
 								Strategy								aStrategy);
 							~CompactionAdvisor();
 
@@ -35,6 +32,7 @@ namespace jelly
 
 		uint32_t											m_nodeId;
 		IHost*												m_host;
+		ConfigProxy*										m_config;
 		Strategy											m_strategy;
 
 		Timer												m_compactionStrategyUpdateCooldown;

@@ -55,6 +55,26 @@ namespace jelly
 			void		
 			Run()
 			{	
+				// String utils
+				{
+					JELLY_ASSERT(StringUtils::ParseBool("0") == false);
+					JELLY_ASSERT(StringUtils::ParseBool("1") == true);
+					JELLY_ASSERT(StringUtils::ParseUInt32("0") == 0);
+					JELLY_ASSERT(StringUtils::ParseUInt32("123456") == 123456);
+					JELLY_ASSERT(StringUtils::ParseUInt32("4294967295") == UINT32_MAX);
+					JELLY_ASSERT(StringUtils::ParseInterval("0") == 0);
+					JELLY_ASSERT(StringUtils::ParseInterval("100") == 100);
+					JELLY_ASSERT(StringUtils::ParseInterval("1s") == 1000);
+					JELLY_ASSERT(StringUtils::ParseInterval("1s500ms") == 1500);
+					JELLY_ASSERT(StringUtils::ParseInterval("1m30s") == 60 * 1000 + 30 * 1000);
+					JELLY_ASSERT(StringUtils::ParseInterval("1h30m10s") == 60 * 60 * 1000 + 30 * 60 * 1000 + 10 * 1000);
+					JELLY_ASSERT(StringUtils::ParseSize("1KB") == 1024);
+					JELLY_ASSERT(StringUtils::ParseSize("1 KB") == 1024);
+					JELLY_ASSERT(StringUtils::ParseSize("1k") == 1024);
+					JELLY_ASSERT(StringUtils::ParseSize("2MB") == 1024 * 1024 * 2);
+					JELLY_ASSERT(StringUtils::ParseSize("1G") == 1024 * 1024 * 1024);
+				}
+
 				// Var size uints
 				{
 					{

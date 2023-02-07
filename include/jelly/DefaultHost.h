@@ -22,17 +22,13 @@ namespace jelly
 		 * \param aRoot				          Path to directory where database files should be stored.
 		 * \param aFilePrefix		          String the will prefixed to database files. Useful if you're storing multiple databases in the same directory.
 		 * \param aConfigSource				  Configuration source interface.
-		 * \param aCompressionId	          Specifies compression algorithm.
-		 * \param aBufferCompressionLevel	  Blob compression level in the range of 1 (lowest, fastest) to 9 (highest, slowest). A compression level of 1 is usually plenty when using ZSTD and is very fast.
 		 * \param aExtraApplicationStats      Pointer to application-defined statistics.
 		 * \param aExtraApplicationStatsCount Number of elements pointed to by aExtraApplicationStats.
 		 */
 								DefaultHost(	
-									const char*					aRoot,
-									const char*					aFilePrefix,
-									IConfigSource*				aConfigSource,
-									Compression::Id				aCompressionId,
-									uint32_t					aBufferCompressionLevel = 0,
+									const char*					aRoot = ".",
+									const char*					aFilePrefix = "",
+									IConfigSource*				aConfigSource = NULL,
 									const Stat::Info*			aExtraApplicationStats = NULL,
 									uint32_t					aExtraApplicationStatsCount = 0);
 		virtual					~DefaultHost();
@@ -99,6 +95,7 @@ namespace jelly
 		std::unique_ptr<StoreManager>			m_storeManager;
 		std::unique_ptr<IStats>					m_stats;
 		std::unique_ptr<DefaultConfigSource>	m_defaultConfigSource;
+		std::unique_ptr<ConfigProxy>			m_config;
 	};
 
 }

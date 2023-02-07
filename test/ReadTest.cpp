@@ -17,11 +17,7 @@ namespace jelly
 			{			
 				typedef BlobNode<UIntKey<uint32_t>, Blob<1>> BlobNodeType;
 
-				#if defined(JELLY_ZSTD)
-					DefaultHost host(".", "wrtest", NULL, Compression::ID_ZSTD);
-				#else
-					DefaultHost host(".", "wrtest", NULL, Compression::ID_NO_COMPRESSION);
-				#endif
+				DefaultHost host(".", "wrtest", NULL);
 
 				if(aConfig->m_readTestBlobCountMemoryLimit != UINT32_MAX)
 					host.GetDefaultConfigSource()->Set(jelly::Config::ID_MAX_RESIDENT_BLOB_SIZE, StringUtils::Format("%u", aConfig->m_readTestBlobCountMemoryLimit).c_str());

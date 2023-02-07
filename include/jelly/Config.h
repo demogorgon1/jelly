@@ -17,6 +17,10 @@ namespace jelly
 		//! Configuration value ids.
 		enum Id : uint32_t
 		{
+			// DefaultHost
+			ID_COMPRESSION_METHOD,
+			ID_COMPRESSION_LEVEL,
+
 			// Node
 			ID_WAL_SIZE_LIMIT,
 			ID_WAL_CONCURRENCY,
@@ -65,6 +69,9 @@ namespace jelly
 		{
 			//                                              | m_type       | m_id                                    | m_default    | m_requiresRestart
 			//----------------------------------------------+--------------+-----------------------------------------+--------------+--------------------
+			/* ID_COMPRESSION_METHOD */				        { TYPE_STRING,  "compression_method",                      "zstd",        true },
+			/* ID_COMPRESSION_LEVEL */                      { TYPE_UINT32,  "compression_level",				       "1",           true },
+
 			/* ID_WAL_SIZE_LIMIT */                         { TYPE_SIZE,     "wal_size_limit",                         "64MB",        true },
 			/* ID_WAL_CONCURRENCY */                        { TYPE_UINT32,   "wal_concurrency",                        "1",           true },
 											                				  					                  				     

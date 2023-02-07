@@ -1,6 +1,7 @@
 #include <jelly/Base.h>
 
 #include <jelly/Compression.h>
+#include <jelly/ConfigProxy.h>
 #include <jelly/DefaultConfigSource.h>
 #include <jelly/DefaultHost.h>
 #include <jelly/ErrorUtils.h>
@@ -21,8 +22,6 @@ namespace jelly
 		const char*					aRoot,
 		const char*					aFilePrefix,
 		IConfigSource*				aConfigSource,
-		Compression::Id				aCompressionId,
-		uint32_t					aBufferCompressionLevel,
 		const Stat::Info*			aExtraApplicationStats,
 		uint32_t					aExtraApplicationStatsCount)
 		: m_root(aRoot)
@@ -35,22 +34,23 @@ namespace jelly
 			m_configSource = m_defaultConfigSource.get();
 		}
 
+		m_config = std::make_unique<ConfigProxy>(this);
+
 		m_storeManager = std::make_unique<StoreManager>(aRoot, aFilePrefix);
 		m_stats = std::make_unique<Stats>(Stats::ExtraApplicationStats(aExtraApplicationStats, aExtraApplicationStatsCount));
 
-		switch(aCompressionId)
 		{
-		case Compression::ID_ZSTD:		
-			#if defined(JELLY_ZSTD)
-				m_compressionProvider = std::make_unique<ZstdCompression>(aBufferCompressionLevel); 				
-			#else
-				JELLY_UNUSED(aBufferCompressionLevel);
-				JELLY_ASSERT(false);
-			#endif
-			break;
-
-		default:
-			break;
+			const char* compressionMethod = m_config->GetString(Config::ID_COMPRESSION_METHOD);
+			if(strcmp(compressionMethod, "zstd") == 0)
+			{
+				#if defined(JELLY_ZSTD)
+					m_compressionProvider = std::make_unique<ZstdCompression>(m_config->GetUInt32(Config::ID_COMPRESSION_LEVEL)); 				
+				#endif
+			}
+			else
+			{
+				JELLY_FATAL_ERROR("Invalid compression method: %s", compressionMethod);
+			}
 		}
 	}
 	

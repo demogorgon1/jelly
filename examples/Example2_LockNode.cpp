@@ -14,8 +14,7 @@ main(
 	jelly::DefaultHost host(
 		".",									// Put database files here.
 		"example2",								// Database files will be prefixed with this.
-		NULL,									// Use default configuration.
-		jelly::Compression::ID_NO_COMPRESSION);	// Don't use compression.
+		NULL);									// Use default configuration.
 
 	// Make sure the database is gone.
 	host.DeleteAllFiles();

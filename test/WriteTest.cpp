@@ -40,11 +40,7 @@ namespace jelly
 				{
 					typedef BlobNode<UIntKey<uint32_t>, Blob<1>> BlobNodeType;
 
-					#if defined(JELLY_ZSTD)
-						DefaultHost host(".", "wrtest", NULL, Compression::ID_ZSTD, aConfig->m_writeTestBufferCompressionLevel);
-					#else
-						DefaultHost host(".", "wrtest", NULL, Compression::ID_NO_COMPRESSION);
-					#endif
+					DefaultHost host(".", "wrtest", NULL);
 
 					host.DeleteAllFiles(UINT32_MAX);
 

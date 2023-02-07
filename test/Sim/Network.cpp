@@ -18,8 +18,6 @@ namespace jelly::Test::Sim
 			aWorkingDirectory, 
 			"simtest", 
 			NULL,
-			Compression::ID_ZSTD, 
-			aConfig->m_simBufferCompressionLevel, 
 			Stats::GetExtraApplicationStats(),
 			Stats::GetExtraApplicationStatsCount())
 		, m_config(aConfig)

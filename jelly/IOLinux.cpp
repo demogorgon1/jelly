@@ -64,7 +64,7 @@ namespace jelly
 			JELLY_CHECK(m_handle.IsSet(), "open() failed: %u (path: %s)", errno, aPath);
 
 			int result = flock(m_handle, LOCK_EX | LOCK_NB);
-			JELLY_CHECK(m_handle.IsSet(), "flock() failed: %u (path: %s)", errno, aPath);
+			JELLY_CHECK(result == 0, "flock() failed: %u (path: %s)", errno, aPath);
 		}
 		
 		FileLock::~FileLock()

@@ -55,6 +55,30 @@ namespace jelly
 
 		//-----------------------------------------------------------------------------------
 
+		FileLock::FileLock(
+			const char*			aPath)
+			: m_path(aPath)
+		{
+			m_handle = open(m_path.GetBuffer(), O_RDWR | O_CREAT, 0666);
+			JELLY_CHECK(m_handle.IsSet(), "open() failed: %u (path: %s)", errno, aPath);
+
+			int result = flock(m_handle, LOCK_EX | LOCK_NB);
+			JELLY_CHECK(m_handle.IsSet(), "flock() failed: %u (path: %s)", errno, aPath);
+		}
+		
+		FileLock::~FileLock()
+		{
+			flock(m_handle, LOCK_UN);
+
+			m_handle.Release();
+
+			// Try to delete the file, but it could fail if someone else took the lock already
+			std::error_code result;
+			std::filesystem::remove(m_path.c_str(), result);
+		}
+
+		//-----------------------------------------------------------------------------------
+
 		FileReadRandom::FileReadRandom(
 			const char*			aPath)
 		{

@@ -10,6 +10,7 @@ namespace jelly
 
 	struct FileStatsContext;
 
+	class File;
 	class IConfigSource;
 	class IFileStreamReader;
 	class IStats;
@@ -109,6 +110,9 @@ namespace jelly
 											uint32_t				aNodeId,
 											uint32_t				aId) = 0;
 
+		//! Locks a node with a file lock. 
+		virtual File*					CreateNodeLock(
+											uint32_t				aNodeId) = 0;
 	};
 
 }

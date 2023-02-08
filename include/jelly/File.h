@@ -20,7 +20,8 @@ namespace jelly
 		{
 			MODE_READ_STREAM,
 			MODE_READ_RANDOM,
-			MODE_WRITE_STREAM
+			MODE_WRITE_STREAM,
+			MODE_MUTEX
 		};
 
 					File(
@@ -29,6 +30,7 @@ namespace jelly
 						Mode				aMode);
 					~File();
 
+		void		Close();
 		bool		IsValid() const;
 		size_t		GetSize() const;
 		size_t		Flush();

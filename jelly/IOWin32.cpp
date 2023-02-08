@@ -53,6 +53,38 @@ namespace jelly
 
 		//-----------------------------------------------------------------------------------
 
+		FileLock::FileLock(
+			const char*			aPath)
+			: m_path(aPath)
+		{
+			DWORD desiredAccess = GENERIC_READ | GENERIC_WRITE;
+			DWORD shareMode = 0;
+			DWORD creationDisposition = CREATE_ALWAYS;
+			DWORD flags = 0;
+
+			m_handle = CreateFileA(aPath, desiredAccess, shareMode, NULL, creationDisposition, flags, NULL);
+			if (!m_handle.IsSet())
+			{
+				DWORD errorCode = GetLastError();
+
+				if(errorCode == ERROR_SHARING_VIOLATION)
+					JELLY_FATAL_ERROR("Unable to acquire file lock: %s", aPath);
+				else
+					JELLY_FATAL_ERROR("CreatefileA() failed: %u (path: %s)", errorCode, aPath);
+			}
+		}
+		
+		FileLock::~FileLock()
+		{
+			m_handle.Release();
+
+			// Try to delete the file, but it could fail if someone else took the lock already
+			std::error_code result;
+			std::filesystem::remove(m_path.c_str(), result);
+		}
+
+		//-----------------------------------------------------------------------------------
+
 		FileReadRandom::FileReadRandom(
 			const char*			aPath)
 		{

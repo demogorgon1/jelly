@@ -49,9 +49,13 @@ namespace jelly
 			, m_currentCompactionIsMajor(false)
 			, m_config(aHost->GetConfigSource())
 		{
+			{
+				// Make sure that no other node operates at the same root, with the same node id
+				m_fileLock.reset(aHost->CreateNodeLock(aNodeId));
+			}
+
 			uint32_t walConcurrency = m_config.GetUInt32(Config::ID_WAL_CONCURRENCY);
-			for(uint32_t i = 0; i < walConcurrency; i++)
-				m_pendingWALs.push_back(NULL);
+			m_pendingWALs.resize((size_t)walConcurrency, NULL);
 		}
 
 		~Node()
@@ -627,6 +631,8 @@ namespace jelly
 		std::mutex													m_currentCompactionStoreIdsLock;
 		std::unordered_set<uint32_t>								m_currentCompactionStoreIds;
 		bool														m_currentCompactionIsMajor;
+
+		std::unique_ptr<File>										m_fileLock;
 
 		WAL*
 		_GetPendingWAL(

@@ -705,6 +705,13 @@ namespace jelly
 			m_storeMap.erase(i);
 		}
 
+		File* 
+		MemoryHost::CreateNodeLock(
+			uint32_t					/*aNodeId*/) 
+		{
+			return NULL;
+		}
+
 	}
 
 }

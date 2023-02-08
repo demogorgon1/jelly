@@ -39,6 +39,21 @@ namespace jelly
 
 		//-----------------------------------------------------------------------------------
 
+		class FileLock
+		{
+		public:
+							FileLock(
+								const char*			aPath);
+							~FileLock();
+
+		private:
+
+			Handle								m_handle;
+			std::string							m_path;
+		};
+
+		//-----------------------------------------------------------------------------------
+
 		class FileReadRandom
 		{
 		public:

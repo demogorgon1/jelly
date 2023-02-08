@@ -1,5 +1,6 @@
 #pragma once
 
+#include "File.h"
 #include "IHost.h"
 #include "IStats.h"
 #include "StoreManager.h"
@@ -82,6 +83,8 @@ namespace jelly
 		void					DeleteStore(
 									uint32_t					aNodeId,
 									uint32_t					aId) override;
+		File*					CreateNodeLock(
+									uint32_t					aNodeId) override;
 
 		// Data access
 		DefaultConfigSource*	GetDefaultConfigSource() { JELLY_ASSERT(m_defaultConfigSource); return m_defaultConfigSource.get(); }
@@ -96,6 +99,7 @@ namespace jelly
 		std::unique_ptr<IStats>					m_stats;
 		std::unique_ptr<DefaultConfigSource>	m_defaultConfigSource;
 		std::unique_ptr<ConfigProxy>			m_config;
+		std::unique_ptr<File>					m_fileLock;
 	};
 
 }

@@ -40,6 +40,7 @@ namespace jelly
 			case MODE_READ_STREAM:			m_fileReadStream = std::make_unique<FileReadStream>(aPath); break;
 			case MODE_READ_RANDOM:			m_fileReadRandom = std::make_unique<FileReadRandom>(aPath); break;
 			case MODE_WRITE_STREAM:			m_fileWriteStream = std::make_unique<FileWriteStream>(aPath); break;
+			case MODE_MUTEX:				m_fileLock = std::make_unique<FileLock>(aPath); break;
 			default:						JELLY_ASSERT(false);
 			}
 		}
@@ -54,6 +55,7 @@ namespace jelly
 		std::unique_ptr<FileWriteStream>	m_fileWriteStream;
 		std::unique_ptr<FileReadStream>		m_fileReadStream;
 		std::unique_ptr<FileReadRandom>		m_fileReadRandom;
+		std::unique_ptr<FileLock>			m_fileLock;
 	};
 
 	//---------------------------------------------------------------------
@@ -70,12 +72,25 @@ namespace jelly
 		
 	File::~File()
 	{
-		delete m_internal;
+		Close();
+	}
+
+	void		
+	File::Close()
+	{
+		if(m_internal != NULL)
+		{
+			delete m_internal;
+			m_internal = NULL;
+		}
 	}
 
 	bool	
 	File::IsValid() const
 	{
+		if(m_internal == NULL)
+			return false;
+
 		if(m_internal->m_fileWriteStream)
 			return true;
 		else if(m_internal->m_fileReadStream)
@@ -90,6 +105,7 @@ namespace jelly
 	size_t	
 	File::GetSize() const
 	{
+		JELLY_ASSERT(m_internal != NULL);
 		if(m_internal->m_fileWriteStream)
 			return m_internal->m_fileWriteStream->GetTotalBytesWritten();
 		if (m_internal->m_fileReadStream)
@@ -102,6 +118,7 @@ namespace jelly
 	size_t
 	File::Flush()
 	{
+		JELLY_ASSERT(m_internal != NULL);
 		JELLY_ASSERT(m_internal->m_mode == MODE_WRITE_STREAM);
 		JELLY_ASSERT(m_internal->m_fileWriteStream);
 
@@ -114,6 +131,7 @@ namespace jelly
 		void*			aBuffer,
 		size_t			aBufferSize)
 	{
+		JELLY_ASSERT(m_internal != NULL);
 		JELLY_ASSERT(m_internal->m_mode == MODE_READ_RANDOM);
 		JELLY_ASSERT(m_internal->m_fileReadRandom);
 
@@ -130,6 +148,7 @@ namespace jelly
 		const void*		aBuffer,
 		size_t			aBufferSize) 
 	{
+		JELLY_ASSERT(m_internal != NULL);
 		JELLY_ASSERT(m_internal->m_mode == MODE_WRITE_STREAM);
 		JELLY_ASSERT(m_internal->m_fileWriteStream);
 
@@ -144,6 +163,7 @@ namespace jelly
 	size_t		
 	File::GetTotalBytesWritten() const 
 	{
+		JELLY_ASSERT(m_internal != NULL);
 		return m_internal->m_fileWriteStream->GetTotalBytesWritten();
 	}
 
@@ -154,6 +174,7 @@ namespace jelly
 		void*			aBuffer,
 		size_t			aBufferSize) 
 	{
+		JELLY_ASSERT(m_internal != NULL);
 		JELLY_ASSERT(m_internal->m_mode == MODE_READ_STREAM);
 		JELLY_ASSERT(m_internal->m_fileReadStream);
 
@@ -168,6 +189,7 @@ namespace jelly
 	size_t		
 	File::GetTotalBytesRead() const 
 	{
+		JELLY_ASSERT(m_internal != NULL);
 		return m_internal->m_fileReadStream->GetTotalBytesRead();
 	}
 

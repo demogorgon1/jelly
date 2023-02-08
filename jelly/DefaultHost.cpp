@@ -5,7 +5,9 @@
 #include <jelly/DefaultConfigSource.h>
 #include <jelly/DefaultHost.h>
 #include <jelly/ErrorUtils.h>
+#include <jelly/File.h>
 #include <jelly/IStats.h>
+#include <jelly/StringUtils.h>
 #include <jelly/ZstdCompression.h>
 
 #include "FileStreamReader.h"
@@ -28,6 +30,12 @@ namespace jelly
 		, m_filePrefix(aFilePrefix)
 		, m_configSource(aConfigSource)
 	{
+		{
+			// Make sure that no other host operates in the same root
+			std::string fileLockPath = StringUtils::Format("%s/%shost.lck", aRoot, aFilePrefix);
+			m_fileLock = std::make_unique<File>(nullptr, fileLockPath.c_str(), File::MODE_MUTEX);
+		}
+
 		if(m_configSource == NULL)
 		{
 			m_defaultConfigSource = std::make_unique<DefaultConfigSource>();
@@ -315,6 +323,13 @@ namespace jelly
 		uint32_t					aId) 
 	{
 		m_storeManager->DeleteStore(aNodeId, aId);
+	}
+
+	File* 
+	DefaultHost::CreateNodeLock(
+		uint32_t					aNodeId) 
+	{
+		return new File(NULL, StringUtils::Format("%s/%snode-%u.lck", m_root.c_str(), m_filePrefix.c_str(), aNodeId).c_str(), File::MODE_MUTEX);
 	}
 
 }

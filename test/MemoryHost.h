@@ -57,6 +57,8 @@ namespace jelly
 			void					DeleteStore(
 										uint32_t					aNodeId,
 										uint32_t					aId) override;
+			File*					CreateNodeLock(
+										uint32_t					aNodeId) override;
 
 			// Data access
 			DefaultConfigSource*	GetDefaultConfigSource() { return &m_defaultConfigSource; }

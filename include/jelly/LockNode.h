@@ -101,6 +101,8 @@ namespace jelly
 
 			aRequest->SetExecutionCallback([=, this]()
 			{
+				ScopedTimeSampler timerSampler(this->m_host->GetStats(), Stat::ID_LOCK_TIME);
+
 				aRequest->SetResult(_Lock(aRequest));
 			});
 
@@ -124,6 +126,8 @@ namespace jelly
 
 			aRequest->SetExecutionCallback([=, this]()
 			{
+				ScopedTimeSampler timerSampler(this->m_host->GetStats(), Stat::ID_UNLOCK_TIME);
+				
 				aRequest->SetResult(_Unlock(aRequest));
 			});
 
@@ -145,6 +149,8 @@ namespace jelly
 
 			aRequest->SetExecutionCallback([=, this]()
 			{
+				ScopedTimeSampler timerSampler(this->m_host->GetStats(), Stat::ID_LOCK_DELETE_TIME);
+
 				aRequest->SetResult(_Delete(aRequest));
 			});
 

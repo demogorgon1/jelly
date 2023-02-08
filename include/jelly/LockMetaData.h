@@ -10,6 +10,9 @@ namespace jelly
 	namespace LockMetaData
 	{
 
+		/**
+		 * \brief Lock node meta data for when every lock key maps directly to a single blob
+		 */
 		template <size_t _MaxBlobNodeIds = 1>
 		struct StaticSingleBlob
 		{
@@ -59,9 +62,9 @@ namespace jelly
 			}
 
 			// Public data
-			uint32_t							m_blobNodeIds[_MaxBlobNodeIds];
-			uint32_t							m_blobSeq; 
-			uint32_t							m_blobNodeIdCount;
+			uint32_t							m_blobNodeIds[_MaxBlobNodeIds];	//!< Blob node ids where blob is stored.
+			uint32_t							m_blobSeq;						//!< Latest blob sequence number.
+			uint32_t							m_blobNodeIdCount;				//!< Number of entries in the m_blobNodeIds array.
 		};
 
 	}

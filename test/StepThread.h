@@ -2,6 +2,8 @@
 
 #include <random>
 
+#include <jelly/StringUtils.h>
+
 namespace jelly
 {
 

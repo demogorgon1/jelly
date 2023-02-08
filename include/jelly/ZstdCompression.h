@@ -7,7 +7,9 @@
 namespace jelly
 {
 
-	// ZSTD compression provider
+	/**
+	 * \brief ZSTD implementation of Compression::IProvider.
+	 */
 	class ZstdCompression
 		: public Compression::IProvider
 	{

@@ -1,5 +1,7 @@
 #include <jelly/API.h>
 
+#include <jelly/StringUtils.h>
+
 #include "Config.h"
 
 namespace jelly

@@ -49,6 +49,12 @@ namespace jelly
 			ID_TOTAL_HOST_WAL_SIZE,
 			ID_TOTAL_HOST_STORE_SIZE,
 			ID_AVAILABLE_DISK_SPACE,
+			ID_BLOB_SET_TIME,
+			ID_BLOB_GET_TIME,
+			ID_BLOB_DELETE_TIME,
+			ID_LOCK_TIME,
+			ID_UNLOCK_TIME,
+			ID_LOCK_DELETE_TIME,
 
 			NUM_IDS
 		};
@@ -118,7 +124,13 @@ namespace jelly
 			/* ID_TOTAL_RESIDENT_BLOB_COUNT */          { TYPE_GAUGE,   "total_resident_blob_count",          0,          {} },
 			/* ID_TOTAL_HOST_WAL_SIZE */				{ TYPE_GAUGE,   "total_host_wal_size",                0,          {} },
 			/* ID_TOTAL_HOST_STORE_SIZE */              { TYPE_GAUGE,   "total_host_store_size",		      0,          {} },
-			/* ID_AVAILABLE_DISK_SPACE */               { TYPE_GAUGE,   "available_disk_space",               0,          {} }
+			/* ID_AVAILABLE_DISK_SPACE */               { TYPE_GAUGE,   "available_disk_space",               0,          {} },
+			/* ID_BLOB_SET_TIME */						{ TYPE_SAMPLER, "blob_set_time",                      0,          TIME_SAMPLER_HISTOGRAM_BUCKETS },
+			/* ID_BLOB_GET_TIME */						{ TYPE_SAMPLER, "blob_get_time",                      0,          TIME_SAMPLER_HISTOGRAM_BUCKETS },
+			/* ID_BLOB_DELETE_TIME */					{ TYPE_SAMPLER, "blob_delete_time",                   0,          TIME_SAMPLER_HISTOGRAM_BUCKETS },
+			/* ID_LOCK_TIME */					        { TYPE_SAMPLER, "lock_time",                          0,          TIME_SAMPLER_HISTOGRAM_BUCKETS },
+			/* ID_UNLOCK_TIME */					    { TYPE_SAMPLER, "unlock_time",                        0,          TIME_SAMPLER_HISTOGRAM_BUCKETS },
+			/* ID_LOCK_DELETE_TIME */					{ TYPE_SAMPLER, "lock_delete_time",                   0,          TIME_SAMPLER_HISTOGRAM_BUCKETS }
 		};
 		
 		static_assert(sizeof(INFO) == sizeof(Info) * (size_t)NUM_IDS);

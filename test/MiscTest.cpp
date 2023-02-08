@@ -2,6 +2,8 @@
 
 #include <jelly/API.h>
 
+#include <jelly/StringUtils.h>
+
 namespace jelly
 {
 

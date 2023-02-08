@@ -111,6 +111,8 @@ namespace jelly
 
 			aRequest->SetExecutionCallback([=, this]()
 			{
+				ScopedTimeSampler timerSampler(this->m_host->GetStats(), Stat::ID_BLOB_SET_TIME);
+
 				aRequest->SetResult(_Update(aRequest, false)); // Update: Set
 			});
 
@@ -123,11 +125,11 @@ namespace jelly
 		 * Input  | <!-- -->
 		 * -------|-----------------------------------------------------------------------------------------------
 		 * m_key  | Request key.
-		 * m_seq  | Minimum sequence number of the blob (REUSLT_OUTDATED if sequence number isn't at least this).
+		 * m_seq  | Minimum sequence number of the blob (RESULT_OUTDATED if sequence number isn't at least this).
 		 * m_blob | The blob.
 		 * 
 		 * Output | <!-- -->
-		 * -------|-----------------------------------------------------------------------------------
+		 * -------|-----------------------------------------------------------------------------------------------
 		 * m_blob | The blob.
 		 * m_seq  | Returns the stored sequence number.
 		 */
@@ -139,6 +141,8 @@ namespace jelly
 
 			aRequest->SetExecutionCallback([=, this]()
 			{
+				ScopedTimeSampler timerSampler(this->m_host->GetStats(), Stat::ID_BLOB_GET_TIME);
+
 				aRequest->SetResult(_Get(aRequest));
 			});
 
@@ -154,7 +158,7 @@ namespace jelly
 		* m_seq  | Sequence number of the blob being deleted.
 		*
 		* Output | <!-- -->
-		* -------|-----------------------------------------------------------------------------------
+		* -------|-----------------------------------------------------------------------------------------------
 		* m_blob | The blob.
 		* m_seq  | If RESULT_OUTDATED this returns the sequence number of the currently stored blob.
 		*/
@@ -166,6 +170,8 @@ namespace jelly
 
 			aRequest->SetExecutionCallback([=, this]()
 			{
+				ScopedTimeSampler timerSampler(this->m_host->GetStats(), Stat::ID_BLOB_DELETE_TIME);
+
 				aRequest->SetResult(_Update(aRequest, true)); // Update: Delete
 			});
 

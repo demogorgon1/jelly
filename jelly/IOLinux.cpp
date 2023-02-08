@@ -2,6 +2,7 @@
 
 #if !defined(_WIN32)
 
+#include <sys/file.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -59,7 +60,7 @@ namespace jelly
 			const char*			aPath)
 			: m_path(aPath)
 		{
-			m_handle = open(m_path.GetBuffer(), O_RDWR | O_CREAT, 0666);
+			m_handle = open(aPath, O_RDWR | O_CREAT, 0666);
 			JELLY_CHECK(m_handle.IsSet(), "open() failed: %u (path: %s)", errno, aPath);
 
 			int result = flock(m_handle, LOCK_EX | LOCK_NB);

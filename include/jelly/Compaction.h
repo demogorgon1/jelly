@@ -29,9 +29,6 @@ namespace jelly
 			if(!f1 || !f2)
 				return; // Could be that the stores no longer exists, just don't do anything then
 
-			std::unique_ptr<CompactionRedirect<_KeyType, _STLKeyHasher>> compactionRedirect1(new CompactionRedirect<_KeyType, _STLKeyHasher>());
-			std::unique_ptr<CompactionRedirect<_KeyType, _STLKeyHasher>> compactionRedirect2(new CompactionRedirect<_KeyType, _STLKeyHasher>());
-
 			{
 				uint32_t newStoreId = aNode->CreateStoreId();
 
@@ -59,7 +56,7 @@ namespace jelly
 					{
 						uint64_t offset = item1.CompactionWrite(aOldestStoreId, fOut.get());
 						if(offset != UINT64_MAX)
-							compactionRedirect1->AddEntry(item1.GetKey(), newStoreId, offset);
+							aOut->AddItem(item1.GetKey(), item1.GetSeq(), newStoreId, offset);
 
 						item1.Reset();
 						hasItem1 = false;
@@ -68,7 +65,7 @@ namespace jelly
 					{
 						uint64_t offset = item2.CompactionWrite(aOldestStoreId, fOut.get());
 						if (offset != UINT64_MAX)
-							compactionRedirect2->AddEntry(item2.GetKey(), newStoreId, offset);
+							aOut->AddItem(item2.GetKey(), item2.GetSeq(), newStoreId, offset);
 
 						item2.Reset();
 						hasItem2 = false;
@@ -81,7 +78,7 @@ namespace jelly
 						{
 							uint64_t offset = item1.CompactionWrite(aOldestStoreId, fOut.get());
 							if (offset != UINT64_MAX)
-								compactionRedirect1->AddEntry(item1.GetKey(), newStoreId, offset);
+								aOut->AddItem(item1.GetKey(), item1.GetSeq(), newStoreId, offset);
 
 							item1.Reset();
 							hasItem1 = false;
@@ -90,7 +87,7 @@ namespace jelly
 						{
 							uint64_t offset = item2.CompactionWrite(aOldestStoreId, fOut.get());
 							if (offset != UINT64_MAX)
-								compactionRedirect2->AddEntry(item2.GetKey(), newStoreId, offset);
+								aOut->AddItem(item2.GetKey(), item2.GetSeq(), newStoreId, offset);
 
 							item2.Reset();
 							hasItem2 = false;
@@ -99,17 +96,21 @@ namespace jelly
 						{
 							// Items are the same - keep the one with the highest sequence number
 							size_t offset = UINT64_MAX;
+							uint32_t seq = 0;
 
 							if (item1.GetSeq() > item2.GetSeq())
+							{
+								seq = item1.GetSeq();
 								offset = item1.CompactionWrite(aOldestStoreId, fOut.get());
+							}
 							else
+							{
+								seq = item2.GetSeq();
 								offset = item2.CompactionWrite(aOldestStoreId, fOut.get());
+							}
 
 							if (offset != UINT64_MAX)
-							{
-								compactionRedirect1->AddEntry(item1.GetKey(), newStoreId, offset);
-								compactionRedirect2->AddEntry(item2.GetKey(), newStoreId, offset);
-							}
+								aOut->AddItem(item1.GetKey(), seq, newStoreId, offset);
 
 							hasItem1 = false;
 							hasItem2 = false;
@@ -122,9 +123,6 @@ namespace jelly
 
 				fOut->Flush();
 			}
-
-			aOut->AddCompactedStore(aStoreId1, compactionRedirect1.release());
-			aOut->AddCompactedStore(aStoreId2, compactionRedirect2.release());
 		}
 
 		// Do a compaction of more than 2 stores
@@ -142,18 +140,16 @@ namespace jelly
 			{
 				SourceStore(
 					uint32_t							aStoreId,
-					IFileStreamReader* aFileStreamReader)
+					IFileStreamReader*					aFileStreamReader)
 					: m_hasItem(false)
 					, m_storeId(aStoreId)
 					, m_fileStreamReader(aFileStreamReader)
-					, m_redirect(new CompactionRedirect<_KeyType, _STLKeyHasher>())
 				{
 				}
 
 				uint32_t														m_storeId;
 
 				std::unique_ptr<IFileStreamReader>								m_fileStreamReader;
-				std::unique_ptr<CompactionRedirect<_KeyType, _STLKeyHasher>>	m_redirect;
 
 				_ItemType														m_item;
 				bool															m_hasItem;
@@ -234,11 +230,11 @@ namespace jelly
 
 					size_t offset = sourceItem.CompactionWrite(aOldestStoreId, outputStore.get());
 
+					if(offset != UINT64_MAX)
+						aOut->AddItem(lowestKey.value(), sourceItem.GetSeq(), newStoreId, offset);
+
 					for (SourceStore* lowestKeyStore : lowestKeySourceStores)
 					{
-						if (offset != UINT64_MAX)
-							lowestKeyStore->m_redirect->AddEntry(lowestKey.value(), newStoreId, offset);
-
 						JELLY_ASSERT(lowestKeyStore->m_hasItem);
 						lowestKeyStore->m_hasItem = false;
 
@@ -246,11 +242,6 @@ namespace jelly
 					}
 				}
 			}
-
-			// Finally add compacted store redirections to the output
-			for (std::unique_ptr<SourceStore>& sourceStore : sourceStores)
-				aOut->AddCompactedStore(sourceStore->m_storeId, sourceStore->m_redirect.release());
-
 		}
 
 		// Do a "minor" compaction 
@@ -261,6 +252,8 @@ namespace jelly
 			const CompactionJob&						aCompactionJob,
 			CompactionResult<_KeyType, _STLKeyHasher>*	aOut)
 		{
+			aOut->SetStoreIds(aCompactionJob.m_storeIds);
+
 			if(aCompactionJob.m_storeIds.size() == 2)
 				PerformOnTwoStores<_KeyType, _ItemType, _STLKeyHasher, _NodeType>(aNode, aCompactionJob.m_oldestStoreId, aCompactionJob.m_storeIds[0], aCompactionJob.m_storeIds[1], aOut);
 			else
@@ -286,6 +279,8 @@ namespace jelly
 				std::vector<uint32_t> storeIds;
 				for(size_t i = 0; i < storeInfo.size() - 1; i++)
 					storeIds.push_back(storeInfo[i].m_id);
+
+				aOut->SetStoreIds(storeIds);
 
 				if (storeIds.size() == 2)
 					PerformOnTwoStores<_KeyType, _ItemType, _STLKeyHasher, _NodeType>(aNode, oldestStoreId, storeIds[0], storeIds[1], aOut);

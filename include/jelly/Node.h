@@ -68,8 +68,8 @@ namespace jelly
 			for(typename TableType::iterator i = m_table.begin(); i != m_table.end(); i++)
 				delete i->second;
 
-			for(typename CompactionRedirectMap::iterator i = m_compactionRedirectMap.begin(); i != m_compactionRedirectMap.end(); i++)
-				delete i->second;
+			//for(typename CompactionRedirectMap::iterator i = m_compactionRedirectMap.begin(); i != m_compactionRedirectMap.end(); i++)
+			//	delete i->second;
 		}
 
 		/**
@@ -389,21 +389,23 @@ namespace jelly
 		{
 			ScopedTimeSampler timeSampler(m_host->GetStats(), m_statsContext.m_idApplyCompactionTime);
 
-			std::vector<uint32_t> deletedStoreIds;
+			size_t updatedItemCount = 0;
 
-			for(typename CompactionResultType::CompactedStore* compactedStore : aCompactionResult->GetCompactedStores())
+			for(const CompactionResultType::Item& compactionResultItem : aCompactionResult->GetItems())
 			{
-				if(compactedStore->m_redirect)
-				{	
-					JELLY_ASSERT(m_currentCompactionIsMajor || m_compactionRedirectMap.find(compactedStore->m_storeId) == m_compactionRedirectMap.end());
-					
-					m_compactionRedirectMap[compactedStore->m_storeId] = compactedStore->m_redirect.release();
+				_ItemType* item;
+				bool ok = GetItem(compactionResultItem.m_key, item);
+				JELLY_ASSERT(ok);
+
+				if(compactionResultItem.m_seq == item->GetSeq())
+				{
+					item->CompactionUpdate(compactionResultItem.m_storeId, compactionResultItem.m_storeOffset);
+					updatedItemCount++;
 				}
-
-				m_host->DeleteStore(m_nodeId, compactedStore->m_storeId);
-
-				deletedStoreIds.push_back(compactedStore->m_storeId);
 			}
+
+			for (uint32_t storeId : aCompactionResult->GetStoreIds())
+				m_host->DeleteStore(m_nodeId, storeId);
 
 			{
 				std::lock_guard lock(m_currentCompactionStoreIdsLock);
@@ -416,7 +418,7 @@ namespace jelly
 				}
 				else
 				{
-					for (uint32_t deletedStoreId : deletedStoreIds)
+					for (uint32_t deletedStoreId : aCompactionResult->GetStoreIds())
 						m_currentCompactionStoreIds.erase(deletedStoreId);
 				}
 			}
@@ -501,8 +503,6 @@ namespace jelly
 		typedef std::unordered_map<_KeyType, _ItemType*, _STLKeyHasher> TableType;
 		typedef std::map<_KeyType, _ItemType*> PendingStoreType;
 		typedef std::function<void(uint32_t, IStoreWriter*, PendingStoreType*)> FlushPendingStoreCallback;
-		typedef CompactionRedirect<_KeyType, _STLKeyHasher> CompactionRedirectType;
-		typedef std::unordered_map<uint32_t, CompactionRedirectType*> CompactionRedirectMap;
 
 		struct StatsContext
 		{
@@ -611,7 +611,7 @@ namespace jelly
 		uint32_t													m_nextWALId;		
 		FlushPendingStoreCallback									m_flushPendingStoreCallback;
 		PendingStoreType											m_pendingStore;
-		CompactionRedirectMap										m_compactionRedirectMap;
+		//CompactionRedirectMap										m_compactionRedirectMap;
 		bool														m_stopped;
 		uint32_t													m_pendingStoreWALItemCount;
 		StatsContext												m_statsContext;

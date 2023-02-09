@@ -55,6 +55,7 @@ namespace jelly
 			ID_LOCK_TIME,
 			ID_UNLOCK_TIME,
 			ID_LOCK_DELETE_TIME,
+			ID_MEMORY_USAGE,
 
 			NUM_IDS
 		};
@@ -130,7 +131,8 @@ namespace jelly
 			/* ID_BLOB_DELETE_TIME */					{ TYPE_SAMPLER, "blob_delete_time",                   0,          TIME_SAMPLER_HISTOGRAM_BUCKETS },
 			/* ID_LOCK_TIME */					        { TYPE_SAMPLER, "lock_time",                          0,          TIME_SAMPLER_HISTOGRAM_BUCKETS },
 			/* ID_UNLOCK_TIME */					    { TYPE_SAMPLER, "unlock_time",                        0,          TIME_SAMPLER_HISTOGRAM_BUCKETS },
-			/* ID_LOCK_DELETE_TIME */					{ TYPE_SAMPLER, "lock_delete_time",                   0,          TIME_SAMPLER_HISTOGRAM_BUCKETS }
+			/* ID_LOCK_DELETE_TIME */					{ TYPE_SAMPLER, "lock_delete_time",                   0,          TIME_SAMPLER_HISTOGRAM_BUCKETS },
+			/* ID_MEMORY_USAGE */						{ TYPE_GAUGE,   "memory_usage",                       0,          {} }
 		};
 		
 		static_assert(sizeof(INFO) == sizeof(Info) * (size_t)NUM_IDS);

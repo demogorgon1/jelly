@@ -24,6 +24,18 @@ namespace jelly
 
 	}
 
+	void		
+	DefaultConfigSource::SetString(
+		const char*						aString,
+		const char*						aValue)
+	{
+		std::unordered_map<std::string, uint32_t>::const_iterator i = m_stringIdTable.find(aString);
+		JELLY_CHECK(i != m_stringIdTable.end(), "Invalid configuration id: %s", aString);
+		m_config[i->second] = aValue;
+
+		m_version++;
+	}
+
 	void
 	DefaultConfigSource::Set(
 		uint32_t						aConfigId,

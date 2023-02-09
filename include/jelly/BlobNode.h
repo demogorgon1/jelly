@@ -324,23 +324,8 @@ namespace jelly
 
 				uint32_t storeId = runtimeState.m_storeId;
 				size_t storeOffset = runtimeState.m_storeOffset;
-				IStoreBlobReader* storeBlobReader = NULL;
-				
-				for(;;)
-				{
-					storeBlobReader = this->m_host->GetStoreBlobReader(this->m_nodeId, storeId, &this->m_statsContext.m_fileStore);
-					if(storeBlobReader != NULL)
-						break;
-
-					// This store doesn't exist anymore, it was probably compacted away. Look up the compaction redirect.
-					uint32_t newStoreId;
-					if(!_GetCompactionRedirect(storeId, item->GetKey(), newStoreId, storeOffset))
-					{
-						JELLY_ASSERT(false);
-					}
-
-					storeId = newStoreId;
-				}
+				IStoreBlobReader* storeBlobReader = this->m_host->GetStoreBlobReader(this->m_nodeId, storeId, &this->m_statsContext.m_fileStore);
+				JELLY_CHECK(storeBlobReader != NULL, "Failed to open store blob reader: %u %u", this->m_nodeId, storeId);
 
 				storeBlobReader->ReadItemBlob(storeOffset, item);
 

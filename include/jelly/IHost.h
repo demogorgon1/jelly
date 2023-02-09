@@ -40,6 +40,12 @@ namespace jelly
 			bool operator<(const StoreInfo& aOther) const { return m_id < aOther.m_id; }
 		};
 
+		struct MemoryInfo
+		{
+			size_t			m_available = 0;
+			size_t			m_used = 0;
+		};
+
 		//---------------------------------------------------------------------------
 		// Virtual interface
 

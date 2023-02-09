@@ -174,8 +174,8 @@ main(
 	// performance, but if you do them too little, you'll end up with a lot of 
 	// superflous data on disk.
 
-	// Next example will be about the housekeeping advisor, which can help 
-	// monitoring you node and suggest when to perform various housekeeping tasks.
+	// A later example will be about the housekeeping advisor, which can help 
+	// monitoring your node and suggest when to perform various housekeeping tasks.
 
 	return EXIT_SUCCESS;
 }

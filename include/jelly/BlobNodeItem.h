@@ -148,6 +148,15 @@ namespace jelly
 			return m_runtimeState.m_storeOffset;
 		}
 
+		void
+		CompactionUpdate(
+			uint32_t										aNewStoreId,
+			size_t											aNewStoreOffset)
+		{
+			m_runtimeState.m_storeId = aNewStoreId;
+			m_runtimeState.m_storeOffset = aNewStoreOffset;
+		}
+
 		BlobNodeItem<_KeyType, _BlobType>*
 		GetNext()
 		{

@@ -173,6 +173,25 @@ namespace jelly
 							m_simCSVOutputColumns.push_back(token);
 						i++;
 					}
+					else if(strcmp(arg, "-simconfig") == 0)
+					{
+						std::stringstream tokenizer(aArgs[i + 1]);
+						std::string token;
+						while (std::getline(tokenizer, token, ','))
+						{
+							std::stringstream configTokenizer(token.c_str());
+							std::string configToken;
+							std::vector<std::string> configTokens;
+							while (std::getline(configTokenizer, configToken, ':'))
+								configTokens.push_back(configToken);
+
+							JELLY_CHECK(configTokens.size() == 2, "Syntax error.");
+
+							m_simConfigSource.SetString(configTokens[0].c_str(), configTokens[1].c_str());
+						}
+
+						i++;
+					}
 					else
 					{
 						JELLY_FATAL_ERROR("Syntax error.");
@@ -205,6 +224,7 @@ namespace jelly
 			std::vector<std::string>				m_simCSVOutputColumns;
 			bool									m_simTestStdOut = true;
 			uint32_t								m_simBufferCompressionLevel = 0;
+			DefaultConfigSource						m_simConfigSource;
 
 			// WriteTest
 			bool									m_writeTest = false;

@@ -15,6 +15,7 @@
 #include "Stats.h"
 #include "StoreBlobReader.h"
 #include "StoreWriter.h"
+#include "SystemUtils.h"
 #include "WALWriter.h"
 
 namespace jelly
@@ -91,6 +92,9 @@ namespace jelly
 		}
 
 		m_stats->Emit(Stat::ID_AVAILABLE_DISK_SPACE, GetAvailableDiskSpace());
+
+		SystemUtils::MemoryInfo memoryInfo = SystemUtils::GetMemoryInfo();
+		m_stats->Emit(Stat::ID_MEMORY_USAGE, memoryInfo.m_usage);
 	}
 
 	void		

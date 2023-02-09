@@ -17,6 +17,13 @@ namespace jelly
 		virtual		~DefaultConfigSource();
 
 		/**
+		 * Sets the specified configuration item identified by its string name.
+		 */
+		void		SetString(
+						const char*						aString,
+						const char*						aValue);
+
+		/**
 		 * Sets the specified configuration item.
 		 */
 		void		Set(

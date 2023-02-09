@@ -104,6 +104,13 @@ namespace jelly
 		}
 
 		void
+		CompactionUpdate(
+			uint32_t										/*aNewStoreId*/,
+			size_t											/*aNewStoreOffset*/)
+		{
+		}
+
+		void
 		SetKey(
 			const _KeyType&									aKey)
 		{

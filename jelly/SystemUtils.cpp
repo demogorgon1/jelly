@@ -3,6 +3,8 @@
 #if defined(_WIN32)
 	#include <windows.h>
 	#include <psapi.h>	
+#else
+	#include <unistd.h>
 #endif
 
 #include <jelly/ErrorUtils.h>

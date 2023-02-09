@@ -13,6 +13,7 @@ namespace jelly::Test::Sim
 		uint32_t				aId)
 		: m_network(aNetwork)
 		, m_id(aId)
+		, m_lockId(aId + 1)
 		, m_random(aId)
 	{
 
@@ -148,7 +149,7 @@ namespace jelly::Test::Sim
 				{
 					aClient->m_lockRequest = std::make_unique<LockServer::LockNodeType::Request>();
 					aClient->m_lockRequest->SetKey(aClient->m_id);
-					aClient->m_lockRequest->SetLock(m_id);
+					aClient->m_lockRequest->SetLock(m_lockId);
 					lockNode->Lock(aClient->m_lockRequest.get());
 					
 					_SetClientState(aClient, Client::STATE_WAITING_FOR_LOCK);
@@ -269,13 +270,48 @@ namespace jelly::Test::Sim
 				{
 				case RESULT_OK:
 					if(aClient->m_disconnectRequested)
-						return false;
-
-					_SetClientState(aClient, Client::STATE_CONNECTED);
+						_SetClientState(aClient, Client::STATE_NEED_UNLOCK);
+					else
+						_SetClientState(aClient, Client::STATE_CONNECTED);
 					break;
 
 				default:
 					return false;
+				}
+			}
+			break;
+
+		case Client::STATE_NEED_UNLOCK:
+			if (aClient->m_timer.HasExpired())
+			{
+				LockServer::LockNodeType* lockNode = m_network->GetMasterLockServer()->GetNode();
+				if (lockNode == NULL)
+				{
+					aClient->m_timer.SetTimeout(1000);
+				}
+				else
+				{
+					aClient->m_unlockRequest = std::make_unique<LockServer::LockNodeType::Request>();
+					aClient->m_unlockRequest->SetKey(aClient->m_id);
+					aClient->m_unlockRequest->SetLock(m_lockId);
+					aClient->m_unlockRequest->SetMeta(LockServer::LockMetaDataType(aClient->m_blobSeq, { aClient->m_lastBlobNodeId }));
+					lockNode->Unlock(aClient->m_unlockRequest.get());
+
+					_SetClientState(aClient, Client::STATE_WAITING_FOR_UNLOCK);
+				}					
+			}
+			break;
+
+		case Client::STATE_WAITING_FOR_UNLOCK:	
+			if(aClient->m_unlockRequest->IsCompleted())
+			{
+				switch (aClient->m_unlockRequest->GetResult())
+				{
+				case RESULT_OK:
+					return false;
+
+				default:
+					JELLY_ASSERT(false);
 				}
 			}
 			break;

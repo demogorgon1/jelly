@@ -51,7 +51,8 @@ namespace jelly::Test::Sim
 		GetCurrentStateTime(
 			std::chrono::time_point<std::chrono::steady_clock>	aCurrentTime) const
 		{
-			return (uint32_t)std::chrono::duration_cast<std::chrono::microseconds>(aCurrentTime - m_stateTimeStamp).count();
+			uint64_t t = (uint64_t)std::chrono::duration_cast<std::chrono::microseconds>(aCurrentTime - m_stateTimeStamp).count();
+			return (uint32_t)std::min<uint64_t>(t, UINT32_MAX);
 		}
 
 		void
@@ -59,13 +60,11 @@ namespace jelly::Test::Sim
 			IStats*												aStats,
 			std::chrono::time_point<std::chrono::steady_clock>	aCurrentTime) const
 		{
-			uint32_t millisecondsSpentInState = (uint32_t)std::chrono::duration_cast<std::chrono::microseconds>(aCurrentTime - m_stateTimeStamp).count();
-
 			JELLY_ASSERT((size_t)m_currentState < m_definitions.size());
 			uint32_t statsId = m_definitions[m_currentState].m_idCurTime;
 
 			if (statsId != UINT32_MAX)
-				aStats->Emit(statsId, millisecondsSpentInState, Stat::TYPE_SAMPLER);
+				aStats->Emit(statsId, GetCurrentStateTime(aCurrentTime), Stat::TYPE_SAMPLER);
 		}
 
 	private:

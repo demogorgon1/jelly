@@ -30,7 +30,9 @@ namespace jelly::Test::Sim
 				Stats::ID_GS_C_NEED_BLOB_NUM,
 				Stats::ID_GS_C_WAITING_FOR_BLOB_GET_NUM,
 				Stats::ID_GS_C_CONNECTED_NUM, 
-				Stats::ID_GS_C_WAITING_FOR_BLOB_SET_NUM
+				Stats::ID_GS_C_WAITING_FOR_BLOB_SET_NUM,
+				Stats::ID_GS_C_NEED_UNLOCK_NUM,
+				Stats::ID_GS_C_WAITING_FOR_UNLOCK_NUM
 			};
 			static_assert(sizeof(IDS) == sizeof(uint32_t) * (size_t)Client::NUM_STATES);
 			JELLY_ASSERT(aState < (uint32_t)Client::NUM_STATES);
@@ -70,6 +72,7 @@ namespace jelly::Test::Sim
 
 		Network*													m_network;
 		uint32_t													m_id;
+		uint32_t													m_lockId;
 
 		struct Client
 		{
@@ -92,6 +95,8 @@ namespace jelly::Test::Sim
 				m_stateTimeSampler.DefineState(STATE_WAITING_FOR_BLOB_GET, Stats::ID_GS_C_WAITING_FOR_BLOB_GET_TIME, Stats::ID_GS_C_WAITING_FOR_BLOB_GET_CUR_TIME);
 				m_stateTimeSampler.DefineState(STATE_CONNECTED, Stats::ID_GS_C_CONNECTED_TIME, Stats::ID_GS_C_CONNECTED_CUR_TIME);
 				m_stateTimeSampler.DefineState(STATE_WAITING_FOR_BLOB_SET, Stats::ID_GS_C_WAITING_FOR_BLOB_SET_TIME, Stats::ID_GS_C_WAITING_FOR_BLOB_SET_CUR_TIME);
+				m_stateTimeSampler.DefineState(STATE_NEED_UNLOCK, Stats::ID_GS_C_NEED_UNLOCK_TIME, Stats::ID_GS_C_NEED_UNLOCK_CUR_TIME);
+				m_stateTimeSampler.DefineState(STATE_WAITING_FOR_UNLOCK, Stats::ID_GS_C_WAITING_FOR_UNLOCK_TIME, Stats::ID_GS_C_WAITING_FOR_UNLOCK_CUR_TIME);
 			}
 
 			// Public data
@@ -106,6 +111,8 @@ namespace jelly::Test::Sim
 				STATE_WAITING_FOR_BLOB_GET,
 				STATE_CONNECTED,
 				STATE_WAITING_FOR_BLOB_SET,
+				STATE_NEED_UNLOCK,
+				STATE_WAITING_FOR_UNLOCK,
 
 				NUM_STATES
 			};
@@ -119,6 +126,7 @@ namespace jelly::Test::Sim
 			std::unique_ptr<LockServer::LockNodeType::Request>		m_lockRequest;
 			std::unique_ptr<BlobServer::BlobNodeType::Request>		m_getRequest;
 			std::unique_ptr<BlobServer::BlobNodeType::Request>		m_setRequest;
+			std::unique_ptr<LockServer::LockNodeType::Request>		m_unlockRequest;
 
 			std::vector<uint32_t>									m_blobNodeIds;
 			size_t													m_nextBlobNodeIdIndex;

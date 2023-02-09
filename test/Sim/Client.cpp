@@ -98,6 +98,8 @@ namespace jelly::Test::Sim
 			break;
 
 		case STATE_DISCONNECTED:
+			m_startTimeStamp = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+			_SetState(STATE_WAITING_TO_CONNECT);
 			break;
 
 		default:

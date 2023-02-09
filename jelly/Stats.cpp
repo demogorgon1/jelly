@@ -173,6 +173,13 @@ namespace jelly
 		return UINT32_MAX;
 	}
 
+	const Stat::Info* 
+	Stats::GetInfo(
+		uint32_t			aId) const 
+	{
+		return _GetStatInfo(aId);
+	}
+
 	//----------------------------------------------------------------------------------
 
 	Stats::Thread::Thread()

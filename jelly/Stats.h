@@ -49,6 +49,8 @@ namespace jelly
 									uint32_t							aId) const override;
 		uint32_t				GetIdByString(
 									const char*							aString) const override;
+		const Stat::Info*		GetInfo(
+									uint32_t							aId) const override;
 
 	private:
 

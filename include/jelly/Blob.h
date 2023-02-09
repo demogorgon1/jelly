@@ -115,6 +115,13 @@ namespace jelly
 			}
 		}
 
+		size_t
+		GetSize() const
+		{
+			// Return uncompressed size
+			return m_buffer.GetSize();
+		}
+
 		bool		
 		operator==(
 			const Blob&						aOther) const 

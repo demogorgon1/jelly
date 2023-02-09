@@ -29,6 +29,7 @@
 #include "Request.h"
 #include "Result.h"
 #include "Stat.h"
+#include "StringUtils.h"
 #include "UIntKey.h"
 #include "UIntLock.h"
 #include "ZstdCompression.h"

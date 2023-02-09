@@ -218,6 +218,7 @@ namespace jelly
 			uint32_t								m_simStartClientLimit = 0;
 			std::string								m_simCSVOutput;
 			std::vector<std::string>				m_simCSVOutputColumns;
+			std::vector<std::string>				m_simStdOut;
 			uint32_t								m_simBufferCompressionLevel = 0;
 			DefaultConfigSource						m_simConfigSource;
 

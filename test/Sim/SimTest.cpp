@@ -136,6 +136,47 @@ namespace jelly::Test::Sim
 			std::string					m_csvColumnPrefix;
 		};
 
+		void
+		_DebugPrintStat(
+			IStats*			aStats,
+			const char*		aName)
+		{
+			uint32_t id = aStats->GetIdByString(aName);
+			const Stat::Info* info = aStats->GetInfo(id);
+
+			printf("%s", aName);
+
+			switch(info->m_type)
+			{
+			case Stat::TYPE_COUNTER:
+				{
+					IStats::Counter t = aStats->GetCounter(id);
+					printf(" value=%s rate=%s\n", StringUtils::MakeSizeString(t.m_value).c_str(), StringUtils::MakeSizeString(t.m_rate).c_str());
+				}
+				break;
+
+			case Stat::TYPE_GAUGE:
+				{
+					IStats::Gauge t = aStats->GetGauge(id);
+					printf(" value=%s\n", StringUtils::MakeSizeString(t.m_value).c_str());
+				}
+				break;
+
+			case Stat::TYPE_SAMPLER:
+				{
+					IStats::Sampler t = aStats->GetSampler(id);
+					if(t.m_count > 0)
+						printf(" avg=%u min=%u max=%u count=%u\n", (uint32_t)t.m_avg, (uint32_t)t.m_min, (uint32_t)t.m_max, (uint32_t)t.m_count);
+					else
+						printf("\n");
+				}
+				break;
+
+			default:
+				break;
+			}
+		}
+
 	}
 
 	void		
@@ -164,6 +205,7 @@ namespace jelly::Test::Sim
 			ThreadCollection<LockServer::LockServerType> lockServers(&network.m_host, aConfig->m_simNumLockServerThreads, network.m_lockServers);
 
 			Timer statsTimer(1000);
+			Timer stdOutStatsTimer(10000);
 
 			Interactive interactive(&network);
 
@@ -175,6 +217,12 @@ namespace jelly::Test::Sim
 
 					if(csv)
 						csv->WriteRow();
+				}
+
+				if(stdOutStatsTimer.HasExpired())
+				{
+					for (const std::string& statName : aConfig->m_simStdOut)
+						_DebugPrintStat(network.m_host.GetStats(), statName.c_str());
 				}
 
 				std::this_thread::sleep_for(std::chrono::milliseconds(50)); // It's not going to be exactly every 1 second, but close enough (tm)

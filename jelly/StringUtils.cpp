@@ -168,6 +168,22 @@ namespace jelly
 			return (uint32_t)v;
 		}
 
+		std::string 
+		MakeSizeString(
+			uint64_t		aValue)
+		{
+			char buffer[64];
+			double v = (double)aValue;
+			if (v > 1024.0f * 1024.0f * 1024.0f)
+				snprintf(buffer, sizeof(buffer), "%.1fG", v / (1024.0f * 1024.0f * 1024.0f));
+			else if (aValue > 1024.0f * 1024.0f)
+				snprintf(buffer, sizeof(buffer), "%.1fM", v / (1024.0f * 1024.0f));
+			else if (aValue > 1024.0f)
+				snprintf(buffer, sizeof(buffer), "%.1fK", v / (1024.0f));
+			else
+				snprintf(buffer, sizeof(buffer), "%.0f", v);
+			return buffer;
+		}
 
 	}
 

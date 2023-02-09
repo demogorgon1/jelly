@@ -43,6 +43,8 @@ namespace jelly
 						const char*		aString);
 		uint32_t	ParseInterval(
 						const char*		aString);
+		std::string MakeSizeString(
+						uint64_t		aValue);
 
 	}
 

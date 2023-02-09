@@ -212,6 +212,9 @@ namespace jelly
 			{
 				newBlob = std::make_unique<BlobBuffer>();
 				aRequest->GetBlob().ToBuffer(this->m_host->GetCompressionProvider(), *newBlob);
+
+				this->m_host->GetStats()->Emit(Stat::ID_UNCOMPRESSED_BLOB_SIZE, aRequest->GetBlob().GetSize());
+				this->m_host->GetStats()->Emit(Stat::ID_COMPRESSED_BLOB_SIZE, newBlob->GetSize());
 			}
 
 			Item* item;

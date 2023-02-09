@@ -56,6 +56,8 @@ namespace jelly
 			ID_UNLOCK_TIME,
 			ID_LOCK_DELETE_TIME,
 			ID_MEMORY_USAGE,
+			ID_COMPRESSED_BLOB_SIZE,
+			ID_UNCOMPRESSED_BLOB_SIZE,
 
 			NUM_IDS
 		};
@@ -88,6 +90,11 @@ namespace jelly
 			100000, 200000, 300000, 400000, 500000, 600000, 700000, 800000, 900000,
 			1000000, 2000000, 3000000, 4000000, 5000000, 6000000, 7000000, 8000000, 9000000,
 			10000000
+		};
+
+		static const std::vector<uint64_t> BLOB_SIZE_HISTOGRAM_BUCKETS = 
+		{
+			1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000
 		};
 
 		// IMPORTANT: Order must match the Id enum
@@ -132,7 +139,9 @@ namespace jelly
 			/* ID_LOCK_TIME */					        { TYPE_SAMPLER, "lock_time",                          0,          TIME_SAMPLER_HISTOGRAM_BUCKETS },
 			/* ID_UNLOCK_TIME */					    { TYPE_SAMPLER, "unlock_time",                        0,          TIME_SAMPLER_HISTOGRAM_BUCKETS },
 			/* ID_LOCK_DELETE_TIME */					{ TYPE_SAMPLER, "lock_delete_time",                   0,          TIME_SAMPLER_HISTOGRAM_BUCKETS },
-			/* ID_MEMORY_USAGE */						{ TYPE_GAUGE,   "memory_usage",                       0,          {} }
+			/* ID_MEMORY_USAGE */						{ TYPE_GAUGE,   "memory_usage",                       0,          {} },
+			/* ID_COMPRESSED_BLOB_SIZE */				{ TYPE_SAMPLER, "compressed_blob_size",               0,          BLOB_SIZE_HISTOGRAM_BUCKETS },
+			/* ID_UNCOMPRESSED_BLOB_SIZE */				{ TYPE_SAMPLER, "uncompressed_blob_size",             0,          BLOB_SIZE_HISTOGRAM_BUCKETS }
 		};
 		
 		static_assert(sizeof(INFO) == sizeof(Info) * (size_t)NUM_IDS);

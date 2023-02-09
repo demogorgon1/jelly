@@ -51,6 +51,12 @@ namespace jelly
 					JELLY_ASSERT(fluff[i] == m_value * i);
 			}
 
+			size_t
+			GetSize() const
+			{
+				return sizeof(uint32_t);
+			}
+
 			bool		
 			operator==(
 				const UInt32Blob&				aOther) const 

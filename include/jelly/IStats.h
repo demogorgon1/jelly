@@ -147,6 +147,9 @@ namespace jelly
 		virtual uint32_t				GetIdByString(
 											const char*							/*aString*/) const { return UINT32_MAX; }
 
+		//! Get statistic info by id.
+		virtual const Stat::Info*		GetInfo(
+											uint32_t							/*aId*/) const { JELLY_ASSERT(false); return NULL; }
 	};
 
 }

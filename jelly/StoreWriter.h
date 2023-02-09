@@ -12,7 +12,8 @@ namespace jelly
 	{
 	public:			
 					StoreWriter(
-						const char*						aPath,
+						const char*						aTargetPath,
+						const char*						aTempPath,
 						FileStatsContext*				aFileStatsContext);
 		virtual		~StoreWriter();
 
@@ -24,6 +25,9 @@ namespace jelly
 		void		Flush() override;
 
 	private:
+
+		std::string m_tempPath;
+		std::string m_targetPath;
 
 		File		m_file;
 	};

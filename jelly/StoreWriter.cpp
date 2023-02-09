@@ -10,14 +10,23 @@ namespace jelly
 {
 
 	StoreWriter::StoreWriter(
-		const char*						aPath,
+		const char*						aTargetPath,
+		const char*						aTempPath,
 		FileStatsContext*				aFileStatsContext)
-		: m_file(aFileStatsContext, aPath, File::MODE_WRITE_STREAM)
+		: m_file(aFileStatsContext, aTempPath, File::MODE_WRITE_STREAM)
+		, m_targetPath(aTargetPath)
+		, m_tempPath(aTempPath)
 	{
 	}
 
 	StoreWriter::~StoreWriter()
 	{
+		m_file.Close();
+
+		// Rename temp path to final target path
+		std::error_code errorCode;
+		std::filesystem::rename(m_tempPath, m_targetPath, errorCode);
+		JELLY_CHECK(!errorCode, "Rename failed: %s %s", m_tempPath.c_str(), m_targetPath.c_str());
 	}
 
 	bool

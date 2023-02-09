@@ -312,8 +312,13 @@ namespace jelly
 		uint32_t					aId,
 		FileStatsContext*			aFileStatsContext)
 	{
+		std::string targetPath = PathUtils::MakePath(m_root.c_str(), m_filePrefix.c_str(), PathUtils::FILE_TYPE_STORE, aNodeId, aId);
+		std::string tempPath = targetPath + ".tmp";
+
 		std::unique_ptr<StoreWriter> f(new StoreWriter(
-			PathUtils::MakePath(m_root.c_str(), m_filePrefix.c_str(), PathUtils::FILE_TYPE_STORE, aNodeId, aId).c_str(), aFileStatsContext));
+			targetPath.c_str(),
+			tempPath.c_str(),
+			aFileStatsContext));
 
 		if (!f->IsValid())
 			return NULL;

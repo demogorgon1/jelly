@@ -29,7 +29,7 @@ namespace jelly
 			typedef LockNode<UIntKey<uint32_t>, UIntLock<uint32_t>, LockMetaDataType> LockNodeType;
 			typedef LockNodeItem<UIntKey<uint32_t>, UIntLock<uint32_t>, LockMetaDataType> LockNodeItemType;
 
-			typedef CompactionResult<UIntKey<uint32_t>, UIntKey<uint32_t>::Hasher> CompactionResultType;
+			typedef CompactionResult<UIntKey<uint32_t>> CompactionResultType;
 
 			struct ExpectedBlobNodeItemData
 			{

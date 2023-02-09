@@ -13,14 +13,14 @@ namespace jelly
 	{
 
 		// Do a compaction of just 2 stores
-		template <typename _KeyType, typename _ItemType, typename _STLKeyHasher, typename _NodeType>
+		template <typename _KeyType, typename _ItemType, typename _NodeType>
 		void
 		PerformOnTwoStores(			
 			_NodeType*									aNode,
 			uint32_t									aOldestStoreId,
 			uint32_t									aStoreId1,
 			uint32_t									aStoreId2,
-			CompactionResult<_KeyType, _STLKeyHasher>*	aOut)
+			CompactionResult<_KeyType>*					aOut)
 		{
 			// Stores are always written in ascendening key order, so merging them is easy
 			std::unique_ptr<IFileStreamReader> f1(aNode->GetHost()->ReadStoreStream(aNode->GetNodeId(), aStoreId1, aNode->GetStoreFileStatsContext()));
@@ -126,13 +126,13 @@ namespace jelly
 		}
 
 		// Do a compaction of more than 2 stores
-		template <typename _KeyType, typename _ItemType, typename _STLKeyHasher, typename _NodeType>
+		template <typename _KeyType, typename _ItemType, typename _NodeType>
 		void
 		PerformOnStoreList(
 			_NodeType*									aNode,
 			uint32_t									aOldestStoreId,
 			const std::vector<uint32_t>&				aStoreIds,
-			CompactionResult<_KeyType, _STLKeyHasher>*	aOut)
+			CompactionResult<_KeyType>*					aOut)
 		{
 			JELLY_ASSERT(aStoreIds.size() > 2);
 
@@ -245,27 +245,27 @@ namespace jelly
 		}
 
 		// Do a "minor" compaction 
-		template <typename _KeyType, typename _ItemType, typename _STLKeyHasher, typename _NodeType>
+		template <typename _KeyType, typename _ItemType, typename _NodeType>
 		void
 		Perform(			
 			_NodeType*									aNode,
 			const CompactionJob&						aCompactionJob,
-			CompactionResult<_KeyType, _STLKeyHasher>*	aOut)
+			CompactionResult<_KeyType>*					aOut)
 		{
 			aOut->SetStoreIds(aCompactionJob.m_storeIds);
 
 			if(aCompactionJob.m_storeIds.size() == 2)
-				PerformOnTwoStores<_KeyType, _ItemType, _STLKeyHasher, _NodeType>(aNode, aCompactionJob.m_oldestStoreId, aCompactionJob.m_storeIds[0], aCompactionJob.m_storeIds[1], aOut);
+				PerformOnTwoStores<_KeyType, _ItemType, _NodeType>(aNode, aCompactionJob.m_oldestStoreId, aCompactionJob.m_storeIds[0], aCompactionJob.m_storeIds[1], aOut);
 			else
-				PerformOnStoreList<_KeyType, _ItemType, _STLKeyHasher, _NodeType>(aNode, aCompactionJob.m_oldestStoreId, aCompactionJob.m_storeIds, aOut);
+				PerformOnStoreList<_KeyType, _ItemType, _NodeType>(aNode, aCompactionJob.m_oldestStoreId, aCompactionJob.m_storeIds, aOut);
 		}
 		
 		// Do a "major" compaction of everything.
-		template <typename _KeyType, typename _ItemType, typename _STLKeyHasher, typename _NodeType>
+		template <typename _KeyType, typename _ItemType, typename _NodeType>
 		void
 		PerformMajorCompaction(
 			_NodeType*									aNode,
-			CompactionResult<_KeyType, _STLKeyHasher>*	aOut)
+			CompactionResult<_KeyType>*					aOut)
 		{
 			// Enumerate all stores
 			std::vector<IHost::StoreInfo> storeInfo;
@@ -283,9 +283,9 @@ namespace jelly
 				aOut->SetStoreIds(storeIds);
 
 				if (storeIds.size() == 2)
-					PerformOnTwoStores<_KeyType, _ItemType, _STLKeyHasher, _NodeType>(aNode, oldestStoreId, storeIds[0], storeIds[1], aOut);
+					PerformOnTwoStores<_KeyType, _ItemType, _NodeType>(aNode, oldestStoreId, storeIds[0], storeIds[1], aOut);
 				else
-					PerformOnStoreList<_KeyType, _ItemType, _STLKeyHasher, _NodeType>(aNode, oldestStoreId, storeIds, aOut);
+					PerformOnStoreList<_KeyType, _ItemType, _NodeType>(aNode, oldestStoreId, storeIds, aOut);
 			}
 		}
 

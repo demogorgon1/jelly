@@ -33,7 +33,7 @@ namespace jelly
 	class Node
 	{
 	public:		
-		typedef CompactionResult<_KeyType, _STLKeyHasher> CompactionResultType;
+		typedef CompactionResult<_KeyType> CompactionResultType;
 
 		Node(
 			IHost*				aHost,
@@ -67,9 +67,6 @@ namespace jelly
 
 			for(typename TableType::iterator i = m_table.begin(); i != m_table.end(); i++)
 				delete i->second;
-
-			//for(typename CompactionRedirectMap::iterator i = m_compactionRedirectMap.begin(); i != m_compactionRedirectMap.end(); i++)
-			//	delete i->second;
 		}
 
 		/**
@@ -346,7 +343,7 @@ namespace jelly
 					m_currentCompactionStoreIds.insert(storeId);
 			}
 
-			Compaction::Perform<_KeyType, _ItemType, _STLKeyHasher>(this, aCompactionJob, result.get());
+			Compaction::Perform<_KeyType, _ItemType>(this, aCompactionJob, result.get());
 
 			return result.release();
 		}
@@ -374,7 +371,7 @@ namespace jelly
 
 			result->SetMajorCompaction(true);
 
-			Compaction::PerformMajorCompaction<_KeyType, _ItemType, _STLKeyHasher>(this, result.get());
+			Compaction::PerformMajorCompaction<_KeyType, _ItemType>(this, result.get());
 
 			return result.release();
 		}

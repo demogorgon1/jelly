@@ -21,7 +21,7 @@ namespace jelly
 	* @see BlobNode
 	* @see LockNode
 	*/		
-	template <typename _KeyType, typename _STLKeyHasher>
+	template <typename _KeyType>
 	class CompactionResult
 	{
 	public:
@@ -45,8 +45,6 @@ namespace jelly
 			uint32_t														m_storeId;
 			size_t															m_storeOffset;
 		};
-
-		typedef std::unordered_map<_KeyType, Item, _STLKeyHasher> ItemMap;
 
 		CompactionResult()
 			: m_isMajorCompaction(false)

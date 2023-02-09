@@ -179,9 +179,19 @@ namespace jelly
 				}
 				else if(item->GetLock() != aRequest->GetLock())
 				{
-					// Locked by someone else, fail
-					aRequest->SetLock(item->GetLock());
-					return RESULT_ALREADY_LOCKED;
+					// Locked by someone else				
+					if(aRequest->IsForced())
+					{
+						// Force the lock
+						item->SetLock(aRequest->GetLock());
+						aRequest->SetLock(item->GetLock());
+					}
+					else
+					{
+						// Fail
+						aRequest->SetLock(item->GetLock());
+						return RESULT_ALREADY_LOCKED;
+					}
 				}
 				else
 				{
@@ -219,7 +229,7 @@ namespace jelly
 				// It wasn't locked, fail
 				return RESULT_NOT_LOCKED;
 			}
-			else if(item->GetLock() != aRequest->GetLock())
+			else if(item->GetLock() != aRequest->GetLock() && !aRequest->IsForced())
 			{
 				// Locked by someone else, fail
 				return RESULT_ALREADY_LOCKED;
@@ -246,7 +256,7 @@ namespace jelly
 				// Doesn't exist
 				return RESULT_DOES_NOT_EXIST;
 			}
-			else if (item->GetLock().IsSet())
+			else if (item->GetLock().IsSet() && !aRequest->IsForced())
 			{
 				// It is locked, fail
 				return RESULT_ALREADY_LOCKED;

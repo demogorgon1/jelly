@@ -16,11 +16,12 @@ namespace jelly
 	{	
 	public:
 		LockNodeRequest()
+			: m_forced(false)
 		{
 
 		}
 
-		//! Set lock key for request
+		//! Set lock key for request.
 		void
 		SetKey(
 			const _KeyType&			aKey)
@@ -28,7 +29,7 @@ namespace jelly
 			m_key = aKey;
 		}
 
-		//! Set lock identifier for request
+		//! Set lock identifier for request.
 		void
 		SetLock(
 			const _LockType&		aLock)
@@ -36,7 +37,7 @@ namespace jelly
 			m_lock = aLock;
 		}
 
-		//! Set lock meta data
+		//! Set lock meta data.
 		void
 		SetMeta(
 			const _LockMetaType&	aMeta)
@@ -44,17 +45,27 @@ namespace jelly
 			m_meta = aMeta;
 		}
 
+		//! Try to force the request, regardles of existing lock.
+		void
+		SetForced(
+			bool					aForced)
+		{
+			m_forced = aForced;
+		}
+
 		//---------------------------------------------------------------------------------
 		// Data access
-		const _KeyType&			GetKey() const { return m_key; }					//!< Returns lock key
-		const _LockType&		GetLock() const { return m_lock; }					//!< Returns lock identifier
-		const _LockMetaType&	GetMeta() const { return m_meta; }					//!< Returns lock meta data
+		const _KeyType&			GetKey() const { return m_key; }		//!< Returns lock key
+		const _LockType&		GetLock() const { return m_lock; }		//!< Returns lock identifier
+		const _LockMetaType&	GetMeta() const { return m_meta; }		//!< Returns lock meta data
+		bool					IsForced() const { return m_forced;	}	//!< Returns whether request should be forced
 
 	private:
 
 		_KeyType							m_key;
 		_LockType							m_lock;
 		_LockMetaType						m_meta;
+		bool								m_forced;
 	};
 
 }

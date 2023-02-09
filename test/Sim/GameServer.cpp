@@ -264,6 +264,8 @@ namespace jelly::Test::Sim
 				switch (aClient->m_getRequest->GetResult())
 				{
 				case RESULT_OK:					
+					aClient->m_playerBlob.FromBlob(aClient->m_getRequest->GetBlob());
+
 					_OnClientConnected(aClient);
 					break;
 

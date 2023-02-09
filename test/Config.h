@@ -76,10 +76,6 @@ namespace jelly
 					{
 						m_simTest = true;
 					}
-					else if (strcmp(arg, "-simtestnostdout") == 0)
-					{
-						m_simTestStdOut = false;
-					}
 					else if (strcmp(arg, "-simnumclients") == 0)
 					{
 						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
@@ -222,7 +218,6 @@ namespace jelly
 			uint32_t								m_simStartClientLimit = 0;
 			std::string								m_simCSVOutput;
 			std::vector<std::string>				m_simCSVOutputColumns;
-			bool									m_simTestStdOut = true;
 			uint32_t								m_simBufferCompressionLevel = 0;
 			DefaultConfigSource						m_simConfigSource;
 

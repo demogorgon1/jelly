@@ -388,7 +388,7 @@ namespace jelly
 
 			size_t updatedItemCount = 0;
 
-			for(const CompactionResultType::Item& compactionResultItem : aCompactionResult->GetItems())
+			for(const typename CompactionResultType::Item& compactionResultItem : aCompactionResult->GetItems())
 			{
 				_ItemType* item;
 				bool ok = GetItem(compactionResultItem.m_key, item);

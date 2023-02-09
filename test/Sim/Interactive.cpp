@@ -2,6 +2,7 @@
 
 #include "../Config.h"
 
+#include "GameServer.h"
 #include "Interactive.h"
 #include "Network.h"
 
@@ -56,6 +57,27 @@ namespace jelly::Test::Sim
 					m_network->m_clientLimit -= count;
 
 				printf("Client limit: %u\n", (uint32_t)m_network->m_clientLimit);
+			}
+			else if(input.size() == 2 && input[0] == "disc")
+			{
+				size_t count = (size_t)atoi(input[1].c_str());
+
+				if(count > 0 && m_network->m_gameServers.size() > 0)
+				{
+					size_t disconnectsPerGameServer = count / m_network->m_gameServers.size();
+					
+					for(size_t i = 0; i < m_network->m_gameServers.size() - 1; i++)
+					{
+						JELLY_ASSERT(disconnectsPerGameServer <= count);
+						count -= disconnectsPerGameServer;
+						m_network->m_gameServers[i]->TestUngracefulDisconnectRandomClients(disconnectsPerGameServer);
+					}
+
+					if(count > 0)
+					{
+						m_network->m_gameServers[m_network->m_gameServers.size() - 1]->TestUngracefulDisconnectRandomClients(count);
+					}
+				}				
 			}
 			else
 			{

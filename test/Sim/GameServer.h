@@ -67,6 +67,8 @@ namespace jelly::Test::Sim
 					ConnectRequest*				aConnectRequest);
 		void	Disconnect(
 					uint32_t					aClientId);
+		void	TestUngracefulDisconnectRandomClients(
+					size_t						aCount);
 
 	private:
 
@@ -87,6 +89,7 @@ namespace jelly::Test::Sim
 				, m_blobSeq(0)
 				, m_stateTimeSampler(NUM_STATES)
 				, m_disconnectRequested(false)
+				, m_ungracefulDisconnect(false)
 			{
 				m_stateTimeSampler.DefineState(STATE_INIT, Stats::ID_GS_C_INIT_TIME, Stats::ID_GS_C_INIT_CUR_TIME);
 				m_stateTimeSampler.DefineState(STATE_NEED_LOCK, Stats::ID_GS_C_NEED_LOCK_TIME, Stats::ID_GS_C_NEED_LOCK_CUR_TIME);
@@ -123,6 +126,7 @@ namespace jelly::Test::Sim
 			ConnectRequest*											m_pendingConnectRequest;
 			CompletionEvent*										m_disconnectEvent;
 			bool													m_disconnectRequested;
+			bool													m_ungracefulDisconnect;
 			std::unique_ptr<LockServer::LockNodeType::Request>		m_lockRequest;
 			std::unique_ptr<BlobServer::BlobNodeType::Request>		m_getRequest;
 			std::unique_ptr<BlobServer::BlobNodeType::Request>		m_setRequest;
@@ -140,7 +144,7 @@ namespace jelly::Test::Sim
 		};
 
 		std::unordered_map<uint32_t, Client*>						m_clients;
-
+		uint32_t													m_updateId;
 		std::mt19937												m_random;
 
 		std::mutex													m_connectRequestsLock;
@@ -149,7 +153,11 @@ namespace jelly::Test::Sim
 		std::mutex													m_disconnectRequestsLock;
 		std::vector<uint32_t>										m_disconnectRequests;
 
-		void		_ProcessRequests();
+		std::mutex													m_testEventLock;
+		std::optional<size_t>										m_testUngracefulDisconnectRandomClientCount;
+
+		void		_ProcessTestEvents();
+		void		_ProcessRequests();		
 		void		_UpdateClients();
 		bool		_UpdateClient(
 						Client*			aClient);

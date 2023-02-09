@@ -15,6 +15,7 @@ namespace jelly::Test::Sim
 		, m_id(aId)
 		, m_lockId(aId + 1)
 		, m_random(aId)
+		, m_updateId(0)
 	{
 
 	}
@@ -29,6 +30,9 @@ namespace jelly::Test::Sim
 	GameServer::Update()
 	{
 		ScopedTimeSampler timer(m_network->m_host.GetStats(), Stats::ID_GS_UPDATE_TIME);
+
+		if(m_updateId++ % 100)
+			_ProcessTestEvents();
 
 		_ProcessRequests();
 		_UpdateClients();
@@ -68,7 +72,37 @@ namespace jelly::Test::Sim
 		m_disconnectRequests.push_back(aClientId);
 	}
 
+	void	
+	GameServer::TestUngracefulDisconnectRandomClients(
+		size_t					aCount)
+	{
+		std::lock_guard lock(m_testEventLock);
+		m_testUngracefulDisconnectRandomClientCount = aCount;
+	}
+
 	//-------------------------------------------------------------------------------------------
+
+	void
+	GameServer::_ProcessTestEvents()
+	{
+		size_t randomClientsToDisconnect = 0;
+
+		{
+			std::lock_guard lock(m_testEventLock);
+			if(m_testUngracefulDisconnectRandomClientCount.has_value())
+			{
+				randomClientsToDisconnect = m_testUngracefulDisconnectRandomClientCount.value();
+				m_testUngracefulDisconnectRandomClientCount.reset();
+			}
+		}
+
+		std::unordered_map<uint32_t, Client*>::iterator it = m_clients.begin();
+		for(size_t i = 0; it != m_clients.end() && i < randomClientsToDisconnect; i++)
+		{
+			it->second->m_ungracefulDisconnect = true;
+			it++;
+		}
+	}
 
 	void	
 	GameServer::_ProcessRequests()
@@ -240,7 +274,7 @@ namespace jelly::Test::Sim
 			break;
 
 		case Client::STATE_CONNECTED:
-			if(aClient->m_setTimer.HasExpired() || aClient->m_disconnectRequested)
+			if(aClient->m_setTimer.HasExpired() || aClient->m_disconnectRequested || aClient->m_ungracefulDisconnect)
 			{
 				aClient->m_setRequest = std::make_unique<BlobServer::BlobNodeType::Request>();
 				aClient->m_setRequest->SetKey(aClient->m_id);
@@ -269,7 +303,9 @@ namespace jelly::Test::Sim
 				switch (aClient->m_setRequest->GetResult())
 				{
 				case RESULT_OK:
-					if(aClient->m_disconnectRequested)
+					if(aClient->m_ungracefulDisconnect)
+						return false;
+					else if(aClient->m_disconnectRequested)
 						_SetClientState(aClient, Client::STATE_NEED_UNLOCK);
 					else
 						_SetClientState(aClient, Client::STATE_CONNECTED);

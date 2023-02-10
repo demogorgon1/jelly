@@ -18,6 +18,7 @@ jelly_option(JELLY_ZSTD "Use ZSTD." OFF)
 jelly_option(JELLY_PRECOMPILED_HEADERS "Enable precompiled headers." ON)
 jelly_option(JELLY_EXTRA_CONSISTENCY_CHECKS "Enable extra consistency checks." OFF)
 jelly_option(JELLY_EXAMPLES "Build examples." ON)
+jelly_option(JELLY_TEST "Build tests." ON)
 
 enable_testing()
 
@@ -54,8 +55,11 @@ else()
 endif()
 
 add_subdirectory(jelly)
-add_subdirectory(test)
 add_subdirectory(include)
+
+if(JELLY_TEST)
+	add_subdirectory(test)
+endif()
 
 if(JELLY_EXAMPLES)
 	add_subdirectory(examples)

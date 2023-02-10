@@ -56,6 +56,10 @@ namespace jelly
 					m_compressionProvider = std::make_unique<ZstdCompression>(m_config->GetUInt32(Config::ID_COMPRESSION_LEVEL)); 				
 				#endif
 			}
+			else if(strcmp(compressionMethod, "none") == 0)
+			{
+				// Do nothing
+			}
 			else
 			{
 				JELLY_FATAL_ERROR("Invalid compression method: %s", compressionMethod);

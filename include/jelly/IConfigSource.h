@@ -20,14 +20,14 @@ namespace jelly
 		 * configuration. This will cause any ConfigProxy objects to invalidate their
 		 * data.
 		 */
-		virtual uint32_t	GetVersion() = 0;
+		virtual uint32_t	GetVersion() const = 0;
 
 		/**
 		 * \brief This should return the string value of the specified configuration
 		 * item.
 		 */
 		virtual const char*	Get(
-								const char*		aId) = 0;	
+								const char*		aId) const = 0;	
 	};
 
 }

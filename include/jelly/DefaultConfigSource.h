@@ -37,9 +37,9 @@ namespace jelly
 
 		//----------------------------------------------------------------------
 		// IConfigSource implementation
-		uint32_t	GetVersion() override;
+		uint32_t	GetVersion() const override;
 		const char*	Get(
-						const char*						aId) override;
+						const char*						aId) const override;
 
 	private:
 

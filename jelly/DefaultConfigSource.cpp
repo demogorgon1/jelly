@@ -59,20 +59,20 @@ namespace jelly
 	//--------------------------------------------------------------------------
 
 	uint32_t	
-	DefaultConfigSource::GetVersion() 
+	DefaultConfigSource::GetVersion() const
 	{
 		return m_version;
 	}
 
 	const char* 
 	DefaultConfigSource::Get(
-		const char*						aId)
+		const char*						aId) const
 	{
 		std::unordered_map<std::string, uint32_t>::const_iterator i = m_stringIdTable.find(aId);
 		JELLY_CHECK(i != m_stringIdTable.end(), "Invalid configuration id: %s", aId);
 
 		uint32_t configId = i->second;
-		std::optional<std::string>& config = m_config[configId];
+		const std::optional<std::string>& config = m_config[configId];
 
 		if(config.has_value())
 			return config.value().c_str();

@@ -8,7 +8,7 @@ namespace jelly
 {
 
 	ConfigProxy::ConfigProxy(
-		IConfigSource*	aSource)
+		const IConfigSource*	aSource)
 		: m_source(aSource)
 	{
 
@@ -21,7 +21,7 @@ namespace jelly
 
 	const char*
 	ConfigProxy::GetString(
-		Config::Id		aId)
+		Config::Id				aId)
 	{
 		const Config::Info* info = Config::GetInfo(aId);
 		JELLY_ASSERT(info->m_type == Config::TYPE_STRING);
@@ -32,7 +32,7 @@ namespace jelly
 
 	uint32_t				
 	ConfigProxy::GetInterval(
-		Config::Id		aId)
+		Config::Id				aId)
 	{
 		const Config::Info* info = Config::GetInfo(aId);
 		JELLY_ASSERT(info->m_type == Config::TYPE_INTERVAL);
@@ -54,7 +54,7 @@ namespace jelly
 
 	uint32_t	
 	ConfigProxy::GetUInt32(
-		Config::Id		aId)
+		Config::Id				aId)
 	{
 		const Config::Info* info = Config::GetInfo(aId);
 		JELLY_ASSERT(info->m_type == Config::TYPE_UINT32);
@@ -76,7 +76,7 @@ namespace jelly
 	
 	size_t		
 	ConfigProxy::GetSize(
-		Config::Id		aId)
+		Config::Id				aId)
 	{
 		const Config::Info* info = Config::GetInfo(aId);
 		JELLY_ASSERT(info->m_type == Config::TYPE_SIZE);
@@ -98,7 +98,7 @@ namespace jelly
 	
 	bool		
 	ConfigProxy::GetBool(
-		Config::Id		aId)
+		Config::Id				aId)
 	{
 		const Config::Info* info = Config::GetInfo(aId);
 		JELLY_ASSERT(info->m_type == Config::TYPE_BOOL);

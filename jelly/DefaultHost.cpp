@@ -24,7 +24,7 @@ namespace jelly
 	DefaultHost::DefaultHost(
 		const char*					aRoot,
 		const char*					aFilePrefix,
-		IConfigSource*				aConfigSource,
+		const IConfigSource*		aConfigSource,
 		const Stat::Info*			aExtraApplicationStats,
 		uint32_t					aExtraApplicationStatsCount)
 		: m_root(aRoot)
@@ -124,7 +124,7 @@ namespace jelly
 		return m_stats.get();
 	}
 
-	IConfigSource* 
+	const IConfigSource* 
 	DefaultHost::GetConfigSource() 
 	{
 		return m_configSource;

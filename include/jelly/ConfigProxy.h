@@ -13,23 +13,23 @@ namespace jelly
 	{
 	public:
 								ConfigProxy(
-									IConfigSource*	aSource);
+									const IConfigSource*	aSource);
 								~ConfigProxy();
 				
 		const char*				GetString(
-									Config::Id		aId);
+									Config::Id				aId);
 		uint32_t				GetInterval(
-									Config::Id		aId);
+									Config::Id				aId);
 		uint32_t				GetUInt32(
-									Config::Id		aId);
+									Config::Id				aId);
 		size_t					GetSize(
-									Config::Id		aId);
+									Config::Id				aId);
 		bool					GetBool(
-									Config::Id		aId);
+									Config::Id				aId);
 
 	private:					
 
-		IConfigSource*		m_source;
+		const IConfigSource*		m_source;
 
 		struct CacheItem
 		{
@@ -39,17 +39,17 @@ namespace jelly
 
 			}
 
-			uint32_t		m_version;
+			uint32_t				m_version;
 			
 			union _CacheItem_u
 			{
-				size_t		m_size;
-				uint32_t	m_uint32;
-				bool		m_bool;
+				size_t				m_size;
+				uint32_t			m_uint32;
+				bool				m_bool;
 			} m_u;
 		};
 
-		CacheItem			m_cache[Config::NUM_IDS];
+		CacheItem					m_cache[Config::NUM_IDS];
 	};
 
 }

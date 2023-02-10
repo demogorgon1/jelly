@@ -53,7 +53,7 @@ namespace jelly
 		virtual IStats*					GetStats() = 0;
 
 		//! Get config source.
-		virtual IConfigSource*			GetConfigSource() = 0;
+		virtual const IConfigSource*	GetConfigSource() = 0;
 
 		//! Get compression provider for managing compression.
 		virtual Compression::IProvider*	GetCompressionProvider() = 0;

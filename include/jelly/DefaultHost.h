@@ -29,7 +29,7 @@ namespace jelly
 								DefaultHost(	
 									const char*					aRoot = ".",
 									const char*					aFilePrefix = "",
-									IConfigSource*				aConfigSource = NULL,
+									const IConfigSource*		aConfigSource = NULL,
 									const Stat::Info*			aExtraApplicationStats = NULL,
 									uint32_t					aExtraApplicationStatsCount = 0);
 		virtual					~DefaultHost();
@@ -44,7 +44,7 @@ namespace jelly
 		//----------------------------------------------------------------------------------------------
 		// IHost implementation
 		IStats*					GetStats() override;		
-		IConfigSource*			GetConfigSource() override;
+		const IConfigSource*	GetConfigSource() override;
 		Compression::IProvider* GetCompressionProvider() override;
 		uint64_t				GetTimeStamp() override;
 		size_t					GetAvailableDiskSpace() override;
@@ -93,7 +93,7 @@ namespace jelly
 		
 		std::string								m_root;
 		std::string								m_filePrefix;
-		IConfigSource*							m_configSource;
+		const IConfigSource*					m_configSource;
 		std::unique_ptr<Compression::IProvider>	m_compressionProvider;
 		std::unique_ptr<StoreManager>			m_storeManager;
 		std::unique_ptr<IStats>					m_stats;

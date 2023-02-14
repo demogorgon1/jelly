@@ -8,7 +8,7 @@ in a game server or as the inner-most moving parts of a larger distributed datab
 
 * [Documentation and C++ examples](https://demogorgon1.github.io/jelly/index.html)
 * [More in-depth discussion of _jelly_ topics on the wiki](https://github.com/demogorgon1/jelly/wiki)
-* [Comparative benchmarks (SQLite/RocksDB)](https::/github.com/demogorgon1/jelly-bench)
+* [Comparative benchmarks (SQLite/RocksDB)](https://github.com/demogorgon1/jelly-bench)
 
 ## In a nutshell
 

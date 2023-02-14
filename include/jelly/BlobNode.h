@@ -86,6 +86,7 @@ namespace jelly
  			};
 		}
 
+		virtual 
 		~BlobNode()
 		{
 		}

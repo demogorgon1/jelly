@@ -76,6 +76,7 @@ namespace jelly
 			};
 		}
 
+		virtual
 		~LockNode()
 		{
 		}

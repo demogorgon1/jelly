@@ -58,8 +58,9 @@ namespace jelly
 			m_pendingWALs.resize((size_t)walConcurrency, NULL);
 		}
 
+		virtual 
 		~Node()
-		{
+		{			
 			Stop();
 
 			for(WAL* wal : m_wals)
@@ -608,7 +609,6 @@ namespace jelly
 		uint32_t													m_nextWALId;		
 		FlushPendingStoreCallback									m_flushPendingStoreCallback;
 		PendingStoreType											m_pendingStore;
-		//CompactionRedirectMap										m_compactionRedirectMap;
 		bool														m_stopped;
 		uint32_t													m_pendingStoreWALItemCount;
 		StatsContext												m_statsContext;

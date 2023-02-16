@@ -77,7 +77,7 @@ namespace jelly
 						uint32_t key = testItems[i].first;
 						uint32_t value = testItems[i].second;
 
-						std::pair<TestItem*, bool> result = table.InsertOrUpdate(key, key * 2);
+						std::pair<TestItem*, bool> result = table.InsertOrUpdate(key, [key]() { return new TestItem(key, key * 2); });
 						if(result.second)
 						{
 							// Inserted

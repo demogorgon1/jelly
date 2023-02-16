@@ -164,13 +164,14 @@ namespace jelly
 		_Lock(
 			Request*											aRequest)
 		{
-			Item* item;
-			if (!this->GetItem(aRequest->GetKey(), item))
+			std::pair<Item*, bool> result = this->m_table.InsertOrUpdate(aRequest->GetKey(), [aRequest]()
 			{
-				// Never seen before, apply lock
-				this->SetItem(aRequest->GetKey(), item = new Item(aRequest->GetKey(), aRequest->GetLock()));
-			}
-			else
+				return new Item(aRequest->GetKey(), aRequest->GetLock());
+			});
+
+			Item* item = result.first;
+
+			if(!result.second)
 			{
 				if(!item->GetLock().IsSet())
 				{
@@ -203,6 +204,45 @@ namespace jelly
 				}
 			}
 
+			//Item* item;
+			//if (!this->GetItem(aRequest->GetKey(), item))
+			//{
+			//	// Never seen before, apply lock
+			//	this->SetItem(aRequest->GetKey(), item = new Item(aRequest->GetKey(), aRequest->GetLock()));
+			//}
+			//else
+			//{
+			//	if(!item->GetLock().IsSet())
+			//	{
+			//		// Not locked, just apply lock
+			//		item->SetLock(aRequest->GetLock());
+			//		aRequest->SetLock(_LockType());
+			//	}
+			//	else if(item->GetLock() != aRequest->GetLock())
+			//	{
+			//		// Locked by someone else				
+			//		if(aRequest->IsForced())
+			//		{
+			//			// Force the lock
+			//			item->SetLock(aRequest->GetLock());
+			//			aRequest->SetLock(item->GetLock());
+			//		}
+			//		else
+			//		{
+			//			// Fail
+			//			aRequest->SetLock(item->GetLock());
+			//			return RESULT_ALREADY_LOCKED;
+			//		}
+			//	}
+			//	else
+			//	{
+			//		// Same lock, no need to write anything - return meta data and timestamp					
+			//		aRequest->SetMeta(item->GetMeta());
+			//		aRequest->SetTimeStamp(item->GetTimeStamp());
+			//		return RESULT_OK;
+			//	}
+			//}
+
  			aRequest->SetMeta(item->GetMeta());
 
 			item->SetTimeStamp(aRequest->GetTimeStamp());
@@ -219,8 +259,9 @@ namespace jelly
 		_Unlock(
 			Request*											aRequest)
 		{
-			Item* item;
-			if (!this->GetItem(aRequest->GetKey(), item))
+			Item* item = this->m_table.Get(aRequest->GetKey());
+
+			if (item == NULL)
 			{
 				// Doesn't exist
 				return RESULT_DOES_NOT_EXIST;
@@ -251,8 +292,9 @@ namespace jelly
 		_Delete(
 			Request*											aRequest)
 		{
-			Item* item;
-			if (!this->GetItem(aRequest->GetKey(), item))
+			Item* item = this->m_table.Get(aRequest->GetKey());
+
+			if (item == NULL)
 			{
 				// Doesn't exist
 				return RESULT_DOES_NOT_EXIST;
@@ -338,8 +380,8 @@ namespace jelly
 
 				_KeyType key = item->GetKey();
 
-				Item* existing;
-				if (this->GetItem(key, existing))
+				Item* existing = this->m_table.Get(key);
+				if (existing != NULL)
 				{
 					if (item->GetSeq() > existing->GetSeq())
 					{
@@ -370,7 +412,7 @@ namespace jelly
 
 					this->m_pendingStore.insert(std::pair<const _KeyType, Item*>(item->GetKey(), item.get()));
 
-					this->SetItem(key, item.release());
+					this->m_table.Insert(key, item.release());
 				}
 			}
 
@@ -390,15 +432,15 @@ namespace jelly
 
 				_KeyType key = item->GetKey();
 
-				Item* existing;
-				if (this->GetItem(key, existing))
+				Item* existing = this->m_table.Get(key);
+				if (existing != NULL)
 				{
 					if (item->GetSeq() > existing->GetSeq())
 						existing->MoveFrom(item.get());
 				}
 				else
 				{
-					this->SetItem(key, item.release());
+					this->m_table.Insert(key, item.release());
 				}
 			}
 		}

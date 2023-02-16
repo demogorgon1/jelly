@@ -6,6 +6,7 @@
 #include "FileStatsContext.h"
 #include "IHost.h"
 #include "IStoreWriter.h"
+#include "ItemHashTable.h"
 #include "PerfTimer.h"
 #include "Queue.h"
 #include "Result.h"
@@ -65,9 +66,6 @@ namespace jelly
 
 			for(WAL* wal : m_wals)
 				delete wal;
-
-			for(typename TableType::iterator i = m_table.begin(); i != m_table.end(); i++)
-				delete i->second;
 		}
 
 		/**
@@ -391,9 +389,8 @@ namespace jelly
 
 			for(const typename CompactionResultType::Item& compactionResultItem : aCompactionResult->GetItems())
 			{
-				_ItemType* item;
-				bool ok = GetItem(compactionResultItem.m_key, item);
-				JELLY_ASSERT(ok);
+				_ItemType* item = m_table.Get(compactionResultItem.m_key);
+				JELLY_ASSERT(item != NULL);
 
 				if(compactionResultItem.m_seq == item->GetSeq())
 				{
@@ -498,7 +495,6 @@ namespace jelly
 
 	protected:
 
-		typedef std::unordered_map<_KeyType, _ItemType*, _STLKeyHasher> TableType;
 		typedef std::map<_KeyType, _ItemType*> PendingStoreType;
 		typedef std::function<void(uint32_t, IStoreWriter*, PendingStoreType*)> FlushPendingStoreCallback;
 
@@ -534,33 +530,33 @@ namespace jelly
 			return m_wals[m_wals.size() - 1];
 		}
 
-		bool
-		GetItem(
-			const _KeyType&					aKey,
-			_ItemType*&						aOut)
-		{
-			typename TableType::iterator i = m_table.find(aKey);
-			if (i == m_table.end())
-				return false;
+		//bool
+		//GetItem(
+		//	const _KeyType&					aKey,
+		//	_ItemType*&						aOut)
+		//{
+		//	typename TableType::iterator i = m_table.find(aKey);
+		//	if (i == m_table.end())
+		//		return false;
 
-			aOut = i->second;
-			return true;
-		}
+		//	aOut = i->second;
+		//	return true;
+		//}
 
-		void
-		SetItem(
-			const _KeyType&					aKey,
-			_ItemType*						aValue)
-		{
-			typename TableType::iterator i = m_table.find(aKey);
-			JELLY_ASSERT(i == m_table.end());
-			m_table[aKey] = aValue;
-		}
+		//void
+		//SetItem(
+		//	const _KeyType&					aKey,
+		//	_ItemType*						aValue)
+		//{
+		//	typename TableType::iterator i = m_table.find(aKey);
+		//	JELLY_ASSERT(i == m_table.end());
+		//	m_table[aKey] = aValue;
+		//}
 
 		size_t
 		GetItemCount() const
 		{
-			return m_table.size();
+			return m_table.Count();
 		}
 
 		void
@@ -605,7 +601,7 @@ namespace jelly
 		IHost*														m_host;
 		uint32_t													m_nodeId;
 		ConfigProxy													m_config;
-		TableType													m_table;
+		ItemHashTable<_KeyType, _ItemType>							m_table;
 		uint32_t													m_nextWALId;		
 		FlushPendingStoreCallback									m_flushPendingStoreCallback;
 		PendingStoreType											m_pendingStore;

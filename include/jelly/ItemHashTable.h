@@ -60,7 +60,7 @@ namespace jelly
 		std::pair<_ItemType*, bool>
 		InsertOrUpdate(
 			const _KeyType&				aKey,
-			uint32_t					aSeq)
+			std::function<_ItemType*()>	aItemCreator)
 		{
 			uint64_t hash = aKey.GetHash();
 
@@ -68,25 +68,53 @@ namespace jelly
 			if(item != NULL)
 				return std::make_pair(item, false);
 
-			item = new _ItemType(aKey, aSeq);
+			item = aItemCreator();
+
+			if(item != NULL)
+			{
+				TableEntry insert;
+				insert.m_item = item;
+				insert.m_key = aKey;
+
+				while (!_TryInsert(m_table, m_size, insert, hash))
+					Grow();
+
+				m_count++;
+			}
+
+			return std::make_pair(item, true);
+		}
+
+		void
+		Insert(
+			const _KeyType&				aKey,
+			_ItemType*					aItem)
+		{
+			uint64_t hash = aKey.GetHash();			
+			JELLY_ASSERT(_TryGet(hash, aKey) == NULL);
 
 			TableEntry insert;
-			insert.m_item = item;
+			insert.m_item = aItem;
 			insert.m_key = aKey;
 
-			uint64_t insertHash = aKey.GetHash();
-
-			while(!_TryInsert(m_table, m_size, insert, insertHash))
+			while (!_TryInsert(m_table, m_size, insert, hash))
 				Grow();
 
 			m_count++;
-
-			return std::make_pair(item, true);
 		}
 
 		const _ItemType*
 		Get(
 			const _KeyType&				aKey) const
+		{
+			uint64_t hash = aKey.GetHash();
+
+			return _TryGet(hash, aKey);
+		}
+
+		_ItemType*
+		Get(
+			const _KeyType&				aKey) 
 		{
 			uint64_t hash = aKey.GetHash();
 
@@ -113,6 +141,26 @@ namespace jelly
 			std::function<void(const _ItemType*)>	aCallback) const
 		{
 			const TableEntry* entry = (const TableEntry*)m_table;
+			size_t tableArraySize = m_size * 2;
+			size_t found = 0;
+
+			for (size_t i = 0; i < tableArraySize && found < m_count; i++)
+			{
+				if (entry->m_item != NULL)
+				{
+					aCallback(entry->m_item);
+					found++;
+				}
+
+				entry++;
+			}
+		}
+
+		void
+		ForEach(
+			std::function<void(_ItemType*)>			aCallback) 
+		{
+			TableEntry* entry = (TableEntry*)m_table;
 			size_t tableArraySize = m_size * 2;
 			size_t found = 0;
 

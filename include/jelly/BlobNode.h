@@ -218,8 +218,17 @@ namespace jelly
 				this->m_host->GetStats()->Emit(Stat::ID_COMPRESSED_BLOB_SIZE, newBlob->GetSize());
 			}
 
-			Item* item;
-			if (!this->GetItem(aRequest->GetKey(), item))
+			std::pair<Item*, bool> result = this->m_table.InsertOrUpdate(aRequest->GetKey(), [aRequest, aDelete]()
+			{
+				if(aDelete)
+					return (Item*)NULL;
+				else
+					return new Item(aRequest->GetKey(), aRequest->GetSeq());
+			});
+
+			Item* item = result.first;
+
+			if(result.second)
 			{
 				if(aDelete)
 				{
@@ -227,8 +236,6 @@ namespace jelly
 				}
 				else
 				{
-					this->SetItem(aRequest->GetKey(), item = new Item(aRequest->GetKey(), aRequest->GetSeq()));				
-
 					item->SetBlob(newBlob.release());
 
 					m_totalResidentBlobSize += item->GetBlob()->GetSize();
@@ -284,6 +291,72 @@ namespace jelly
 					item->SetBlob(newBlob.release());				
 			}
 
+			//Item* item;
+			//if (!this->GetItem(aRequest->GetKey(), item))
+			//{
+			//	if(aDelete)
+			//	{
+			//		return RESULT_DOES_NOT_EXIST;
+			//	}
+			//	else
+			//	{
+			//		this->SetItem(aRequest->GetKey(), item = new Item(aRequest->GetKey(), aRequest->GetSeq()));				
+
+			//		item->SetBlob(newBlob.release());
+
+			//		m_totalResidentBlobSize += item->GetBlob()->GetSize();
+			//		m_residentItems.Add(item);
+
+			//		obeyResidentBlobSizeLimit = true;
+			//	}
+			//}
+			//else
+			//{
+			//	if(item->GetSeq() >= aRequest->GetSeq())
+			//	{
+			//		// Trying to set an old version - return latest sequence number to requester
+			//		aRequest->SetSeq(item->GetSeq());
+			//		return RESULT_OUTDATED;
+			//	}
+
+			//	if(item->HasBlob())
+			//	{
+			//		// Already has a blob and is resident
+			//		JELLY_ASSERT(m_totalResidentBlobSize >= item->GetBlob()->GetSize());
+			//		m_totalResidentBlobSize -= item->GetBlob()->GetSize();
+
+			//		if(!aDelete)
+			//			m_totalResidentBlobSize += newBlob->GetSize();
+
+			//		m_residentItems.MoveToTail(item);
+			//	}
+			//	else if(item->HasTombstone())
+			//	{
+			//		// Was deleted (and is also resident)
+			//		if (!aDelete)
+			//			m_totalResidentBlobSize += newBlob->GetSize();
+
+			//		m_residentItems.MoveToTail(item);
+
+			//		obeyResidentBlobSizeLimit = true;
+			//	}
+			//	else
+			//	{
+			//		// No blob, not resident
+			//		if(!aDelete)
+			//			m_totalResidentBlobSize += newBlob->GetSize();
+
+			//		m_residentItems.Add(item);
+
+			//		obeyResidentBlobSizeLimit = true;
+			//	}
+
+			//	if(aDelete)
+			//		item->SetBlob(NULL);
+			//	else
+			//		item->SetBlob(newBlob.release());				
+			//}
+
 			item->GetRuntimeState().m_isResident = true; 
 
 			item->SetSeq(aRequest->GetSeq());
@@ -306,8 +379,8 @@ namespace jelly
 		_Get(
 			Request*										aRequest)
 		{
-			Item* item;
-			if (!this->GetItem(aRequest->GetKey(), item))
+			Item* item = this->m_table.Get(aRequest->GetKey());
+			if(item == NULL)
 				return RESULT_DOES_NOT_EXIST;
 
 			if(item->HasTombstone())
@@ -421,17 +494,28 @@ namespace jelly
 				TimeStampSorter timeStampSorter;
 				size_t totalSize = 0;
 
-				for (std::pair<const _KeyType, Item*>& i : this->m_table)
+				this->m_table.ForEach([&](
+					Item* aItem)
 				{
-					Item* item = i.second;
-
-					if (item->HasBlob())
+					if (aItem->HasBlob())
 					{
-						timeStampSorter.insert(TimeStampSorterValue({ item->GetKey(), item->GetTimeStamp() }, item));
+						timeStampSorter.insert(TimeStampSorterValue({ aItem->GetKey(), aItem->GetTimeStamp() }, aItem));
 
-						totalSize += item->GetBlob()->GetSize();
+						totalSize += aItem->GetBlob()->GetSize();
 					}
-				};
+				});
+
+				//for (std::pair<const _KeyType, Item*>& i : this->m_table)
+				//{
+				//	Item* item = i.second;
+
+				//	if (item->HasBlob())
+				//	{
+				//		timeStampSorter.insert(TimeStampSorterValue({ item->GetKey(), item->GetTimeStamp() }, item));
+
+				//		totalSize += item->GetBlob()->GetSize();
+				//	}
+				//};
 
 				JELLY_ASSERT(totalSize == m_totalResidentBlobSize);
 				JELLY_ASSERT(m_residentItems.IsEmpty());
@@ -472,8 +556,8 @@ namespace jelly
 
 				_KeyType key = item.get()->GetKey();
 
-				Item* existing;
-				if (this->GetItem(key, existing))
+				Item* existing = this->m_table.Get(key);
+				if (existing != NULL)
 				{
 					// We have an existing item for this key - update it if new sequence number is higher
 					if (item->GetSeq() > existing->GetSeq())
@@ -525,7 +609,7 @@ namespace jelly
 					if(item->HasBlob())
 						m_totalResidentBlobSize += item->GetBlob()->GetSize();
 
-					this->SetItem(key, item.release());
+					this->m_table.Insert(key, item.release());
 				}
 			}
 
@@ -566,8 +650,8 @@ namespace jelly
 					itemRuntimeState.m_isResident = true;
 				}
 
-				Item* existing;
-				if (this->GetItem(key, existing))
+				Item* existing = this->m_table.Get(key);
+				if (existing != NULL)
 				{
 					if (item->GetSeq() > existing->GetSeq())
 					{
@@ -588,29 +672,9 @@ namespace jelly
 					if(item->HasBlob())
 						m_totalResidentBlobSize += item->GetBlob()->GetSize();
 
-					this->SetItem(key, item.release());
+					this->m_table.Insert(key, item.release());
 				}
 			}
-		}
-
-		bool
-		_GetCompactionRedirect(
-			uint32_t				aStoreId,
-			const _KeyType&			aKey,
-			uint32_t&				aOutStoreId,
-			size_t&					aOutOffset)
-		{
-			auto i = this-> m_compactionRedirectMap.find(aStoreId);
-			if(i == this->m_compactionRedirectMap.end())
-				return false;
-
-			typename NodeBase::CompactionRedirectType::Entry t;
-			if(!i->second->GetEntry(aKey, t))
-				return false;
-
-			aOutStoreId = t.m_storeId;
-			aOutOffset = t.m_offset;
-			return true;
 		}
 
 		void

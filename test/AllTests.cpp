@@ -6,6 +6,7 @@
 #include "Config.h"
 #include "FileTest.h"
 #include "HousekeepingAdvisorTest.h"
+#include "ItemHashTableTest.h"
 #include "MiscTest.h"
 #include "NodeTest.h"
 #include "ReadTest.h"
@@ -26,6 +27,7 @@ namespace jelly
 				const char*		aWorkingDirectory,
 				const Config*	aConfig)
 			{
+				ItemHashTableTest::Run();
 				FileTest::Run();
 				CompressionTest::Run();
 				MiscTest::Run();

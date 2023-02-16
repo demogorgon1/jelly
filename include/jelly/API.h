@@ -20,6 +20,7 @@
 #include "IHost.h"
 #include "IReader.h"
 #include "IStats.h"
+#include "ItemHashTable.h"
 #include "IWriter.h"
 #include "LockMetaData.h"
 #include "LockNode.h"

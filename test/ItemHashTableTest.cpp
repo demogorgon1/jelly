@@ -1,8 +1,5 @@
 #include <jelly/API.h>
 
-#include <windows.h>
-#include <Psapi.h>
-
 namespace jelly
 {
 

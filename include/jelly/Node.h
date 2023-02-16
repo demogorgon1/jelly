@@ -530,29 +530,6 @@ namespace jelly
 			return m_wals[m_wals.size() - 1];
 		}
 
-		//bool
-		//GetItem(
-		//	const _KeyType&					aKey,
-		//	_ItemType*&						aOut)
-		//{
-		//	typename TableType::iterator i = m_table.find(aKey);
-		//	if (i == m_table.end())
-		//		return false;
-
-		//	aOut = i->second;
-		//	return true;
-		//}
-
-		//void
-		//SetItem(
-		//	const _KeyType&					aKey,
-		//	_ItemType*						aValue)
-		//{
-		//	typename TableType::iterator i = m_table.find(aKey);
-		//	JELLY_ASSERT(i == m_table.end());
-		//	m_table[aKey] = aValue;
-		//}
-
 		size_t
 		GetItemCount() const
 		{

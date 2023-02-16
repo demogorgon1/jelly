@@ -291,72 +291,6 @@ namespace jelly
 					item->SetBlob(newBlob.release());				
 			}
 
-			//Item* item;
-			//if (!this->GetItem(aRequest->GetKey(), item))
-			//{
-			//	if(aDelete)
-			//	{
-			//		return RESULT_DOES_NOT_EXIST;
-			//	}
-			//	else
-			//	{
-			//		this->SetItem(aRequest->GetKey(), item = new Item(aRequest->GetKey(), aRequest->GetSeq()));				
-
-			//		item->SetBlob(newBlob.release());
-
-			//		m_totalResidentBlobSize += item->GetBlob()->GetSize();
-			//		m_residentItems.Add(item);
-
-			//		obeyResidentBlobSizeLimit = true;
-			//	}
-			//}
-			//else
-			//{
-			//	if(item->GetSeq() >= aRequest->GetSeq())
-			//	{
-			//		// Trying to set an old version - return latest sequence number to requester
-			//		aRequest->SetSeq(item->GetSeq());
-			//		return RESULT_OUTDATED;
-			//	}
-
-			//	if(item->HasBlob())
-			//	{
-			//		// Already has a blob and is resident
-			//		JELLY_ASSERT(m_totalResidentBlobSize >= item->GetBlob()->GetSize());
-			//		m_totalResidentBlobSize -= item->GetBlob()->GetSize();
-
-			//		if(!aDelete)
-			//			m_totalResidentBlobSize += newBlob->GetSize();
-
-			//		m_residentItems.MoveToTail(item);
-			//	}
-			//	else if(item->HasTombstone())
-			//	{
-			//		// Was deleted (and is also resident)
-			//		if (!aDelete)
-			//			m_totalResidentBlobSize += newBlob->GetSize();
-
-			//		m_residentItems.MoveToTail(item);
-
-			//		obeyResidentBlobSizeLimit = true;
-			//	}
-			//	else
-			//	{
-			//		// No blob, not resident
-			//		if(!aDelete)
-			//			m_totalResidentBlobSize += newBlob->GetSize();
-
-			//		m_residentItems.Add(item);
-
-			//		obeyResidentBlobSizeLimit = true;
-			//	}
-
-			//	if(aDelete)
-			//		item->SetBlob(NULL);
-			//	else
-			//		item->SetBlob(newBlob.release());				
-			//}
-
 			item->GetRuntimeState().m_isResident = true; 
 
 			item->SetSeq(aRequest->GetSeq());
@@ -504,18 +438,6 @@ namespace jelly
 						totalSize += aItem->GetBlob()->GetSize();
 					}
 				});
-
-				//for (std::pair<const _KeyType, Item*>& i : this->m_table)
-				//{
-				//	Item* item = i.second;
-
-				//	if (item->HasBlob())
-				//	{
-				//		timeStampSorter.insert(TimeStampSorterValue({ item->GetKey(), item->GetTimeStamp() }, item));
-
-				//		totalSize += item->GetBlob()->GetSize();
-				//	}
-				//};
 
 				JELLY_ASSERT(totalSize == m_totalResidentBlobSize);
 				JELLY_ASSERT(m_residentItems.IsEmpty());

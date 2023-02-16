@@ -204,45 +204,6 @@ namespace jelly
 				}
 			}
 
-			//Item* item;
-			//if (!this->GetItem(aRequest->GetKey(), item))
-			//{
-			//	// Never seen before, apply lock
-			//	this->SetItem(aRequest->GetKey(), item = new Item(aRequest->GetKey(), aRequest->GetLock()));
-			//}
-			//else
-			//{
-			//	if(!item->GetLock().IsSet())
-			//	{
-			//		// Not locked, just apply lock
-			//		item->SetLock(aRequest->GetLock());
-			//		aRequest->SetLock(_LockType());
-			//	}
-			//	else if(item->GetLock() != aRequest->GetLock())
-			//	{
-			//		// Locked by someone else				
-			//		if(aRequest->IsForced())
-			//		{
-			//			// Force the lock
-			//			item->SetLock(aRequest->GetLock());
-			//			aRequest->SetLock(item->GetLock());
-			//		}
-			//		else
-			//		{
-			//			// Fail
-			//			aRequest->SetLock(item->GetLock());
-			//			return RESULT_ALREADY_LOCKED;
-			//		}
-			//	}
-			//	else
-			//	{
-			//		// Same lock, no need to write anything - return meta data and timestamp					
-			//		aRequest->SetMeta(item->GetMeta());
-			//		aRequest->SetTimeStamp(item->GetTimeStamp());
-			//		return RESULT_OK;
-			//	}
-			//}
-
  			aRequest->SetMeta(item->GetMeta());
 
 			item->SetTimeStamp(aRequest->GetTimeStamp());

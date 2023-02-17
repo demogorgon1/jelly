@@ -28,7 +28,6 @@ namespace jelly
 		typename _KeyType,
 		typename _RequestType,
 		typename _ItemType,
-		typename _STLKeyHasher,
 		bool _CompressWAL
 	>
 	class Node
@@ -461,8 +460,7 @@ namespace jelly
 
 				// Pick a pending WAL to write to, using the hash of item key
 				{
-					_STLKeyHasher hasher;
-					size_t hash = hasher(aItem->GetKey());
+					size_t hash = aItem->GetKey().GetHash();
 					walConcurrencyIndex = (uint32_t)(m_pendingWALs.size() * (hash >> 32) / 0x100000000);
 				}
 

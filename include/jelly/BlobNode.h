@@ -28,11 +28,10 @@ namespace jelly
 			_KeyType, 
 			BlobNodeRequest<_KeyType, _BlobType>, 
 			BlobNodeItem<_KeyType, _BlobType>,
-			typename _KeyType::Hasher,
 			false> // Disable streaming compression of WALs (blobs are already compressed)
 	{
 	public:
-		typedef Node<_KeyType, BlobNodeRequest<_KeyType, _BlobType>, BlobNodeItem<_KeyType, _BlobType>, typename _KeyType::Hasher, false> NodeBase;
+		typedef Node<_KeyType, BlobNodeRequest<_KeyType, _BlobType>, BlobNodeItem<_KeyType, _BlobType>, false> NodeBase;
 
 		typedef BlobNodeRequest<_KeyType, _BlobType> Request;
 		typedef BlobNodeItem<_KeyType, _BlobType> Item;

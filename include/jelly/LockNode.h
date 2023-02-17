@@ -28,11 +28,10 @@ namespace jelly
 			_KeyType, 
 			LockNodeRequest<_KeyType, _LockType, _LockMetaType>, 
 			LockNodeItem<_KeyType, _LockType, _LockMetaType>,
-			typename _KeyType::Hasher,
 			true> // Enable streaming compression of WALs
 	{
 	public:
-		typedef Node<_KeyType, LockNodeRequest<_KeyType, _LockType, _LockMetaType>, LockNodeItem<_KeyType, _LockType, _LockMetaType>, typename _KeyType::Hasher, true> NodeBase;
+		typedef Node<_KeyType, LockNodeRequest<_KeyType, _LockType, _LockMetaType>, LockNodeItem<_KeyType, _LockType, _LockMetaType>, true> NodeBase;
 
 		typedef LockNodeRequest<_KeyType, _LockType, _LockMetaType> Request;
 		typedef LockNodeItem<_KeyType, _LockType, _LockMetaType> Item;

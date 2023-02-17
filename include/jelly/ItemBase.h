@@ -41,9 +41,9 @@ namespace jelly
 		virtual size_t	GetStoredBlobSize() const { JELLY_ASSERT(false); return 0; }
 
 		// Data access
-		uint32_t		GetTombstoneStoreId() const { return m_tombstoneStoreId; }
-		uint32_t		GetSeq() const { return m_seq; }
-		uint64_t		GetTimeStamp() const { return m_timeStamp; }
+		uint32_t		GetTombstoneStoreId() const { return m_data.m_tombstoneStoreId; }
+		uint32_t		GetSeq() const { return m_data.m_seq; }
+		uint64_t		GetTimeStamp() const { return m_data.m_timeStamp; }
 
 	protected:
 
@@ -59,9 +59,22 @@ namespace jelly
 
 	private:
 
-		uint64_t		m_timeStamp;
-		uint32_t		m_seq;
-		uint32_t		m_tombstoneStoreId;
+		struct Data
+		{
+			Data()
+				: m_tombstoneStoreId(UINT32_MAX)
+				, m_seq(0)
+				, m_timeStamp(0)
+			{
+
+			}
+
+			uint64_t		m_timeStamp;
+			uint32_t		m_seq;
+			uint32_t		m_tombstoneStoreId;
+		};
+
+		Data				m_data;
 	};
 
 }

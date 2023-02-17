@@ -89,13 +89,6 @@ namespace jelly
 		return true;
 	}
 
-	bool			
-	ItemBase::CompareBase(
-		const ItemBase&					aItemBase) const
-	{
-		return m_data.m_tombstoneStoreId == aItemBase.m_data.m_tombstoneStoreId && m_data.m_seq == aItemBase.m_data.m_seq; // Don't compare timestamp
-	}
-
 	void			
 	ItemBase::CopyBase(
 		const ItemBase&					aItemBase)

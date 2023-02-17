@@ -52,8 +52,6 @@ namespace jelly
 							IWriter*						aWriter) const;
 		bool			ReadBase(
 							IReader*						aReader);
-		bool			CompareBase(
-							const ItemBase&					aItemBase) const;
 		void			CopyBase(
 							const ItemBase&					aItemBase);
 

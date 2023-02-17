@@ -76,16 +76,6 @@ namespace jelly
 		}
 
 		bool
-		Compare(
-			const LockNodeItem*								aOther) const
-		{
-			return m_key == aOther->m_key 
-				&& m_lock == aOther->m_lock 
-				&& m_meta == aOther->m_meta
-				&& CompareBase(*aOther);
-		}
-
-		bool
 		CompactionRead(
 			IFileStreamReader*								aStoreReader)
 		{

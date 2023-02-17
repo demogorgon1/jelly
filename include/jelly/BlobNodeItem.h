@@ -116,17 +116,6 @@ namespace jelly
 		}
 
 		bool
-		Compare(
-			const BlobNodeItem*								aOther) const
-		{	
-			JELLY_ASSERT(m_blob);
-			JELLY_ASSERT(aOther->m_blob);
-
-			// Note: no comparison of timestamp
-			return m_key == aOther->m_key && *m_blob == *aOther->m_blob && CompareBase(*aOther);
-		}
-
-		bool
 		CompactionRead(
 			IFileStreamReader*								aStoreReader)
 		{

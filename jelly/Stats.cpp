@@ -85,6 +85,7 @@ namespace jelly
 		{
 			const Stat::Info* info = _GetStatInfo(aId);
 			JELLY_ASSERT(!aExpectedType.has_value() || aExpectedType == info->m_type);
+			JELLY_UNUSED(aExpectedType);
 			size_t typeIndex = m_typeIndices[aId];
 
 			_GetCurrentThread()->Emit(aValue, info, typeIndex);
@@ -114,6 +115,7 @@ namespace jelly
 		uint32_t		aId) const 
 	{
 		const Stat::Info* info = _GetStatInfo(aId);
+		JELLY_UNUSED(info);
 		JELLY_ASSERT(info->m_type == Stat::TYPE_COUNTER);
 		size_t typeIndex = m_typeIndices[aId];
 		JELLY_ASSERT(typeIndex < m_counters.size());
@@ -125,6 +127,7 @@ namespace jelly
 		uint32_t		aId) const
 	{
 		const Stat::Info* info = _GetStatInfo(aId);
+		JELLY_UNUSED(info);
 		JELLY_ASSERT(info->m_type == Stat::TYPE_SAMPLER);
 		size_t typeIndex = m_typeIndices[aId];
 		JELLY_ASSERT(typeIndex < m_samplers.size());
@@ -136,6 +139,7 @@ namespace jelly
 		uint32_t		aId) const 
 	{
 		const Stat::Info* info = _GetStatInfo(aId);
+		JELLY_UNUSED(info);
 		JELLY_ASSERT(info->m_type == Stat::TYPE_SAMPLER);
 		size_t typeIndex = m_typeIndices[aId];
 		JELLY_ASSERT(typeIndex < m_samplerHistograms.size());
@@ -152,6 +156,7 @@ namespace jelly
 		uint32_t		aId) const
 	{
 		const Stat::Info* info = _GetStatInfo(aId);
+		JELLY_UNUSED(info);
 		JELLY_ASSERT(info->m_type == Stat::TYPE_GAUGE);
 		size_t typeIndex = m_typeIndices[aId];
 		JELLY_ASSERT(typeIndex < m_gauges.size());

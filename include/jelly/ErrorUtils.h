@@ -7,7 +7,7 @@
 			jelly::ErrorUtils::Terminate("" __VA_ARGS__);					\
 	} while(false)
 
-#define JELLY_ASSERT(_Condition, ...)										\
+#define JELLY_ALWAYS_ASSERT(_Condition, ...)								\
 	do																		\
 	{																		\
 		if(!(_Condition))													\
@@ -20,6 +20,12 @@
 	
 #define JELLY_FATAL_ERROR(...)												\
 	jelly::ErrorUtils::Terminate("" __VA_ARGS__)
+
+#if !defined(NDEBUG)
+	#define JELLY_ASSERT JELLY_ALWAYS_ASSERT
+#else
+	#define JELLY_ASSERT(...) do { } while(false)
+#endif
 
 namespace jelly
 {

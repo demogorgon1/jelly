@@ -34,6 +34,7 @@ namespace jelly
 					return p[i++]; 
 				});
 
+				JELLY_UNUSED(decoded);
 				JELLY_ASSERT(aValue == decoded);
 			}
 

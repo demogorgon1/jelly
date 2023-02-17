@@ -122,11 +122,14 @@ namespace jelly
 				IFileStreamReader*									aFileStreamReader,
 				const std::vector<_ExpectedItemType>&				aExpected)
 			{
+				JELLY_UNUSED(aCompression);
+
 				std::unique_ptr<IFileStreamReader> f(aFileStreamReader);
 				JELLY_ASSERT(f);
 
 				for (const _ExpectedItemType& expected : aExpected)
 				{
+					JELLY_UNUSED(expected);
 					JELLY_ASSERT(!f->IsEnd());
 					_ItemType item;
 					JELLY_ASSERT(item.Read(f.get(), NULL));
@@ -204,6 +207,7 @@ namespace jelly
 			{
 				std::vector<UIntKey<uint32_t>> keys;
 				aNode->GetResidentKeys(keys);
+				JELLY_UNUSED(aExpected);
 				JELLY_ASSERT(keys == aExpected);
 			}
 

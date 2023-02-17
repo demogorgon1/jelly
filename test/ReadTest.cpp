@@ -68,10 +68,12 @@ namespace jelly
 							JELLY_ASSERT(req->GetResult() == RESULT_OK);
 
 							const uint8_t* p = (const uint8_t*)req->GetBlob()->GetPointer();
+							JELLY_UNUSED(p);
 							size_t size = req->GetBlob()->GetSize();
 							for(size_t i = 0; i < size; i++)
 							{
 								uint8_t expectedByte = (uint8_t)(random() % 64);
+								JELLY_UNUSED(expectedByte);
 								JELLY_ASSERT(p[i] == expectedByte);
 							}
 						}

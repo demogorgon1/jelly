@@ -34,6 +34,7 @@ namespace jelly
 				{
 					JELLY_ASSERT(aId < (uint32_t)NUM_IDS);
 					JELLY_ASSERT(aExpectedType == Stat::TYPE_COUNTER);
+					JELLY_UNUSED(aExpectedType);
 					m_counters[aId] += aValue;
 				}
 
@@ -56,6 +57,7 @@ namespace jelly
 
 				static const char* TEST_DATA = "TestHelloWorldTest!";
 				size_t testDataSize = strlen(TEST_DATA);
+				JELLY_UNUSED(testDataSize);
 
 				// Try to read stream file that's not there
 				{
@@ -86,6 +88,7 @@ namespace jelly
 					JELLY_ASSERT(f.IsValid());
 					JELLY_ASSERT(f.GetSize() == testDataSize + sizeof(FileHeader));
 					char buffer[256];
+					JELLY_UNUSED(buffer);
 					JELLY_ASSERT(sizeof(buffer) >= testDataSize);
 					JELLY_ASSERT(f.Read(buffer, testDataSize) == testDataSize);
 					JELLY_ASSERT(memcmp(buffer, TEST_DATA, testDataSize) == 0);

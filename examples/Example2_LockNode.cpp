@@ -86,6 +86,7 @@ main(
 
 		JELLY_ASSERT(meta.m_blobNodeIdCount == 0);	// Associated blob isn't anywhere.
 		JELLY_ASSERT(meta.m_blobSeq == UINT32_MAX); // No blob sequence number.
+		JELLY_UNUSED(meta);
 	}
 
 	// Now unlock the same key

@@ -100,6 +100,7 @@ namespace jelly
 					for(std::unordered_map<uint32_t, uint32_t>::const_iterator it = tableRef.begin(); it != tableRef.end(); it++)
 					{
 						const TestItem* t = table.Get(it->first);
+						JELLY_UNUSED(t);
 						JELLY_ASSERT(t != NULL);
 						JELLY_ASSERT(t->m_value == it->second);
 					}

@@ -68,7 +68,7 @@ namespace jelly
 				// Since we now have a pending request, advisor should suggest a "flush pending WAL"
 				_UpdateHousekeepingAdvisor(housekeepingAdvisor, 
 				{
-					[](const HousekeepingAdvisorType::Event& aEvent) { JELLY_ASSERT(aEvent.m_type == HousekeepingAdvisorType::Event::TYPE_FLUSH_PENDING_WAL); }
+					[](const HousekeepingAdvisorType::Event& aEvent) { JELLY_ASSERT(aEvent.m_type == HousekeepingAdvisorType::Event::TYPE_FLUSH_PENDING_WAL); JELLY_UNUSED(aEvent); }
 				});
 			}
 

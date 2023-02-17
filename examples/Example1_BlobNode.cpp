@@ -118,6 +118,7 @@ main(
 		const jelly::IBuffer* blob = req.GetBlob();
 		JELLY_ASSERT(blob->GetSize() == 5);
 		JELLY_ASSERT(memcmp(blob->GetPointer(), "hello", 5) == 0);
+		JELLY_UNUSED(blob);
 	}
 
 	return EXIT_SUCCESS;

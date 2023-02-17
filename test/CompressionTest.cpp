@@ -49,6 +49,7 @@ namespace jelly
 				{
 					JELLY_ASSERT(aBufferSize <= compareRemaining);
 					JELLY_ASSERT(memcmp(aBuffer, comparePointer, aBufferSize) == 0);
+					JELLY_UNUSED(aBuffer);
 					comparePointer += aBufferSize;
 					compareRemaining -= aBufferSize;
 				});

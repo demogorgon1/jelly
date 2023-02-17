@@ -1,7 +1,7 @@
 #pragma once
 
-#include "BlobBuffer.h"
 #include "ErrorUtils.h"
+#include "IBuffer.h"
 
 namespace jelly
 {
@@ -37,7 +37,7 @@ namespace jelly
 
 		// Virtual methods
 		virtual void	UpdateBlobBuffer(
-							std::unique_ptr<BlobBuffer>&	/*aBlobBuffer*/) { JELLY_ASSERT(false); }
+							std::unique_ptr<IBuffer>&		/*aBlobBuffer*/) { JELLY_ASSERT(false); }
 		virtual size_t	GetStoredBlobSize() const { JELLY_ASSERT(false); return 0; }
 
 		// Data access

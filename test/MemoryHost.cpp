@@ -326,7 +326,7 @@ namespace jelly
 				{
 					JELLY_ASSERT(m_bufferList != NULL);
 
-					std::unique_ptr<BlobBuffer> blobBuffer = std::make_unique<BlobBuffer>();
+					std::unique_ptr<IBuffer> blobBuffer = std::make_unique<Buffer<1>>();
 					blobBuffer->SetSize(aItem->GetStoredBlobSize());
 
 					const MemoryBuffer* buffer;

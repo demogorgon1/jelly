@@ -31,6 +31,9 @@ namespace jelly
 
 		//! Get pointer to data contained in buffer.
 		virtual void*		GetPointer() = 0;
+
+		//! Make copy of buffer.
+		virtual IBuffer*	Copy() const = 0;
 	};
 
 }

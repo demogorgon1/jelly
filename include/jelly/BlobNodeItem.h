@@ -1,8 +1,8 @@
 #pragma once
 
-#include "BlobBuffer.h"
 #include "Compression.h"
 #include "ErrorUtils.h"
+#include "IBuffer.h"
 #include "IFileStreamReader.h"
 #include "IReader.h"
 #include "ItemBase.h"
@@ -16,7 +16,7 @@ namespace jelly
 	class WAL;
 
 	// Blob node item
-	template <typename _KeyType, typename _BlobType>
+	template <typename _KeyType>
 	class BlobNodeItem
 		: public ItemBase
 	{
@@ -44,8 +44,8 @@ namespace jelly
 			bool								m_isResident;
 
 			// Placement in timestamp-sorted linked list used to expell oldest items when memory limit is reached
-			BlobNodeItem<_KeyType, _BlobType>*	m_next;
-			BlobNodeItem<_KeyType, _BlobType>*	m_prev;
+			BlobNodeItem<_KeyType>*				m_next;
+			BlobNodeItem<_KeyType>*				m_prev;
 		};
 
 		BlobNodeItem(
@@ -59,7 +59,7 @@ namespace jelly
 		BlobNodeItem(
 			const _KeyType&									aKey,
 			uint32_t										aSeq,
-			BlobBuffer*										aBlob)
+			IBuffer*										aBlob)
 			: m_key(aKey)
 		{
 			SetSeq(aSeq);
@@ -76,7 +76,7 @@ namespace jelly
 
 		void
 		SetBlob(
-			BlobBuffer*										aBlob)
+			IBuffer*										aBlob)
 		{
 			m_blob.reset(aBlob);
 		}
@@ -157,13 +157,13 @@ namespace jelly
 			m_runtimeState.m_storeOffset = aNewStoreOffset;
 		}
 
-		BlobNodeItem<_KeyType, _BlobType>*
+		BlobNodeItem<_KeyType>*
 		GetNext()
 		{
 			return m_runtimeState.m_next;
 		}
 
-		BlobNodeItem<_KeyType, _BlobType>*
+		BlobNodeItem<_KeyType>*
 		GetPrev()
 		{
 			return m_runtimeState.m_prev;
@@ -171,14 +171,14 @@ namespace jelly
 
 		void
 		SetNext(
-			BlobNodeItem<_KeyType, _BlobType>*				aNext)
+			BlobNodeItem<_KeyType>*								aNext)
 		{
 			m_runtimeState.m_next = aNext;
 		}
 
 		void
 		SetPrev(
-			BlobNodeItem<_KeyType, _BlobType>*				aPrev)
+			BlobNodeItem<_KeyType>*							aPrev)
 		{
 			m_runtimeState.m_prev = aPrev;
 		}
@@ -235,7 +235,7 @@ namespace jelly
 				if (aOutBlobOffset != NULL)
 					(*aOutBlobOffset) += aReader->GetTotalBytesRead() - startOffset;
 
-				std::unique_ptr<BlobBuffer> blob = std::make_unique<BlobBuffer>();
+				std::unique_ptr<IBuffer> blob = std::make_unique<Buffer<1>>();
 				blob->SetSize((size_t)size);
 
 				if (aReader->Read(blob->GetPointer(), blob->GetSize()) != blob->GetSize())
@@ -251,7 +251,7 @@ namespace jelly
 
 		void	
 		UpdateBlobBuffer(
-			std::unique_ptr<BlobBuffer>&					aBlobBuffer) override
+			std::unique_ptr<IBuffer>&					aBlobBuffer) override
 		{
 			JELLY_ASSERT(m_runtimeState.m_storeSize == aBlobBuffer->GetSize());
 			m_blob = std::move(aBlobBuffer);
@@ -267,8 +267,8 @@ namespace jelly
 
 		// Data access
 		const _KeyType&			GetKey() const { return m_key; }
-		const BlobBuffer*		GetBlob() const { JELLY_ASSERT(m_blob); return m_blob.get(); }
-		BlobBuffer*				GetBlob() { JELLY_ASSERT(m_blob); return m_blob.get(); }
+		const IBuffer*			GetBlob() const { JELLY_ASSERT(m_blob); return m_blob.get(); }
+		IBuffer*				GetBlob() { JELLY_ASSERT(m_blob); return m_blob.get(); }
 		bool					HasBlob() const { return (bool)m_blob; }
 		const RuntimeState&		GetRuntimeState() const { return m_runtimeState; }
 		RuntimeState&			GetRuntimeState() { return m_runtimeState; }
@@ -276,7 +276,7 @@ namespace jelly
 	private:
 
 		_KeyType							m_key;
-		std::unique_ptr<BlobBuffer>			m_blob;
+		std::unique_ptr<IBuffer>			m_blob;
 
 		// Runtime state, not serialized
 		RuntimeState						m_runtimeState;

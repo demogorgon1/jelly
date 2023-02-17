@@ -78,9 +78,6 @@ namespace jelly
 		IWriter*						aWriter) const
 	{
 		JELLY_CHECK(aWriter->WritePOD(m_data), "Failed to write item base data.");
-		//JELLY_CHECK(aWriter->WritePOD(m_tombstoneStoreId), "Failed to write tombstone store id.");
-		//JELLY_CHECK(aWriter->WriteUInt(m_timeStamp), "Failed to write time stamp.");
-		//JELLY_CHECK(aWriter->WriteUInt(m_seq), "Failed to write sequence number.");
 	}
 	
 	bool			
@@ -89,12 +86,6 @@ namespace jelly
 	{
 		if (!aReader->ReadPOD(m_data))
 			return false;
-		//if (!aReader->ReadPOD(m_tombstoneStoreId))
-		//	return false;
-		//if (!aReader->ReadUInt(m_timeStamp))
-		//	return false;
-		//if (!aReader->ReadUInt(m_seq))
-		//	return false;
 		return true;
 	}
 

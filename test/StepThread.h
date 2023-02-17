@@ -4,6 +4,8 @@
 
 #include <jelly/StringUtils.h>
 
+#include "UInt32Blob.h"
+
 namespace jelly
 {
 
@@ -346,7 +348,7 @@ namespace jelly
 					m_setRequest = std::make_unique<_BlobNodeRequestType>();
 					m_setRequest->SetKey(m_key);
 					m_setRequest->SetSeq(++m_blobSeq);
-					m_setRequest->SetBlob(m_key);
+					m_setRequest->SetBlob(new UInt32Blob(m_key));
 					m_blobNode->Set(m_setRequest.get());
 				});								
 			}
@@ -462,7 +464,7 @@ namespace jelly
 						switch(m_getRequest->GetResult())
 						{
 						case RESULT_OK:
-							JELLY_ASSERT(m_getRequest->GetBlob() == m_key);
+							JELLY_ASSERT(UInt32Blob::GetValue(m_getRequest->GetBlob()) == m_key);
 							m_getRequest.reset();
 							break;
 
@@ -496,7 +498,7 @@ namespace jelly
 							m_setRequest = std::make_unique<_BlobNodeRequestType>();
 							m_setRequest->SetKey(m_key);
 							m_setRequest->SetSeq(++m_blobSeq);
-							m_setRequest->SetBlob(m_key);
+							m_setRequest->SetBlob(new UInt32Blob(m_key));
 							m_blobNode->Set(m_setRequest.get());
 							break;
 

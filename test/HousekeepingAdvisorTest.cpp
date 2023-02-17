@@ -12,7 +12,7 @@ namespace jelly
 		namespace
 		{
 
-			typedef BlobNode<UIntKey<uint32_t>,	UInt32Blob> BlobNodeType;
+			typedef BlobNode<UIntKey<uint32_t>> BlobNodeType;
 			typedef HousekeepingAdvisor<BlobNodeType> HousekeepingAdvisorType;
 
 			void
@@ -60,7 +60,7 @@ namespace jelly
 					BlobNodeType::Request req;
 					req.SetKey(1);
 					req.SetSeq(1);
-					req.SetBlob(123);
+					req.SetBlob(new UInt32Blob(123));
 					blobNode.Set(&req);
 					JELLY_ASSERT(blobNode.ProcessRequests() == 1);
 				}

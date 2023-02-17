@@ -23,8 +23,7 @@ main(
 	// both kinds of nodes work exactly the same way.
 	typedef jelly::BlobNode
 	<
-		jelly::UIntKey<uint32_t>,				// Our blob keys will be uint32_t.
-		jelly::Blob<>							// Our blobs will be jelly::Blob.
+		jelly::UIntKey<uint32_t>				// Our blob keys will be uint32_t.
 	> BlobNodeType;
 
 	// Create our blob node.
@@ -33,11 +32,11 @@ main(
 		3);										// Use globally unique node id 3.
 
 	// Define a blob.
-	jelly::Blob<> blob;
+	jelly::Blob blob;
 
 	{
-		blob.GetBuffer().SetSize(5);
-		memcpy(blob.GetBuffer().GetPointer(), "hello", 5);
+		blob.SetSize(5);
+		memcpy(blob.GetPointer(), "hello", 5);
 	}
 
 	// Right, let's start off by saving this blob a bunch of times under the same key. 
@@ -50,8 +49,9 @@ main(
 	{
 		// Define the request
 		reqs[i].SetKey(123);
-		reqs[i].SetSeq(1 + i); // Incrementing sequence numbers.
-		reqs[i].SetBlob(blob);
+		reqs[i].SetSeq(1 + i);					// Incrementing sequence numbers.
+		reqs[i].SetBlob(blob.Copy());			// Copy blob and give ownership to 
+												// request.
 
 		// Submit a set request
 		blobNode.Set(&reqs[i]);
@@ -125,7 +125,7 @@ main(
 		BlobNodeType::Request req;
 		req.SetKey(123);			// Still using the same key...
 		req.SetSeq(NUM_SAVES + i);	// ... but with the highest sequence number.
-		req.SetBlob(blob);			// Set our test blob.
+		req.SetBlob(blob.Copy());	// Set our test blob.
 
 		// Submit, process, and flush to make another store.
 		blobNode.Set(&req);

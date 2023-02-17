@@ -27,8 +27,7 @@ main(
 	// to type too much.
 	typedef jelly::BlobNode
 	<
-		jelly::UIntKey<uint32_t>,				// Our blob keys will be uint32_t.
-		jelly::Blob<>							// Our blobs will be jelly::Blob.
+		jelly::UIntKey<uint32_t>				// Our blob keys will be uint32_t.
 	> BlobNodeType;
 
 	// Create our blob node.
@@ -39,11 +38,11 @@ main(
 	// Do a save
 	{
 		// Define a blob with the string "hello" inside
-		jelly::Blob<> blob;
+		jelly::Blob blob;
 
 		{
-			blob.GetBuffer().SetSize(5);
-			memcpy(blob.GetBuffer().GetPointer(), "hello", 5);
+			blob.SetSize(5);
+			memcpy(blob.GetPointer(), "hello", 5);
 		}
 
 		// Define a request to save it.
@@ -60,8 +59,9 @@ main(
 			// whenever it makes any changes to the blob.
 			req.SetSeq(1);
 
-			// Set the blob for the request.
-			req.SetBlob(blob);
+			// Set the blob for the request. We need to copy the blob because ownership of the
+			// object has to be transfered to the request.
+			req.SetBlob(blob.Copy());
 		}
 
 		// Submit a "set" request to the blob node. The caller owns the request object and must
@@ -115,9 +115,9 @@ main(
 		JELLY_ASSERT(req.GetResult() == jelly::RESULT_OK);
 
 		// Read the blob and make sure we got the right data back.
-		jelly::Blob<> blob = req.GetBlob();
-		JELLY_ASSERT(blob.GetBuffer().GetSize() == 5);
-		JELLY_ASSERT(memcmp(blob.GetBuffer().GetPointer(), "hello", 5) == 0);
+		const jelly::IBuffer* blob = req.GetBlob();
+		JELLY_ASSERT(blob->GetSize() == 5);
+		JELLY_ASSERT(memcmp(blob->GetPointer(), "hello", 5) == 0);
 	}
 
 	return EXIT_SUCCESS;

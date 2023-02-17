@@ -281,7 +281,7 @@ namespace jelly::Test::Sim
 				aClient->m_setRequest = std::make_unique<BlobServer::BlobNodeType::Request>();
 				aClient->m_setRequest->SetKey(aClient->m_id);
 				aClient->m_setRequest->SetSeq(++aClient->m_blobSeq);
-				aClient->m_playerBlob.ToBlob(aClient->m_setRequest->GetBlob());
+				aClient->m_setRequest->SetBlob(aClient->m_playerBlob.AsBlob());
 
 				uint32_t blobNodeId = m_network->PickRandomBlobNodeId();
 				BlobServer::BlobNodeType* blobNode = m_network->GetBlobServer(blobNodeId)->GetNode();

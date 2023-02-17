@@ -13,9 +13,7 @@ namespace jelly
 
 		namespace
 		{
-			typedef BlobNode<
-				UIntKey<uint32_t>,
-				UInt32Blob> BlobNodeType;
+			typedef BlobNode<UIntKey<uint32_t>> BlobNodeType;
 
 			typedef LockMetaData::StaticSingleBlob<4> LockNodeMetaType;
 

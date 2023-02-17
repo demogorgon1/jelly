@@ -1,6 +1,6 @@
 #include <jelly/Base.h>
 
-#include <jelly/BlobBuffer.h>
+#include <jelly/Buffer.h>
 #include <jelly/BufferReader.h>
 #include <jelly/ErrorUtils.h>
 
@@ -40,7 +40,7 @@ namespace jelly
 
 		JELLY_ASSERT(m_file);
 
-		std::unique_ptr<BlobBuffer> buffer = std::make_unique<BlobBuffer>();
+		std::unique_ptr<IBuffer> buffer = std::make_unique<Buffer<1>>();
 		buffer->SetSize(aItem->GetStoredBlobSize());
 
 		m_file->ReadAtOffset(aOffset, buffer->GetPointer(), buffer->GetSize());

@@ -15,7 +15,7 @@ namespace jelly
 			Run(
 				const Config* aConfig)
 			{			
-				std::vector<Blob<1>> blobs;
+				std::vector<Blob> blobs;
 
 				// Create blobs
 				{
@@ -25,20 +25,20 @@ namespace jelly
 
 					std::mt19937 random(12345);
 
-					for (Blob<1>& blob : blobs)
+					for (Blob& blob : blobs)
 					{
 						size_t blobSize = (size_t)aConfig->m_writeTestBlobSize;
-						blob.GetBuffer().SetSize(blobSize);
+						blob.SetSize(blobSize);
 
 						for (size_t j = 0; j < blobSize; j++)
-							((uint8_t*)blob.GetBuffer().GetPointer())[j] = (uint8_t)(random() % 64); // (not COMPLETELY random, stay in 0-63 range for a bit of compression)
+							((uint8_t*)blob.GetPointer())[j] = (uint8_t)(random() % 64); // (not COMPLETELY random, stay in 0-63 range for a bit of compression)
 					}
 
 					printf("Created blobs in %u ms...\n", (uint32_t)t.GetElapsedMilliseconds());
 				}
 
 				{
-					typedef BlobNode<UIntKey<uint32_t>, Blob<1>> BlobNodeType;
+					typedef BlobNode<UIntKey<uint32_t>> BlobNodeType;
 
 					DefaultHost host(".", "wrtest", NULL);
 
@@ -60,7 +60,7 @@ namespace jelly
 
 							req->SetKey((uint32_t)i);
 							req->SetSeq(0);
-							req->SetBlob(blobs[i]);
+							req->SetBlob(blobs[i].Copy());
 
 							blobNode.Set(req);
 						}

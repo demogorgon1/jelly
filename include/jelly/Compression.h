@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Buffer.h"
+#include "BufferWriter.h"
 #include "IWriter.h"
 
 namespace jelly
@@ -65,6 +67,38 @@ namespace jelly
 		{
 		public:
 			virtual							~IProvider() {}
+
+			//! Helper for compressing buffer objects.
+			IBuffer*
+			CompressBuffer(
+				const IBuffer*									aBuffer) const
+			{
+				std::unique_ptr<IBuffer> compressed = std::make_unique<Buffer<64>>();
+				BufferWriter writer(*compressed);
+				CompressBuffer(aBuffer->GetPointer(), aBuffer->GetSize(), [&writer](
+					const void*	aData,
+					size_t		aDataSize)
+				{
+					writer.Write(aData, aDataSize);
+				});
+				return compressed.release();
+			}
+
+			//! Helper for decompressing buffer objects.
+			IBuffer*
+			DecompressBuffer(
+				const IBuffer*									aBuffer) const
+			{
+				std::unique_ptr<IBuffer> decompressed = std::make_unique<Buffer<64>>();
+				BufferWriter writer(*decompressed);
+				DecompressBuffer(aBuffer->GetPointer(), aBuffer->GetSize(), [&writer](
+					const void* aData,
+					size_t		aDataSize)
+				{
+					writer.Write(aData, aDataSize);
+				});
+				return decompressed.release();
+			}
 
 			//-------------------------------------------------------------------------------
 			// Virtual interface

@@ -16,25 +16,23 @@ namespace jelly
 	 * \brief A node for storing blobs.
 	 * 
 	 * \tparam _KeyType			Key type. For example \ref UIntKey.
-	 * \tparam _BlobType		Blob type. For example \ref Blob.
 	 */
 	template 
 	<
-		typename _KeyType,
-		typename _BlobType
+		typename _KeyType
 	>
 	class BlobNode
 		: public Node<
 			_KeyType, 
-			BlobNodeRequest<_KeyType, _BlobType>, 
-			BlobNodeItem<_KeyType, _BlobType>,
+			BlobNodeRequest<_KeyType>, 
+			BlobNodeItem<_KeyType>,
 			false> // Disable streaming compression of WALs (blobs are already compressed)
 	{
 	public:
-		typedef Node<_KeyType, BlobNodeRequest<_KeyType, _BlobType>, BlobNodeItem<_KeyType, _BlobType>, false> NodeBase;
+		typedef Node<_KeyType, BlobNodeRequest<_KeyType>, BlobNodeItem<_KeyType>, false> NodeBase;
 
-		typedef BlobNodeRequest<_KeyType, _BlobType> Request;
-		typedef BlobNodeItem<_KeyType, _BlobType> Item;
+		typedef BlobNodeRequest<_KeyType> Request;
+		typedef BlobNodeItem<_KeyType> Item;
 
 		BlobNode(
 			IHost*												aHost,
@@ -207,13 +205,18 @@ namespace jelly
 		{
 			bool obeyResidentBlobSizeLimit = false;
 
-			std::unique_ptr<BlobBuffer> newBlob;
+			std::unique_ptr<IBuffer> newBlob;
 			if(!aDelete)
 			{
-				newBlob = std::make_unique<BlobBuffer>();
-				aRequest->GetBlob().ToBuffer(this->m_host->GetCompressionProvider(), *newBlob);
+				size_t requestBlobSize = aRequest->GetBlob()->GetSize();
 
-				this->m_host->GetStats()->Emit(Stat::ID_UNCOMPRESSED_BLOB_SIZE, aRequest->GetBlob().GetSize());
+				const Compression::IProvider* compression = this->m_host->GetCompressionProvider();
+				if(compression != NULL)
+					newBlob.reset(compression->CompressBuffer(aRequest->GetBlob()));
+				else
+					newBlob.reset(aRequest->DetachBlob());
+
+				this->m_host->GetStats()->Emit(Stat::ID_UNCOMPRESSED_BLOB_SIZE, requestBlobSize);
 				this->m_host->GetStats()->Emit(Stat::ID_COMPRESSED_BLOB_SIZE, newBlob->GetSize());
 			}
 
@@ -343,7 +346,11 @@ namespace jelly
 
 				m_residentItems.Add(item);
 
-				aRequest->GetBlob().FromBuffer(this->m_host->GetCompressionProvider(), *item->GetBlob());
+				Compression::IProvider* compression = this->m_host->GetCompressionProvider();
+				if(compression != NULL)
+					aRequest->SetBlob(compression->DecompressBuffer(item->GetBlob()));
+				else
+					aRequest->SetBlob(item->GetBlob()->Copy());
 
 				_ObeyResidentBlobLimits();
 			}
@@ -351,7 +358,11 @@ namespace jelly
 			{
 				m_residentItems.MoveToTail(item);
 
-				aRequest->GetBlob().FromBuffer(this->m_host->GetCompressionProvider(), *item->GetBlob());
+				Compression::IProvider* compression = this->m_host->GetCompressionProvider();
+				if (compression != NULL)
+					aRequest->SetBlob(compression->DecompressBuffer(item->GetBlob()));
+				else
+					aRequest->SetBlob(item->GetBlob()->Copy());
 			}
 
 			aRequest->SetSeq(item->GetSeq());

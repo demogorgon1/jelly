@@ -123,6 +123,12 @@ namespace jelly
 			return m_data;
 		}
 
+		IBuffer* 
+		Copy() const override
+		{
+			return new Buffer<_StaticSize>(*this);
+		}
+
 	private:
 
 		uint8_t		m_static[_StaticSize];

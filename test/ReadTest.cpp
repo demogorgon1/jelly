@@ -17,7 +17,7 @@ namespace jelly
 			Run(
 				const Config* aConfig)
 			{			
-				typedef BlobNode<UIntKey<uint32_t>, Blob<1>> BlobNodeType;
+				typedef BlobNode<UIntKey<uint32_t>> BlobNodeType;
 
 				DefaultHost host(".", "wrtest", NULL);
 
@@ -67,8 +67,8 @@ namespace jelly
 							JELLY_ASSERT(req->IsCompleted());
 							JELLY_ASSERT(req->GetResult() == RESULT_OK);
 
-							const uint8_t* p = (const uint8_t*)req->GetBlob().GetBuffer().GetPointer();
-							size_t size = req->GetBlob().GetBuffer().GetSize();
+							const uint8_t* p = (const uint8_t*)req->GetBlob()->GetPointer();
+							size_t size = req->GetBlob()->GetSize();
 							for(size_t i = 0; i < size; i++)
 							{
 								uint8_t expectedByte = (uint8_t)(random() % 64);

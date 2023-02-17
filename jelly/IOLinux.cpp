@@ -7,6 +7,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include <jelly/FileHeader.h>
+
 #include "IOLinux.h"
 
 namespace jelly
@@ -97,7 +99,7 @@ namespace jelly
 			{
 				FileHeader header;
 				ssize_t bytes = read(m_handle, &header, sizeof(header));
-				JELLY_CHECK((size_t)bytes == aBufferSize, "read() failed: %u (path: %s)", errno, aPath);
+				JELLY_CHECK((size_t)bytes == sizeof(header), "read() failed: %u (path: %s)", errno, aPath);
 				JELLY_CHECK(header == aHeader, "Header mismatch: %s", aPath);
 			}
 		}
@@ -155,7 +157,7 @@ namespace jelly
 				{
 					FileHeader header;
 					ssize_t bytes = read(m_handle, &header, sizeof(header));
-					JELLY_CHECK((size_t)bytes == aBufferSize, "read() failed: %u (path: %s)", errno, aPath);
+					JELLY_CHECK((size_t)bytes == sizeof(header), "read() failed: %u (path: %s)", errno, aPath);
 					JELLY_CHECK(header == aHeader, "Header mismatch: %s", aPath);
 
 					m_totalBytesRead = sizeof(header);

@@ -45,7 +45,55 @@ namespace jelly
 		return new ZstdStream::Decompressor();
 	}
 		
-	void					
+	IBuffer* 
+	ZstdCompression::CompressBuffer(
+		const IBuffer*				aBuffer) const 
+	{
+		JELLY_CHECK(aBuffer->GetSize() <= MAX_UNCOMPRESSED_BUFFER_SIZE, "Buffer exceeds maximum uncompressed buffer size.");
+
+		size_t compressBound = ZSTD_compressBound(aBuffer->GetSize()) + sizeof(uint32_t);
+
+		std::unique_ptr<Buffer<1>> compressed = std::make_unique<Buffer<1>>();
+		compressed->SetSize(compressBound);
+
+		uint8_t* outputBuffer = (uint8_t*)compressed->GetPointer();
+		uint8_t* compressOutputPtr = outputBuffer + sizeof(uint32_t);
+		size_t compressOutputSize = compressBound - sizeof(uint32_t);
+
+		size_t result = ZSTD_compress(compressOutputPtr, compressOutputSize, aBuffer->GetPointer(), aBuffer->GetSize(), (int)m_bufferCompressionLevel);
+		JELLY_CHECK(!ZSTD_isError(result), "ZSTD_compress() failed.");
+
+		*((uint32_t*)outputBuffer) = (uint32_t)aBuffer->GetSize(); // Store uncompressed size
+
+		compressed->SetSize(result + sizeof(uint32_t));
+
+		return compressed.release();
+	}
+	
+	IBuffer* 
+	ZstdCompression::DecompressBuffer(
+		const IBuffer*				aBuffer) const 
+	{
+		JELLY_CHECK(aBuffer->GetSize() >= sizeof(uint32_t), "Invalid compressed buffer.");
+
+		std::unique_ptr<Buffer<1>> uncompressed = std::make_unique<Buffer<1>>();
+		size_t uncompressedSize = (size_t)*((uint32_t*)aBuffer->GetPointer());
+		if (uncompressedSize == 0)
+			return uncompressed.release();
+
+		JELLY_CHECK(uncompressedSize <= MAX_UNCOMPRESSED_BUFFER_SIZE, "Unable to decompress buffer as uncompressed size is too large.");
+		uncompressed->SetSize(uncompressedSize);
+
+		const uint8_t* decompressInputPtr = (const uint8_t*)aBuffer->GetPointer() + sizeof(uint32_t);
+		size_t decompressInputSize = aBuffer->GetSize() - sizeof(uint32_t);
+
+		size_t result = ZSTD_decompress(uncompressed->GetPointer(), uncompressedSize, decompressInputPtr, decompressInputSize);
+		JELLY_CHECK(!ZSTD_isError(result), "ZSTD_decompress() failed.");
+
+		return uncompressed.release();
+	}
+
+	/*void					
 	ZstdCompression::CompressBuffer(
 		const void*					aBuffer,
 		size_t						aBufferSize,
@@ -131,7 +179,7 @@ namespace jelly
 
 		if(outputBuffer != staticBuffer)
 			delete [] outputBuffer;
-	}
+	}*/
 
 }
 

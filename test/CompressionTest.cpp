@@ -98,18 +98,14 @@ namespace jelly
 
 				size_t strLen = strlen(aString); 
 
-				compression.CompressBuffer(aString, strLen, [&compression, &strLen, aString](
-					const void* aCompressedBuffer,
-					size_t		aCompressedBufferSize)
-				{
-					compression.DecompressBuffer(aCompressedBuffer, aCompressedBufferSize, [&compression, &strLen, aString](
-						const void* aUncompressedBuffer,
-						size_t		aUncompressedBufferSize)
-					{
-						JELLY_ASSERT(aUncompressedBufferSize == strLen);
-						JELLY_ASSERT(memcmp(aUncompressedBuffer, aString, strLen) == 0);
-					});
-				});
+				Buffer<1> sourceBuffer;
+				sourceBuffer.SetSize(strLen);
+				memcpy(sourceBuffer.GetPointer(), aString, strLen);
+
+				std::unique_ptr<IBuffer> compressedBuffer(compression.CompressBuffer(&sourceBuffer));
+				std::unique_ptr<IBuffer> uncompressedBuffer(compression.DecompressBuffer(compressedBuffer.get()));
+
+				JELLY_ASSERT(sourceBuffer == *uncompressedBuffer);
 			}
 
 			template<typename _ProviderType>

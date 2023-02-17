@@ -260,6 +260,7 @@ namespace jelly
 
 			size_t bytes = Write(&aHeader, sizeof(aHeader));
 			JELLY_ASSERT(bytes == sizeof(aHeader));
+			JELLY_UNUSED(bytes);
 		}
 		
 		FileWriteStream::~FileWriteStream()

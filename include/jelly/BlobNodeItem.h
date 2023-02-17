@@ -160,7 +160,7 @@ namespace jelly
 
 		void
 		SetNext(
-			BlobNodeItem<_KeyType>*								aNext)
+			BlobNodeItem<_KeyType>*							aNext)
 		{
 			m_runtimeState.m_next = aNext;
 		}

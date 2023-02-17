@@ -15,12 +15,13 @@ namespace jelly
 			const char*			aFilePrefix,
 			uint32_t			aNodeId,
 			uint32_t			aStoreId,
-			FileStatsContext*	aFileStatsContext)
+			FileStatsContext*	aFileStatsContext,
+			const FileHeader&	aFileHeader)
 			: m_nodeId(aNodeId)
 			, m_storeId(aStoreId)
 		{
 			m_blobReader = std::make_unique<StoreBlobReader>(
-				PathUtils::MakePath(aRoot, aFilePrefix, PathUtils::FILE_TYPE_STORE, m_nodeId, m_storeId).c_str(), aFileStatsContext);
+				PathUtils::MakePath(aRoot, aFilePrefix, PathUtils::FILE_TYPE_STORE, m_nodeId, m_storeId).c_str(), aFileStatsContext, aFileHeader);
 		}
 
 		// Public data
@@ -33,9 +34,11 @@ namespace jelly
 
 	StoreManager::StoreManager(
 		const char*			aRoot,
-		const char*			aFilePrefix)
+		const char*			aFilePrefix,
+		const FileHeader&	aFileHeader)
 		: m_root(aRoot)
 		, m_filePrefix(aFilePrefix)
+		, m_fileHeader(aFileHeader)
 	{
 
 	}
@@ -66,7 +69,7 @@ namespace jelly
 				return i->second->m_blobReader.get();
 		}
 
-		std::unique_ptr<Store> store(new Store(m_root.c_str(), m_filePrefix.c_str(), aNodeId, aStoreId, aFileStatsContext));
+		std::unique_ptr<Store> store(new Store(m_root.c_str(), m_filePrefix.c_str(), aNodeId, aStoreId, aFileStatsContext, m_fileHeader));
 
 		if(!store->m_blobReader->IsValid())
 			return NULL;

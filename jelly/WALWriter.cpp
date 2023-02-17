@@ -14,8 +14,9 @@ namespace jelly
 	WALWriter::WALWriter(
 		const char*						aPath,
 		Compression::IStreamCompressor* aCompressor,
-		FileStatsContext*				aFileStatsContext)
-		: m_file(aFileStatsContext, aPath, File::MODE_WRITE_STREAM)
+		FileStatsContext*				aFileStatsContext,
+		const FileHeader&				aFileHeader)
+		: m_file(aFileStatsContext, aPath, File::MODE_WRITE_STREAM, aFileHeader)
 		, m_compressor(aCompressor)
 	{
 		if(m_compressor)

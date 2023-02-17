@@ -1,6 +1,7 @@
 #pragma once
 
 #include <jelly/File.h>
+#include <jelly/FileHeader.h>
 #include <jelly/ItemBase.h>
 #include <jelly/IStoreBlobReader.h>
 
@@ -14,7 +15,8 @@ namespace jelly
 	public:
 					StoreBlobReader(
 						const char*			aPath,
-						FileStatsContext*	aFileStatsContext);
+						FileStatsContext*	aFileStatsContext,
+						const FileHeader&	aFileHeader);
 		virtual		~StoreBlobReader();
 
 		bool		IsValid() const;
@@ -30,6 +32,7 @@ namespace jelly
 		std::string					m_path;
 		std::unique_ptr<File>		m_file;	
 		FileStatsContext*			m_fileStatsContext;
+		FileHeader					m_fileHeader;
 	};
 
 }

@@ -11,6 +11,8 @@ namespace jelly
 		class IStreamDecompressor;
 	}
 
+	struct FileHeader;
+
 	// DefaultHost implementation of IFileStreamReader
 	class FileStreamReader
 		: public IFileStreamReader
@@ -19,7 +21,8 @@ namespace jelly
 					FileStreamReader(
 						const char*							aPath,
 						Compression::IStreamDecompressor*	aDecompressor,
-						FileStatsContext*					aFileStatsContext);
+						FileStatsContext*					aFileStatsContext,
+						const FileHeader&					aFileHeader);
 		virtual		~FileStreamReader();
 
 		bool		IsValid() const;

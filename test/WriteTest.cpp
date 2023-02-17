@@ -30,8 +30,10 @@ namespace jelly
 						size_t blobSize = (size_t)aConfig->m_writeTestBlobSize;
 						blob.SetSize(blobSize);
 
+						void* blobPointer = blob.GetPointer();
+
 						for (size_t j = 0; j < blobSize; j++)
-							((uint8_t*)blob.GetPointer())[j] = (uint8_t)(random() % 64); // (not COMPLETELY random, stay in 0-63 range for a bit of compression)
+							((uint8_t*)blobPointer)[j] = (uint8_t)(random() % 64); // (not COMPLETELY random, stay in 0-63 range for a bit of compression)
 					}
 
 					printf("Created blobs in %u ms...\n", (uint32_t)t.GetElapsedMilliseconds());

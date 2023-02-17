@@ -1,6 +1,7 @@
 #include <jelly/Base.h>
 
 #include <jelly/ErrorUtils.h>
+#include <jelly/FileHeader.h>
 #include <jelly/ItemBase.h>
 #include <jelly/Stat.h>
 
@@ -12,11 +13,13 @@ namespace jelly
 	StoreWriter::StoreWriter(
 		const char*						aTargetPath,
 		const char*						aTempPath,
-		FileStatsContext*				aFileStatsContext)
-		: m_file(aFileStatsContext, aTempPath, File::MODE_WRITE_STREAM)
+		FileStatsContext*				aFileStatsContext,
+		const FileHeader&				aFileHeader)
+		: m_file(aFileStatsContext, aTempPath, File::MODE_WRITE_STREAM, aFileHeader)
 		, m_targetPath(aTargetPath)
 		, m_tempPath(aTempPath)
 	{
+		JELLY_ASSERT(aFileHeader.m_type == FileHeader::TYPE_STORE);
 	}
 
 	StoreWriter::~StoreWriter()

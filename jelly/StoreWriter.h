@@ -6,6 +6,8 @@
 namespace jelly
 {
 
+	struct FileHeader;
+
 	// DefaultHost implementation of IStoreWriter
 	class StoreWriter
 		: public IStoreWriter
@@ -14,7 +16,8 @@ namespace jelly
 					StoreWriter(
 						const char*						aTargetPath,
 						const char*						aTempPath,
-						FileStatsContext*				aFileStatsContext);
+						FileStatsContext*				aFileStatsContext,
+						const FileHeader&				aFileHeader);
 		virtual		~StoreWriter();
 
 		bool		IsValid() const;

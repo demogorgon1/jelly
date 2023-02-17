@@ -8,6 +8,8 @@
 namespace jelly
 {
 
+	struct FileHeader;
+
 	// Encapsulates platform specific file I/O implementations
 	class File
 		: public IReader
@@ -27,7 +29,8 @@ namespace jelly
 					File(
 						FileStatsContext*	aStatsContext,
 						const char*			aPath,
-						Mode				aMode);
+						Mode				aMode,
+						const FileHeader&	aHeader);
 					~File();
 
 		void		Close();
@@ -38,6 +41,8 @@ namespace jelly
 						size_t				aOffset,
 						void*				aBuffer,
 						size_t				aBufferSize);
+		size_t		GetReadOffset() const;
+		bool		IsEnd() const;
 
 		// IWriter implementation
 		size_t		Write(

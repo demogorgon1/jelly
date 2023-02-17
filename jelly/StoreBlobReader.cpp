@@ -11,11 +11,13 @@ namespace jelly
 
 	StoreBlobReader::StoreBlobReader(
 		const char*			aPath,
-		FileStatsContext*	aFileStatsContext)
+		FileStatsContext*	aFileStatsContext,
+		const FileHeader&	aFileHeader)
 		: m_path(aPath)
 		, m_fileStatsContext(aFileStatsContext)
+		, m_fileHeader(aFileHeader)
 	{
-		m_file = std::make_unique<File>(m_fileStatsContext, m_path.c_str(), File::MODE_READ_RANDOM);
+		m_file = std::make_unique<File>(m_fileStatsContext, m_path.c_str(), File::MODE_READ_RANDOM, m_fileHeader);
 	}
 
 	StoreBlobReader::~StoreBlobReader()
@@ -33,10 +35,10 @@ namespace jelly
 	void		
 	StoreBlobReader::ReadItemBlob(
 		size_t				aOffset,
-		ItemBase*				aItem)
+		ItemBase*			aItem)
 	{
 		if(!m_file)
-			m_file = std::make_unique<File>(m_fileStatsContext, m_path.c_str(), File::MODE_READ_RANDOM);
+			m_file = std::make_unique<File>(m_fileStatsContext, m_path.c_str(), File::MODE_READ_RANDOM, m_fileHeader);
 
 		JELLY_ASSERT(m_file);
 

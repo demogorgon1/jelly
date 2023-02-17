@@ -11,6 +11,8 @@ namespace jelly
 		class IStreamCompressor;
 	}
 
+	struct FileHeader;
+
 	class IStats;
 
 	// DefaultHost implementation of IWALWriter
@@ -21,7 +23,8 @@ namespace jelly
 					WALWriter(
 						const char*						aPath,
 						Compression::IStreamCompressor*	aCompressor,
-						FileStatsContext*				aFileStatsContext);
+						FileStatsContext*				aFileStatsContext,
+						const FileHeader&				aFileHeader);
 		virtual		~WALWriter();
 
 		bool		IsValid() const;

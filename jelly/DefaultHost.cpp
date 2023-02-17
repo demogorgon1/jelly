@@ -6,6 +6,7 @@
 #include <jelly/DefaultHost.h>
 #include <jelly/ErrorUtils.h>
 #include <jelly/File.h>
+#include <jelly/FileHeader.h>
 #include <jelly/IStats.h>
 #include <jelly/StringUtils.h>
 #include <jelly/ZstdCompression.h>
@@ -34,7 +35,7 @@ namespace jelly
 		{
 			// Make sure that no other host operates in the same root
 			std::string fileLockPath = StringUtils::Format("%s/%shost.lck", aRoot, aFilePrefix);
-			m_fileLock = std::make_unique<File>(nullptr, fileLockPath.c_str(), File::MODE_MUTEX);
+			m_fileLock = std::make_unique<File>(nullptr, fileLockPath.c_str(), File::MODE_MUTEX, FileHeader(FileHeader::TYPE_NONE));
 		}
 
 		if(m_configSource == NULL)
@@ -44,10 +45,9 @@ namespace jelly
 		}
 
 		m_config = std::make_unique<ConfigProxy>(m_configSource);
-
-		m_storeManager = std::make_unique<StoreManager>(aRoot, aFilePrefix);
 		m_stats = std::make_unique<Stats>(Stats::ExtraApplicationStats(aExtraApplicationStats, aExtraApplicationStatsCount));
 
+		// Initialize compression
 		{
 			const char* compressionMethod = m_config->GetString(Config::ID_COMPRESSION_METHOD);
 			if(strcmp(compressionMethod, "zstd") == 0)
@@ -64,6 +64,19 @@ namespace jelly
 			{
 				JELLY_FATAL_ERROR("Invalid compression method: %s", compressionMethod);
 			}
+		}
+
+		// Initialize store manager
+		{
+			FileHeader fileHeader(FileHeader::TYPE_STORE);
+
+			if (m_compressionProvider != NULL)
+			{
+				fileHeader.m_flags |= FileHeader::FLAG_ITEM_COMPRESSION;
+				fileHeader.m_compressionId = m_compressionProvider->GetId();
+			}
+
+			m_storeManager = std::make_unique<StoreManager>(aRoot, aFilePrefix, fileHeader);
 		}
 	}
 	
@@ -240,10 +253,19 @@ namespace jelly
 		bool						aUseStreamingCompression,
 		FileStatsContext*			aFileStatsContext)
 	{
+		FileHeader fileHeader(FileHeader::TYPE_WAL);
+
+		if(aUseStreamingCompression && m_compressionProvider != NULL)
+		{
+			fileHeader.m_flags |= FileHeader::FLAG_STREAM_COMPRESSION;
+			fileHeader.m_compressionId = m_compressionProvider->GetId();
+		}
+
 		std::unique_ptr<FileStreamReader> f(new FileStreamReader(
 			PathUtils::MakePath(m_root.c_str(), m_filePrefix.c_str(), PathUtils::FILE_TYPE_WAL, aNodeId, aId).c_str(),
 			m_compressionProvider && aUseStreamingCompression ? m_compressionProvider->CreateStreamDecompressor() : NULL,
-			aFileStatsContext));
+			aFileStatsContext,
+			fileHeader));
 
 		if(!f->IsValid())
 			return NULL;
@@ -258,10 +280,19 @@ namespace jelly
 		bool						aUseStreamingCompression,
 		FileStatsContext*			aFileStatsContext) 
 	{
+		FileHeader fileHeader(FileHeader::TYPE_WAL);
+
+		if (aUseStreamingCompression && m_compressionProvider != NULL)
+		{
+			fileHeader.m_flags |= FileHeader::FLAG_STREAM_COMPRESSION;
+			fileHeader.m_compressionId = m_compressionProvider->GetId();
+		}
+
 		std::unique_ptr<WALWriter> f(new WALWriter(
 			PathUtils::MakePath(m_root.c_str(), m_filePrefix.c_str(), PathUtils::FILE_TYPE_WAL, aNodeId, aId).c_str(),
 			m_compressionProvider && aUseStreamingCompression ? m_compressionProvider->CreateStreamCompressor() : NULL,
-			aFileStatsContext));
+			aFileStatsContext,
+			fileHeader));
 
 		if (!f->IsValid())
 			return NULL;
@@ -290,10 +321,19 @@ namespace jelly
 		uint32_t					aId,
 		FileStatsContext*			aFileStatsContext) 
 	{
+		FileHeader fileHeader(FileHeader::TYPE_STORE);
+
+		if (m_compressionProvider != NULL)
+		{
+			fileHeader.m_flags |= FileHeader::FLAG_ITEM_COMPRESSION;
+			fileHeader.m_compressionId = m_compressionProvider->GetId();
+		}
+
 		std::unique_ptr<FileStreamReader> f(new FileStreamReader(
 			PathUtils::MakePath(m_root.c_str(), m_filePrefix.c_str(), PathUtils::FILE_TYPE_STORE, aNodeId, aId).c_str(),
 			NULL,
-			aFileStatsContext));
+			aFileStatsContext,
+			fileHeader));
 
 		if (!f->IsValid())
 			return NULL;
@@ -319,10 +359,19 @@ namespace jelly
 		std::string targetPath = PathUtils::MakePath(m_root.c_str(), m_filePrefix.c_str(), PathUtils::FILE_TYPE_STORE, aNodeId, aId);
 		std::string tempPath = targetPath + ".tmp";
 
+		FileHeader fileHeader(FileHeader::TYPE_STORE);
+
+		if(m_compressionProvider != NULL)
+		{
+			fileHeader.m_flags |= FileHeader::FLAG_ITEM_COMPRESSION;
+			fileHeader.m_compressionId = m_compressionProvider->GetId();
+		}
+
 		std::unique_ptr<StoreWriter> f(new StoreWriter(
 			targetPath.c_str(),
 			tempPath.c_str(),
-			aFileStatsContext));
+			aFileStatsContext,
+			fileHeader));
 
 		if (!f->IsValid())
 			return NULL;
@@ -342,7 +391,11 @@ namespace jelly
 	DefaultHost::CreateNodeLock(
 		uint32_t					aNodeId) 
 	{
-		return new File(NULL, StringUtils::Format("%s/%snode-%u.lck", m_root.c_str(), m_filePrefix.c_str(), aNodeId).c_str(), File::MODE_MUTEX);
+		return new File(
+			NULL, 
+			StringUtils::Format("%s/%snode-%u.lck", m_root.c_str(), m_filePrefix.c_str(), aNodeId).c_str(), 
+			File::MODE_MUTEX,
+			FileHeader(FileHeader::TYPE_NONE));
 	}
 
 }

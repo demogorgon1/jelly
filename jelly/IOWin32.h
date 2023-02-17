@@ -11,6 +11,8 @@
 namespace jelly
 {
 
+	struct FileHeader;
+
 	namespace IOWin32
 	{
 
@@ -58,7 +60,8 @@ namespace jelly
 		{
 		public:
 						FileReadRandom(
-							const char*			aPath);
+							const char*			aPath,
+							const FileHeader&	aHeader);
 						~FileReadRandom();
 
 			bool		IsValid();
@@ -79,11 +82,13 @@ namespace jelly
 		{
 		public:
 						FileReadStream(
-							const char*			aPath);
+							const char*			aPath,
+							const FileHeader&	aHeader);
 						~FileReadStream();
 
 			bool		IsValid();
 			size_t		GetSize() const;
+			bool		IsEnd() const;
 
 			// IReader implementation
 			size_t		Read(
@@ -126,7 +131,8 @@ namespace jelly
 		{
 		public:
 						FileWriteStream(
-							const char*			aPath);
+							const char*			aPath,
+							const FileHeader&	aHeader);
 						~FileWriteStream();
 
 			size_t		Flush();

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "FileHeader.h"
+
 namespace jelly
 {
 	
@@ -13,7 +15,8 @@ namespace jelly
 	public:
 							StoreManager(
 								const char*			aRoot,
-								const char*			aFilePrefix);
+								const char*			aFilePrefix,
+								const FileHeader&	aFileHeader);
 							~StoreManager();
 
 		IStoreBlobReader*	GetStoreBlobReader(
@@ -32,6 +35,7 @@ namespace jelly
 			
 		std::string	m_root;
 		std::string m_filePrefix;
+		FileHeader	m_fileHeader;
 
 		struct Store;
 		typedef std::unordered_map<uint64_t, Store*> Map;

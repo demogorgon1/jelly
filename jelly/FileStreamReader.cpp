@@ -31,9 +31,9 @@ namespace jelly
 	FileStreamReader::FileStreamReader(
 		const char*							aPath,
 		Compression::IStreamDecompressor*	aDecompressor,
-		FileStatsContext*					aFileStatsContext)
-		: m_file(aFileStatsContext, aPath, File::MODE_READ_STREAM)
-		, m_offset(0)
+		FileStatsContext*					aFileStatsContext,
+		const FileHeader&					aFileHeader)
+		: m_file(aFileStatsContext, aPath, File::MODE_READ_STREAM, aFileHeader)
 		, m_head(NULL)
 		, m_tail(NULL)
 		, m_decompressor(aDecompressor)
@@ -99,15 +99,15 @@ namespace jelly
 	{
 		if(m_decompressor)
 		{
-			if(m_offset < m_file.GetSize())
+			if(!m_file.IsEnd())
 				return false;
 
 			return m_head == NULL;
 		}
 			
-		return m_file.GetSize() == m_offset;
+		return m_file.IsEnd();
 	}
-
+	
 	//-------------------------------------------------------------------------------------------
 
 	size_t
@@ -132,8 +132,6 @@ namespace jelly
 					{
 						break;
 					}
-
-					m_offset += compressedSize;
 
 					m_decompressor->FeedData(compressed, compressedSize);
 
@@ -164,16 +162,14 @@ namespace jelly
 		}
 		else
 		{
-			size_t bytes = m_file.Read(aBuffer, aBufferSize);
-			m_offset += bytes;
-			return bytes;
+			return m_file.Read(aBuffer, aBufferSize);;
 		}
 	}
 
-	size_t		
-	FileStreamReader::GetTotalBytesRead() const 
+	size_t
+	FileStreamReader::GetTotalBytesRead() const
 	{
-		return m_offset;
+		return m_file.GetReadOffset();
 	}
 
 }

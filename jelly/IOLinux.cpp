@@ -81,7 +81,8 @@ namespace jelly
 		//-----------------------------------------------------------------------------------
 
 		FileReadRandom::FileReadRandom(
-			const char*			aPath)
+			const char*			aPath,
+			const FileHeader&	aHeader)
 		{
 			int flags = O_RDONLY;
 			int mode = 0;
@@ -91,6 +92,13 @@ namespace jelly
 			{
 				int errorCode = errno;
 				JELLY_CHECK(errorCode == ENOENT, "open() failed: %u (path: %s)", errorCode, aPath);
+			}
+			else
+			{
+				FileHeader header;
+				ssize_t bytes = read(m_handle, &header, sizeof(header));
+				JELLY_CHECK((size_t)bytes == aBufferSize, "read() failed: %u (path: %s)", errno, aPath);
+				JELLY_CHECK(header == aHeader, "Header mismatch: %s", aPath);
 			}
 		}
 		
@@ -120,7 +128,8 @@ namespace jelly
 		//-----------------------------------------------------------------------------------
 
 		FileReadStream::FileReadStream(
-			const char*			aPath)
+			const char*			aPath,
+			const FileHeader&	aHeader)
 			: m_size(0)
 			, m_totalBytesRead(0)
 		{
@@ -141,6 +150,16 @@ namespace jelly
 					m_handle.Release();
 				else
 					m_size = (size_t)s.st_size;
+
+				if(m_handle.IsSet())
+				{
+					FileHeader header;
+					ssize_t bytes = read(m_handle, &header, sizeof(header));
+					JELLY_CHECK((size_t)bytes == aBufferSize, "read() failed: %u (path: %s)", errno, aPath);
+					JELLY_CHECK(header == aHeader, "Header mismatch: %s", aPath);
+
+					m_totalBytesRead = sizeof(header);
+				}
 			}
 		}
 
@@ -161,6 +180,12 @@ namespace jelly
 			JELLY_ASSERT(m_handle.IsSet());
 
 			return m_size;
+		}
+
+		bool			
+		FileReadStream::IsEnd() const
+		{
+			return m_totalBytesRead == m_size;
 		}
 
 		size_t		
@@ -220,7 +245,8 @@ namespace jelly
 		//-----------------------------------------------------------------------------------
 
 		FileWriteStream::FileWriteStream(
-			const char*			aPath)
+			const char*			aPath,
+			const FileHeader&	aHeader)
 			: m_size(0)
 			, m_nonFlushedBytes(0)
 		{
@@ -229,6 +255,9 @@ namespace jelly
 
 			m_handle = open(aPath, flags, mode);
 			JELLY_CHECK(m_handle.IsSet(), "open() failed: %u (path: %s)", errno, aPath);
+
+			size_t bytes = Write(&aHeader, sizeof(aHeader));
+			JELLY_ASSERT(bytes == sizeof(aHeader));
 		}
 		
 		FileWriteStream::~FileWriteStream()

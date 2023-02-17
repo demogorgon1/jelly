@@ -4,6 +4,8 @@
 
 #include <windows.h>
 
+#include <jelly/FileHeader.h>
+
 #include "IOWin32.h"
 
 namespace jelly
@@ -86,7 +88,8 @@ namespace jelly
 		//-----------------------------------------------------------------------------------
 
 		FileReadRandom::FileReadRandom(
-			const char*			aPath)
+			const char*			aPath,
+			const FileHeader&	aHeader)
 		{
 			DWORD desiredAccess = GENERIC_READ;
 			DWORD shareMode = FILE_SHARE_READ;
@@ -98,6 +101,12 @@ namespace jelly
 			{
 				DWORD errorCode = GetLastError();
 				JELLY_CHECK(errorCode == ERROR_FILE_NOT_FOUND, "CreateFileA() failed: %u (path: %s)", errorCode, aPath);
+			}
+			else
+			{
+				FileHeader header;
+				ReadAtOffset(0, &header, sizeof(header));
+				JELLY_CHECK(header == aHeader, "Header mismatch: %s", aPath);
 			}
 		}
 		
@@ -134,7 +143,8 @@ namespace jelly
 		//-----------------------------------------------------------------------------------
 
 		FileReadStream::FileReadStream(
-			const char*			aPath)
+			const char*			aPath,
+			const FileHeader&	aHeader)
 			: m_size(0)
 			, m_totalBytesRead(0)
 		{
@@ -157,6 +167,17 @@ namespace jelly
 					m_size = (size_t)fileSize;
 				else
 					m_handle.Release();
+
+				if(m_handle.IsSet())
+				{
+					FileHeader header;					
+					DWORD bytes;
+					BOOL result = ReadFile(m_handle, &header, (DWORD)sizeof(header), &bytes, NULL);
+					JELLY_CHECK(result != 0 && bytes == (DWORD)sizeof(header), "ReadFile() failed: %u (path: %s)", GetLastError(), aPath);
+					JELLY_CHECK(header == aHeader, "Header mismatch: %s", aPath);
+
+					m_totalBytesRead += sizeof(header);
+				}
 			}
 		}
 
@@ -177,6 +198,14 @@ namespace jelly
 			JELLY_ASSERT(m_handle.IsSet());
 
 			return m_size;
+		}
+
+		bool		
+		FileReadStream::IsEnd() const
+		{
+			JELLY_ASSERT(m_handle.IsSet());
+
+			return m_size == m_totalBytesRead;
 		}
 
 		size_t		
@@ -237,7 +266,8 @@ namespace jelly
 		//-----------------------------------------------------------------------------------
 
 		FileWriteStream::FileWriteStream(
-			const char*			aPath)
+			const char*			aPath,
+			const FileHeader&	aHeader)
 			: m_size(0)
 			, m_nonFlushedBytes(0)
 		{
@@ -253,6 +283,9 @@ namespace jelly
 
 			m_handle = CreateFileA(aPath, desiredAccess, shareMode, NULL, creationDisposition, flags, NULL);
 			JELLY_CHECK(m_handle.IsSet(), "CreateFileA() failed: %u (path: %s)", GetLastError(), aPath);
+
+			size_t bytes = Write(&aHeader, sizeof(aHeader));
+			JELLY_ASSERT(bytes == sizeof(aHeader));
 		}
 		
 		FileWriteStream::~FileWriteStream()

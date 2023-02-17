@@ -59,32 +59,32 @@ namespace jelly
 
 				// Try to read stream file that's not there
 				{
-					File f(&context, "testfile2.tmp", File::MODE_READ_STREAM);
+					File f(&context, "testfile2.tmp", File::MODE_READ_STREAM, FileHeader());
 					JELLY_ASSERT(!f.IsValid());
 				}
 
 				// Try to read random-access file that's not there
 				{
-					File f(&context, "testfile2.tmp", File::MODE_READ_RANDOM);
+					File f(&context, "testfile2.tmp", File::MODE_READ_RANDOM, FileHeader());
 					JELLY_ASSERT(!f.IsValid());
 				}
 
 				// Create a file
 				{
-					File f(&context, "testfile.tmp", File::MODE_WRITE_STREAM);
+					File f(&context, "testfile.tmp", File::MODE_WRITE_STREAM, FileHeader());
 					JELLY_ASSERT(f.IsValid());
 					JELLY_ASSERT(f.Write(TEST_DATA, testDataSize) == testDataSize);
-					JELLY_ASSERT(f.GetSize() == testDataSize);
-					JELLY_ASSERT(f.Flush() == testDataSize);
+					JELLY_ASSERT(f.GetSize() == testDataSize + sizeof(FileHeader));
+					JELLY_ASSERT(f.Flush() == testDataSize + sizeof(FileHeader));
 					JELLY_ASSERT(fileStats.m_counters[FileStats::ID_READ] == 0);
 					JELLY_ASSERT(fileStats.m_counters[FileStats::ID_WRITE] == testDataSize);
 				}
 
 				// Read file as a stream
 				{
-					File f(&context, "testfile.tmp", File::MODE_READ_STREAM);
+					File f(&context, "testfile.tmp", File::MODE_READ_STREAM, FileHeader());
 					JELLY_ASSERT(f.IsValid());
-					JELLY_ASSERT(f.GetSize() == testDataSize);
+					JELLY_ASSERT(f.GetSize() == testDataSize + sizeof(FileHeader));
 					char buffer[256];
 					JELLY_ASSERT(sizeof(buffer) >= testDataSize);
 					JELLY_ASSERT(f.Read(buffer, testDataSize) == testDataSize);
@@ -95,11 +95,11 @@ namespace jelly
 
 				// Read file with random access
 				{
-					File f(&context, "testfile.tmp", File::MODE_READ_RANDOM);
+					File f(&context, "testfile.tmp", File::MODE_READ_RANDOM, FileHeader());
 					JELLY_ASSERT(f.IsValid());
 					char buffer[11];
 					buffer[10] = '\0';
-					f.ReadAtOffset(4, buffer, 10);
+					f.ReadAtOffset(4 + sizeof(FileHeader), buffer, 10);
 					JELLY_ASSERT(strcmp(buffer, "HelloWorld") == 0);
 					JELLY_ASSERT(fileStats.m_counters[FileStats::ID_READ] == testDataSize + 10);
 					JELLY_ASSERT(fileStats.m_counters[FileStats::ID_WRITE] == testDataSize);
@@ -107,22 +107,22 @@ namespace jelly
 
 				// Open a file as a stream and while still open, also open it as random access
 				{
-					File fStream(&context, "testfile.tmp", File::MODE_READ_STREAM);
+					File fStream(&context, "testfile.tmp", File::MODE_READ_STREAM, FileHeader());
 					JELLY_ASSERT(fStream.IsValid());
 
 					{
-						File fRandom(&context, "testfile.tmp", File::MODE_READ_RANDOM);
+						File fRandom(&context, "testfile.tmp", File::MODE_READ_RANDOM, FileHeader());
 						JELLY_ASSERT(fRandom.IsValid());
 					}
 				}
 
 				// Same thing, but other way around
 				{
-					File fRandom(&context, "testfile.tmp", File::MODE_READ_RANDOM);
+					File fRandom(&context, "testfile.tmp", File::MODE_READ_RANDOM, FileHeader());
 					JELLY_ASSERT(fRandom.IsValid());
 
 					{
-						File fStream(&context, "testfile.tmp", File::MODE_READ_STREAM);
+						File fStream(&context, "testfile.tmp", File::MODE_READ_STREAM, FileHeader());
 						JELLY_ASSERT(fStream.IsValid());
 					}
 				}

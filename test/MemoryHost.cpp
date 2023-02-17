@@ -298,7 +298,7 @@ namespace jelly
 				{
 					return m_bufferListReader.m_currentBuffer == NULL;
 				}
-				
+
 				// Public data
 				BufferListReader m_bufferListReader;
 			};
@@ -433,18 +433,18 @@ namespace jelly
 					return m_bufferListReader.Read(aBuffer, aBufferSize);
 				}
 
-				// IFileStreamReader implementation
-				bool	
-				IsEnd() const override
-				{
-					return m_bufferListReader.m_currentBuffer == NULL;
-				}
-				
 				size_t
 				GetTotalBytesRead() const override
 				{
 					return m_bufferListReader.GetTotalBytesRead();
 				}
+
+				// IFileStreamReader implementation
+				bool	
+				IsEnd() const override
+				{
+					return m_bufferListReader.m_currentBuffer == NULL;
+				}			
 
 				// Public data
 				BufferListReader m_bufferListReader;

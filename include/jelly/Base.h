@@ -18,6 +18,7 @@
 #include <chrono>
 #include <filesystem>
 #include <functional>
+#include <list>
 #include <map>
 #include <memory>
 #include <mutex>

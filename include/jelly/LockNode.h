@@ -73,6 +73,24 @@ namespace jelly
 
 				JELLY_ASSERT(this->m_pendingStoreWALItemCount == 0);
 			};
+
+			this->m_replicationCallback = [&](
+				Stream::Reader*									aReader)
+			{
+				JELLY_ASSERT(this->m_replicationNetwork != NULL);
+
+				if(!this->m_replicationNetwork->IsLocalNodeMaster())
+				{
+					while (!aReader->IsEnd())
+					{
+						Item item;
+						if (!item.Read(aReader, NULL))
+							break;
+
+						_ReplicateItem(item);
+					}
+				}
+			};
 		}
 
 		virtual
@@ -274,6 +292,25 @@ namespace jelly
 			aRequest->WriteToWAL(this, item);
 
 			return RESULT_OK;
+		}
+
+		void
+		_ReplicateItem(
+			Item&												aItem)
+		{
+			JELLY_ASSERT(this->m_replicationNetwork != NULL && !this->m_replicationNetwork->IsLocalNodeMaster());
+
+			std::pair<Item*, bool> result = this->m_table.InsertOrUpdate(aItem.GetKey(), [aItem]()
+			{
+				return new Item(aItem.GetKey(), aItem.GetLock());
+			});
+
+			if(result.second || aItem.GetSeq() > result.first->GetSeq())
+			{
+				result.first->MoveFrom(&aItem);
+
+				this->WriteToWAL(result.first, NULL, NULL);
+			}
 		}
 
 		void

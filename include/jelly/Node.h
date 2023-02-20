@@ -9,6 +9,7 @@
 #include "ItemHashTable.h"
 #include "PerfTimer.h"
 #include "Queue.h"
+#include "ReplicationNetwork.h"
 #include "Result.h"
 #include "ScopedTimeSampler.h"
 #include "Stat.h"
@@ -48,6 +49,7 @@ namespace jelly
 			, m_pendingStoreWALItemCount(0)
 			, m_currentCompactionIsMajor(false)
 			, m_config(aHost->GetConfigSource())
+			, m_replicationNetwork(NULL)
 		{
 			{
 				// Make sure that no other node operates at the same root, with the same node id
@@ -65,6 +67,34 @@ namespace jelly
 
 			for(WAL* wal : m_wals)
 				delete wal;
+		}
+
+		/**
+		 * Enable replication by setting the replication network.
+		 */
+		void
+		SetReplicationNetwork(
+			ReplicationNetwork*	aReplicationNetwork)
+		{
+			m_replicationNetwork = aReplicationNetwork;
+		}
+
+		/**
+		 * Should be called when replication data is received. This must be called on the main thread.
+		 */
+		void
+		ProcessReplication(
+			uint32_t				aSourceNodeId,
+			const Stream::Buffer*	aHead)
+		{
+			JELLY_ASSERT(m_replicationNetwork != NULL);
+			
+			if(!m_replicationNetwork->IsLocalNodeMaster() && m_replicationNetwork->GetMasterNodeId() == aSourceNodeId)
+			{
+				Stream::Reader reader(m_host->GetCompressionProvider(), aHead);
+				
+				m_replicationCallback(&reader);
+			}
 		}
 
 		/**
@@ -130,10 +160,18 @@ namespace jelly
 
 			queue->SetGuard();
 
-			if (queue->m_first != NULL)
+			if (queue->m_first != NULL)					
 			{
-				for (_RequestType* request = queue->m_first; request != NULL; request = request->GetNext())
-					request->Execute();
+				if(m_replicationNetwork == NULL || m_replicationNetwork->IsLocalNodeMaster())
+				{
+					for (_RequestType* request = queue->m_first; request != NULL; request = request->GetNext())
+						request->Execute();
+				}
+				else
+				{
+					for (_RequestType* request = queue->m_first; request != NULL; request = request->GetNext())
+						request->SetResult(RESULT_NOT_MASTER);
+				}
 
 				_RequestType* request = queue->m_first;
 				while (request != NULL)
@@ -176,7 +214,7 @@ namespace jelly
 					{
 						ScopedTimeSampler timeSampler(m_host->GetStats(), m_statsContext.m_idFlushPendingWALTime);
 
-						count += pendingWAL->GetWriter()->Flush();
+						count += pendingWAL->GetWriter()->Flush(m_replicationNetwork);
 					}
 				}
 			}
@@ -190,7 +228,7 @@ namespace jelly
 				{
 					ScopedTimeSampler timeSampler(m_host->GetStats(), m_statsContext.m_idFlushPendingWALTime);
 
-					count += pendingWAL->GetWriter()->Flush();
+					count += pendingWAL->GetWriter()->Flush(m_replicationNetwork);
 				}
 			}
 
@@ -495,6 +533,7 @@ namespace jelly
 
 		typedef std::map<_KeyType, _ItemType*> PendingStoreType;
 		typedef std::function<void(uint32_t, IStoreWriter*, PendingStoreType*)> FlushPendingStoreCallback;
+		typedef std::function<void(Stream::Reader*)> ReplicationCallback;
 
 		struct StatsContext
 		{
@@ -579,10 +618,12 @@ namespace jelly
 		ItemHashTable<_KeyType, _ItemType>							m_table;
 		uint32_t													m_nextWALId;		
 		FlushPendingStoreCallback									m_flushPendingStoreCallback;
+		ReplicationCallback											m_replicationCallback;
 		PendingStoreType											m_pendingStore;
 		bool														m_stopped;
 		uint32_t													m_pendingStoreWALItemCount;
 		StatsContext												m_statsContext;
+		ReplicationNetwork*											m_replicationNetwork;
 
 	private:
 
@@ -629,6 +670,13 @@ namespace jelly
 			}
 
 			return pendingWAL;
+		}
+
+		void
+		_ProcessReplication(
+			const Stream::Buffer* /*aHead*/)
+		{
+			
 		}
 	};
 

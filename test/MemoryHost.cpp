@@ -478,7 +478,8 @@ namespace jelly
 				}
 
 				size_t	
-				Flush() override
+				Flush(
+					ReplicationNetwork*	/*aReplicationNetwork*/) override
 				{
 					for(size_t i = 0; i < m_pending.size(); i++)
 						m_pending[i].first->Signal();

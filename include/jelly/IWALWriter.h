@@ -7,11 +7,12 @@ namespace jelly
 
 	struct CompletionEvent;
 	class ItemBase;
+	class ReplicationNetwork;
 
 	// Interface for WAL writer implementation
 	class IWALWriter
 	{
-	public:
+	public:		
 		virtual			~IWALWriter() {}
 
 		// Virtual interface
@@ -20,7 +21,8 @@ namespace jelly
 							const ItemBase*		aItem,
 							CompletionEvent*	aCompletionEvent,
 							Result*				aResult) = 0;
-		virtual size_t	Flush() = 0;
+		virtual size_t	Flush(
+							ReplicationNetwork*	aReplicationNetwork) = 0;
 		virtual void	Cancel() = 0;
 		virtual size_t	GetPendingWriteCount() const = 0;
 	

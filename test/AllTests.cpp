@@ -10,6 +10,7 @@
 #include "MiscTest.h"
 #include "NodeTest.h"
 #include "ReadTest.h"
+#include "ReplicationTest.h"
 #include "StepTest.h"
 #include "WriteTest.h"
 
@@ -34,6 +35,7 @@ namespace jelly
 				NodeTest::Run(aWorkingDirectory, aConfig);
 				StepTest::Run(aConfig);
 				HousekeepingAdvisorTest::Run();
+				ReplicationTest::Run();
 
 				if(aConfig->m_simTest)
 					Sim::SimTest(aWorkingDirectory, aConfig);

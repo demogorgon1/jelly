@@ -290,7 +290,7 @@ namespace jelly
 
 		std::unique_ptr<WALWriter> f(new WALWriter(
 			PathUtils::MakePath(m_root.c_str(), m_filePrefix.c_str(), PathUtils::FILE_TYPE_WAL, aNodeId, aId).c_str(),
-			m_compressionProvider && aUseStreamingCompression ? m_compressionProvider->CreateStreamCompressor() : NULL,
+			m_compressionProvider && aUseStreamingCompression ? m_compressionProvider.get() : NULL,
 			aFileStatsContext,
 			fileHeader));
 

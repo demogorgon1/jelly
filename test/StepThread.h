@@ -25,6 +25,7 @@ namespace jelly
 			case RESULT_NOT_LOCKED:			return "NOT_LOCKED";
 			case RESULT_DOES_NOT_EXIST:		return "DOES_NOT_EXIST";
 			case RESULT_OUTDATED:			return "OUTDATED";
+			case RESULT_NOT_MASTER:			return "NOT_MASTER";
 			}
 			JELLY_ASSERT(false);
 			return "";

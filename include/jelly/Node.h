@@ -382,7 +382,13 @@ namespace jelly
 					m_currentCompactionStoreIds.insert(storeId);
 			}
 
-			Compaction::Perform<_KeyType, _ItemType>(this, aCompactionJob, result.get());
+			Compaction::Perform<_KeyType, _ItemType>(
+				m_host,
+				m_nodeId,
+				&m_statsContext.m_fileStore,
+				CreateStoreId(),
+				aCompactionJob, 
+				result.get());
 
 			return result.release();
 		}
@@ -410,7 +416,12 @@ namespace jelly
 
 			result->SetMajorCompaction(true);
 
-			Compaction::PerformMajorCompaction<_KeyType, _ItemType>(this, result.get());
+			Compaction::PerformMajorCompaction<_KeyType, _ItemType>(
+				m_host,
+				m_nodeId,
+				&m_statsContext.m_fileStore,
+				CreateStoreId(),
+				result.get());
 
 			return result.release();
 		}

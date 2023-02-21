@@ -13,27 +13,28 @@ namespace jelly
 	{
 
 		// Do a compaction of just 2 stores
-		template <typename _KeyType, typename _ItemType, typename _NodeType>
+		template <typename _KeyType, typename _ItemType>
 		void
 		PerformOnTwoStores(			
-			_NodeType*									aNode,
+			IHost*										aHost,
+			uint32_t									aNodeId,
+			FileStatsContext*							aStoreFileStatsContext,
 			uint32_t									aOldestStoreId,
+			uint32_t									aNewStoreId,
 			uint32_t									aStoreId1,
 			uint32_t									aStoreId2,
 			CompactionResult<_KeyType>*					aOut)
 		{
 			// Stores are always written in ascendening key order, so merging them is easy
-			std::unique_ptr<IFileStreamReader> f1(aNode->GetHost()->ReadStoreStream(aNode->GetNodeId(), aStoreId1, aNode->GetStoreFileStatsContext()));
-			std::unique_ptr<IFileStreamReader> f2(aNode->GetHost()->ReadStoreStream(aNode->GetNodeId(), aStoreId2, aNode->GetStoreFileStatsContext()));
+			std::unique_ptr<IFileStreamReader> f1(aHost->ReadStoreStream(aNodeId, aStoreId1, aStoreFileStatsContext));
+			std::unique_ptr<IFileStreamReader> f2(aHost->ReadStoreStream(aNodeId, aStoreId2, aStoreFileStatsContext));
 
 			if(!f1 || !f2)
 				return; // Could be that the stores no longer exists, just don't do anything then
 
 			{
-				uint32_t newStoreId = aNode->CreateStoreId();
-
-				std::unique_ptr<IStoreWriter> fOut(aNode->GetHost()->CreateStore(aNode->GetNodeId(), newStoreId, aNode->GetStoreFileStatsContext()));
-				JELLY_CHECK(fOut, "Failed to open compaction store for output: %u", newStoreId);
+				std::unique_ptr<IStoreWriter> fOut(aHost->CreateStore(aNodeId, aNewStoreId, aStoreFileStatsContext));
+				JELLY_CHECK(fOut, "Failed to open compaction store for output: %u", aNewStoreId);
 
 				_ItemType item1;
 				bool hasItem1 = false;
@@ -56,7 +57,7 @@ namespace jelly
 					{
 						uint64_t offset = item1.CompactionWrite(aOldestStoreId, fOut.get());
 						if(offset != UINT64_MAX)
-							aOut->AddItem(item1.GetKey(), item1.GetSeq(), newStoreId, offset);
+							aOut->AddItem(item1.GetKey(), item1.GetSeq(), aNewStoreId, offset);
 
 						item1.Reset();
 						hasItem1 = false;
@@ -65,7 +66,7 @@ namespace jelly
 					{
 						uint64_t offset = item2.CompactionWrite(aOldestStoreId, fOut.get());
 						if (offset != UINT64_MAX)
-							aOut->AddItem(item2.GetKey(), item2.GetSeq(), newStoreId, offset);
+							aOut->AddItem(item2.GetKey(), item2.GetSeq(), aNewStoreId, offset);
 
 						item2.Reset();
 						hasItem2 = false;
@@ -78,7 +79,7 @@ namespace jelly
 						{
 							uint64_t offset = item1.CompactionWrite(aOldestStoreId, fOut.get());
 							if (offset != UINT64_MAX)
-								aOut->AddItem(item1.GetKey(), item1.GetSeq(), newStoreId, offset);
+								aOut->AddItem(item1.GetKey(), item1.GetSeq(), aNewStoreId, offset);
 
 							item1.Reset();
 							hasItem1 = false;
@@ -87,7 +88,7 @@ namespace jelly
 						{
 							uint64_t offset = item2.CompactionWrite(aOldestStoreId, fOut.get());
 							if (offset != UINT64_MAX)
-								aOut->AddItem(item2.GetKey(), item2.GetSeq(), newStoreId, offset);
+								aOut->AddItem(item2.GetKey(), item2.GetSeq(), aNewStoreId, offset);
 
 							item2.Reset();
 							hasItem2 = false;
@@ -110,7 +111,7 @@ namespace jelly
 							}
 
 							if (offset != UINT64_MAX)
-								aOut->AddItem(item1.GetKey(), seq, newStoreId, offset);
+								aOut->AddItem(item1.GetKey(), seq, aNewStoreId, offset);
 
 							hasItem1 = false;
 							hasItem2 = false;
@@ -126,11 +127,14 @@ namespace jelly
 		}
 
 		// Do a compaction of more than 2 stores
-		template <typename _KeyType, typename _ItemType, typename _NodeType>
+		template <typename _KeyType, typename _ItemType>
 		void
 		PerformOnStoreList(
-			_NodeType*									aNode,
+			IHost*										aHost,
+			uint32_t									aNodeId,
+			FileStatsContext*							aStoreFileStatsContext,
 			uint32_t									aOldestStoreId,
+			uint32_t									aNewStoreId,
 			const std::vector<uint32_t>&				aStoreIds,
 			CompactionResult<_KeyType>*					aOut)
 		{
@@ -160,16 +164,15 @@ namespace jelly
 			// Open source stores
 			for (uint32_t storeId : aStoreIds)
 			{
-				sourceStores.push_back(std::make_unique<SourceStore>(storeId, aNode->GetHost()->ReadStoreStream(aNode->GetNodeId(), storeId, aNode->GetStoreFileStatsContext())));
+				sourceStores.push_back(std::make_unique<SourceStore>(storeId, aHost->ReadStoreStream(aNodeId, storeId, aStoreFileStatsContext)));
 
 				if(!sourceStores[sourceStores.size() - 1]->m_fileStreamReader)
 					return; // One of the source stores doesn't exist
 			}
 
 			// Open output store
-			uint32_t newStoreId = aNode->CreateStoreId();
-			std::unique_ptr<IStoreWriter> outputStore(aNode->GetHost()->CreateStore(aNode->GetNodeId(), newStoreId, aNode->GetStoreFileStatsContext()));
-			JELLY_CHECK(outputStore, "Failed to open compaction store for output: %u", newStoreId);
+			std::unique_ptr<IStoreWriter> outputStore(aHost->CreateStore(aNodeId, aNewStoreId, aStoreFileStatsContext));
+			JELLY_CHECK(outputStore, "Failed to open compaction store for output: %u", aNewStoreId);
 
 			// Perform the compaction
 			std::vector<SourceStore*> lowestKeySourceStores;
@@ -231,7 +234,7 @@ namespace jelly
 					size_t offset = sourceItem.CompactionWrite(aOldestStoreId, outputStore.get());
 
 					if(offset != UINT64_MAX)
-						aOut->AddItem(lowestKey.value(), sourceItem.GetSeq(), newStoreId, offset);
+						aOut->AddItem(lowestKey.value(), sourceItem.GetSeq(), aNewStoreId, offset);
 
 					for (SourceStore* lowestKeyStore : lowestKeySourceStores)
 					{
@@ -245,31 +248,37 @@ namespace jelly
 		}
 
 		// Do a "minor" compaction 
-		template <typename _KeyType, typename _ItemType, typename _NodeType>
+		template <typename _KeyType, typename _ItemType>
 		void
 		Perform(			
-			_NodeType*									aNode,
+			IHost*										aHost,
+			uint32_t									aNodeId,
+			FileStatsContext*							aStoreFileStatsContext,
+			uint32_t									aNewStoreId,
 			const CompactionJob&						aCompactionJob,
 			CompactionResult<_KeyType>*					aOut)
 		{
 			aOut->SetStoreIds(aCompactionJob.m_storeIds);
 
 			if(aCompactionJob.m_storeIds.size() == 2)
-				PerformOnTwoStores<_KeyType, _ItemType, _NodeType>(aNode, aCompactionJob.m_oldestStoreId, aCompactionJob.m_storeIds[0], aCompactionJob.m_storeIds[1], aOut);
+				PerformOnTwoStores<_KeyType, _ItemType>(aHost, aNodeId, aStoreFileStatsContext, aCompactionJob.m_oldestStoreId, aNewStoreId, aCompactionJob.m_storeIds[0], aCompactionJob.m_storeIds[1], aOut);
 			else
-				PerformOnStoreList<_KeyType, _ItemType, _NodeType>(aNode, aCompactionJob.m_oldestStoreId, aCompactionJob.m_storeIds, aOut);
+				PerformOnStoreList<_KeyType, _ItemType>(aHost, aNodeId, aStoreFileStatsContext, aCompactionJob.m_oldestStoreId, aNewStoreId, aCompactionJob.m_storeIds, aOut);
 		}
 		
 		// Do a "major" compaction of everything.
-		template <typename _KeyType, typename _ItemType, typename _NodeType>
+		template <typename _KeyType, typename _ItemType>
 		void
 		PerformMajorCompaction(
-			_NodeType*									aNode,
+			IHost*										aHost,
+			uint32_t									aNodeId,
+			FileStatsContext*							aStoreFileStatsContext,
+			uint32_t									aNewStoreId,
 			CompactionResult<_KeyType>*					aOut)
 		{
 			// Enumerate all stores
 			std::vector<IHost::StoreInfo> storeInfo;
-			aNode->GetHost()->GetStoreInfo(aNode->GetNodeId(), storeInfo);
+			aHost->GetStoreInfo(aNodeId, storeInfo);
 
 			// Need at least 3 stores for compaction (can't touch the newest one)
 			if (storeInfo.size() >= 3)
@@ -283,9 +292,9 @@ namespace jelly
 				aOut->SetStoreIds(storeIds);
 
 				if (storeIds.size() == 2)
-					PerformOnTwoStores<_KeyType, _ItemType, _NodeType>(aNode, oldestStoreId, storeIds[0], storeIds[1], aOut);
+					PerformOnTwoStores<_KeyType, _ItemType>(aHost, aNodeId, aStoreFileStatsContext, oldestStoreId, aNewStoreId, storeIds[0], storeIds[1], aOut);
 				else
-					PerformOnStoreList<_KeyType, _ItemType, _NodeType>(aNode, oldestStoreId, storeIds, aOut);
+					PerformOnStoreList<_KeyType, _ItemType>(aHost, aNodeId, aStoreFileStatsContext, oldestStoreId, aNewStoreId, storeIds, aOut);
 			}
 		}
 

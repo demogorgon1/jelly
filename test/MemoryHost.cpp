@@ -713,6 +713,26 @@ namespace jelly
 			return NULL;
 		}
 
+		bool					
+		MemoryHost::GetLatestBackupInfo(
+			uint32_t					/*aNodeId*/,
+			const char*					/*aBackupPath*/,
+			std::string&				/*aOutName*/,
+			uint32_t&					/*aOutLatestStoreId*/) 
+		{
+			JELLY_ASSERT(false);
+			return false;
+		}
+		
+		std::string				
+		MemoryHost::GetStorePath(
+			uint32_t					/*aNodeId*/,
+			uint32_t					/*aId*/) 
+		{
+			JELLY_ASSERT(false);
+			return "";
+		}
+
 	}
 
 }

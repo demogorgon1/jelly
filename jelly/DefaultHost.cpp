@@ -398,4 +398,59 @@ namespace jelly
 			FileHeader(FileHeader::TYPE_NONE));
 	}
 
+	bool
+	DefaultHost::GetLatestBackupInfo(
+		uint32_t					aNodeId,
+		const char*					aBackupPath,
+		std::string&				aOutName,
+		uint32_t&					aOutLatestStoreId) 
+	{
+		aOutLatestStoreId = UINT32_MAX;
+
+		if(!std::filesystem::exists(aBackupPath))
+			return false;
+
+		try
+		{
+			for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(aBackupPath))
+			{
+				// Each backup has its own directory in the backup path
+				if(entry.is_directory())
+				{
+					for (const std::filesystem::directory_entry& file : std::filesystem::directory_iterator(entry.path()))
+					{
+						PathUtils::FileType fileType;
+						uint32_t id;
+						uint32_t nodeId;
+						if (file.is_regular_file() && PathUtils::ParsePath(file.path(), m_filePrefix.c_str(), fileType, nodeId, id))
+						{
+							if (nodeId == aNodeId && fileType == PathUtils::FILE_TYPE_STORE)
+							{
+								if(aOutLatestStoreId == UINT32_MAX || id > aOutLatestStoreId)
+								{
+									aOutLatestStoreId = id;
+									aOutName = entry.path().filename().string();
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		catch (std::exception& e)
+		{
+			JELLY_FATAL_ERROR("DefaultHost: Failed to enumerate backup files for node id: %u (%s)", aNodeId, e.what());
+		}
+
+		return aOutLatestStoreId != UINT32_MAX;
+	}
+
+	std::string				
+	DefaultHost::GetStorePath(
+		uint32_t					aNodeId,
+		uint32_t					aId) 
+	{
+		return PathUtils::MakePath(m_root.c_str(), m_filePrefix.c_str(), PathUtils::FILE_TYPE_STORE, aNodeId, aId);
+	}
+
 }

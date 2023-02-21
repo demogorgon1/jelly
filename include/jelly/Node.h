@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Backup.h"
 #include "CompactionJob.h"
 #include "CompactionResult.h"
 #include "ConfigProxy.h"
@@ -35,6 +36,7 @@ namespace jelly
 	{
 	public:		
 		typedef CompactionResult<_KeyType> CompactionResultType;
+		typedef Backup<_KeyType, _ItemType> BackupType;
 
 		Node(
 			IHost*				aHost,
@@ -67,6 +69,86 @@ namespace jelly
 
 			for(WAL* wal : m_wals)
 				delete wal;
+		}
+
+		/**
+		 * Initializes a named backup. Must be called from main thread. When processing has finished,
+		 * finalize backup with FinalizeBackup().
+		 */
+		BackupType*
+		StartBackup(
+			const char*			aName)
+		{
+			std::string prevName;
+			std::string backupPath = m_config.GetString(Config::ID_BACKUP_PATH);
+			uint32_t latestStoreId = UINT32_MAX;
+			bool incremental = false;
+
+			if(m_config.GetBool(Config::ID_BACKUP_INCREMENTAL))
+			{
+				if(m_host->GetLatestBackupInfo(m_nodeId, backupPath.c_str(), prevName, latestStoreId))				
+					incremental = true;
+			}
+
+			std::vector<IHost::StoreInfo> storeInfo;
+			m_host->GetStoreInfo(m_nodeId, storeInfo);
+
+			std::vector<uint32_t> includeStoreIds;
+			size_t totalIncludedStoreSize = 0;
+
+			for(const IHost::StoreInfo& store : storeInfo)
+			{
+				if(!incremental || store.m_id > latestStoreId)
+				{
+					includeStoreIds.push_back(store.m_id);										
+
+					totalIncludedStoreSize += store.m_size;
+				}				
+			}
+
+			if(includeStoreIds.size() == 0)
+				return NULL;
+
+			std::unique_ptr<BackupType> backup = std::make_unique<BackupType>(
+				m_host,
+				m_nodeId, 
+				backupPath.c_str(), 
+				aName, 
+				prevName.c_str(),
+				&m_statsContext.m_fileStore);
+
+			if(m_config.GetBool(Config::ID_BACKUP_COMPACTION))
+			{
+				if(m_host->GetAvailableDiskSpace() < totalIncludedStoreSize)
+				{
+					// Compaction will require too much disk space temporarily
+					return NULL;
+				}
+
+				uint32_t compactionStoreId = CreateStoreId();
+
+				backup->SetCompactionJob(compactionStoreId, storeInfo[0].m_id, includeStoreIds);
+				backup->SetIncludeStoreIds({ compactionStoreId });
+			}
+			else
+			{
+				backup->SetIncludeStoreIds(includeStoreIds);
+			}
+
+			return backup.release();
+		}
+
+		/**
+		 * When backup processing is finished, finalize it by calling this method. Must
+		 * be called from the main thread.
+		 */
+		void
+		FinalizeBackup(
+			BackupType*			aBackup)
+		{
+			CompactionResultType* compactionResult = aBackup->GetCompactionResult();
+			if(compactionResult != NULL)
+				ApplyCompactionResult(compactionResult);
 		}
 
 		/**

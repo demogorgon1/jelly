@@ -85,6 +85,14 @@ namespace jelly
 									uint32_t					aId) override;
 		File*					CreateNodeLock(
 									uint32_t					aNodeId) override;
+		bool					GetLatestBackupInfo(
+									uint32_t					aNodeId,
+									const char*					aBackupPath,
+									std::string&				aOutName,
+									uint32_t&					aOutLatestStoreId) override;
+		std::string				GetStorePath(
+									uint32_t					aNodeId,
+									uint32_t					aId) override;
 
 		// Data access
 		DefaultConfigSource*	GetDefaultConfigSource() { JELLY_ASSERT(m_defaultConfigSource); return m_defaultConfigSource.get(); }

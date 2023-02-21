@@ -4,6 +4,7 @@
 
 #include "Base.h" // Must be included first
 
+#include "Backup.h"
 #include "Blob.h"
 #include "BlobNode.h"
 #include "Buffer.h"

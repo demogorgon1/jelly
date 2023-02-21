@@ -119,6 +119,18 @@ namespace jelly
 		//! Locks a node with a file lock. 
 		virtual File*					CreateNodeLock(
 											uint32_t				aNodeId) = 0;
+
+		//! Scan the backup path for store files associated with specified node id.
+		virtual bool					GetLatestBackupInfo(
+											uint32_t				aNodeId,
+											const char*				aBackupPath,
+											std::string&			aOutName,
+											uint32_t&				aOutLatestStoreId) = 0;
+
+		//! Return path to store.
+		virtual std::string				GetStorePath(
+											uint32_t				aNodeId,
+											uint32_t				aId) = 0;
 	};
 
 }

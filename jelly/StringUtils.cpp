@@ -102,19 +102,13 @@ namespace jelly
 		ParseBool(
 			const char* aString)
 		{
-			size_t len = strlen(aString);
-			JELLY_CHECK(len == 1, "Invalid bool: %s", aString);
+			if (strcmp(aString, "true") == 0 || strcmp(aString, "1") == 0)
+				return true;
+			if (strcmp(aString, "false") == 0 || strcmp(aString, "0") == 0)
+				return false;
 
-			bool value = false;
-
-			if(aString[0] == '0')
-				value = false;
-			else if (aString[0] == '1')
-				value = true;
-			else 
-				JELLY_FATAL_ERROR("Invalid bool: %s", aString);
-			
-			return value;
+			JELLY_FATAL_ERROR("Invalid bool: %s", aString);
+			return false;
 		}
 
 		uint32_t	
@@ -183,6 +177,23 @@ namespace jelly
 			else
 				snprintf(buffer, sizeof(buffer), "%.0f", v);
 			return buffer;
+		}
+
+		std::string	
+		GetFileNameFromPath(
+			const char*		aPath)
+		{
+			size_t strLen = strlen(aPath);
+			JELLY_CHECK(strLen > 0, "Path is empty.");
+
+			for(size_t i = 0; i < strLen; i++)
+			{
+				char c = aPath[strLen - i - 1];
+				if(c == '/' || c == '\\')
+					return &aPath[strLen - i];
+			}
+
+			return aPath;
 		}
 
 	}

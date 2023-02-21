@@ -45,6 +45,8 @@ namespace jelly
 						const char*		aString);
 		std::string MakeSizeString(
 						uint64_t		aValue);
+		std::string	GetFileNameFromPath(
+						const char*		aPath);
 
 	}
 

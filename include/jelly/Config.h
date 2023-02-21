@@ -24,6 +24,9 @@ namespace jelly
 			// Node
 			ID_WAL_SIZE_LIMIT,
 			ID_WAL_CONCURRENCY,
+			ID_BACKUP_PATH,
+			ID_BACKUP_COMPACTION,
+			ID_BACKUP_INCREMENTAL,
 
 			// BlobNode
 			ID_MAX_RESIDENT_BLOB_SIZE,
@@ -75,6 +78,9 @@ namespace jelly
 
 			/* ID_WAL_SIZE_LIMIT */                         { TYPE_SIZE,     "wal_size_limit",                         "64MB",        false },
 			/* ID_WAL_CONCURRENCY */                        { TYPE_UINT32,   "wal_concurrency",                        "1",           true },
+			/* ID_BACKUP_PATH */							{ TYPE_STRING,   "backup_path",							   "backups",	  false },
+			/* ID_BACKUP_COMPACTION */                      { TYPE_BOOL,     "backup_compaction",                      "true",        false },
+			/* ID_BACKUP_INCREMENTAL */                     { TYPE_BOOL,     "backup_incremental",                     "true",        false },
 											                				  					                  				     
 			/* ID_MAX_RESIDENT_BLOB_SIZE */                 { TYPE_SIZE,     "max_resident_blob_size",                 "1GB",         false },
 			/* ID_MAX_RESIDENT_BLOB_COUNT */                { TYPE_SIZE,     "max_resident_blob_count",                "1G",          false },

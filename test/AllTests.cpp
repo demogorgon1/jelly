@@ -2,6 +2,7 @@
 
 #include "Sim/SimTest.h"
 
+#include "BackupTest.h"
 #include "CompressionTest.h"
 #include "Config.h"
 #include "FileTest.h"
@@ -36,6 +37,7 @@ namespace jelly
 				StepTest::Run(aConfig);
 				HousekeepingAdvisorTest::Run();
 				ReplicationTest::Run();
+				BackupTest::Run();
 
 				if(aConfig->m_simTest)
 					Sim::SimTest(aWorkingDirectory, aConfig);

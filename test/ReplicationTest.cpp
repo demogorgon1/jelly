@@ -1,5 +1,7 @@
 #include <jelly/API.h>
 
+#include "UInt32Blob.h"
+
 namespace jelly
 {
 
@@ -27,7 +29,8 @@ namespace jelly
 					const Stream::Buffer*	aHead)
 				{
 					JELLY_ASSERT(aNodeId == 1);
-					node1.ProcessReplication(0, aHead);
+					JELLY_ASSERT(node1.ProcessReplication(0, aHead) == 1);
+					node1.FlushPendingWAL();
 				});
 				node0.SetReplicationNetwork(&node0Replication);
 					
@@ -37,7 +40,8 @@ namespace jelly
 					const Stream::Buffer*	aHead)
 				{
 					JELLY_ASSERT(aNodeId == 0);
-					node0.ProcessReplication(1, aHead);				
+					JELLY_ASSERT(node0.ProcessReplication(1, aHead) == 1);
+					node0.FlushPendingWAL();
 				});
 				node1.SetReplicationNetwork(&node1Replication);
 
@@ -118,6 +122,117 @@ namespace jelly
 					JELLY_ASSERT(req.GetResult() == RESULT_OK);
 				}
 			}
+
+			void
+			_BlobNodeReplication(
+				bool		aMemoryLimit)
+			{
+				DefaultConfigSource config;
+				
+				if(aMemoryLimit)
+					config.Set(Config::ID_MAX_RESIDENT_BLOB_SIZE, "0");
+
+				DefaultHost host(".", "reptest", &config);
+				host.DeleteAllFiles(UINT32_MAX);
+
+				typedef BlobNode<UIntKey<uint32_t>> BlobNodeType;
+
+				std::unique_ptr<BlobNodeType> node0 = std::make_unique<BlobNodeType>(&host, 0);
+				std::unique_ptr<BlobNodeType> node1 = std::make_unique<BlobNodeType>(&host, 1);
+
+				ReplicationNetwork node0Replication(0);
+				node0Replication.SetSendCallback([&node1](
+					uint32_t				aNodeId,
+					const Stream::Buffer*	aHead)
+				{
+					JELLY_ASSERT(aNodeId == 1);
+					JELLY_ASSERT(node1->ProcessReplication(0, aHead) == 1);
+					node1->FlushPendingWAL();
+				});
+				node0->SetReplicationNetwork(&node0Replication);
+					
+				ReplicationNetwork node1Replication(1);
+				node1Replication.SetSendCallback([&node0](
+					uint32_t				aNodeId,
+					const Stream::Buffer*	aHead)
+				{
+					JELLY_ASSERT(aNodeId == 0);
+					JELLY_ASSERT(node0->ProcessReplication(1, aHead) == 1);
+					node0->FlushPendingWAL();
+				});
+				node1->SetReplicationNetwork(&node1Replication);
+
+				// Initially node 0 is master, node 1 is slave
+				node0Replication.SetNodeIds({ 0, 1 });
+				node1Replication.SetNodeIds({ 0, 1 });
+
+				// Write blob to master (already checked negative code path for lock nodes, it's the same)
+				{
+					BlobNodeType::Request req;
+					req.SetKey(123);
+					req.SetBlob(new UInt32Blob(1000));
+					req.SetSeq(1);
+					node0->Set(&req);
+					node0->ProcessRequests();
+					node0->FlushPendingWAL();
+					JELLY_ASSERT(req.IsCompleted());
+					JELLY_ASSERT(req.GetResult() == RESULT_OK);
+
+					node0Replication.Update();
+				}
+
+				// Switch master
+				node0Replication.SetNodeIds({ 1, 0 });
+				node1Replication.SetNodeIds({ 1, 0 });
+
+				// Read blob from previous slave
+				{
+					BlobNodeType::Request req;
+					req.SetKey(123);
+					req.SetSeq(1);
+					node1->Get(&req);
+					node1->ProcessRequests();
+					JELLY_ASSERT(req.IsCompleted());
+					JELLY_ASSERT(req.GetResult() == RESULT_OK);
+					JELLY_ASSERT(UInt32Blob::GetValue(req.GetBlob()) == 1000);
+				}
+
+				// Write to previous slave
+				{
+					BlobNodeType::Request req;
+					req.SetKey(123);
+					req.SetBlob(new UInt32Blob(1001));
+					req.SetSeq(2);
+					node1->Set(&req);
+					node1->ProcessRequests();
+					node1->FlushPendingWAL();
+					JELLY_ASSERT(req.IsCompleted());
+					JELLY_ASSERT(req.GetResult() == RESULT_OK);
+
+					node1Replication.Update();
+				}
+
+				// Switch back to original master
+				node0Replication.SetNodeIds({ 0, 1 });
+				node1Replication.SetNodeIds({ 0, 1 });
+
+				// Restart original master
+				node0.reset();
+				node0 = std::make_unique<BlobNodeType>(&host, 0);
+
+				// Read blob from original master
+				{
+					BlobNodeType::Request req;
+					req.SetKey(123);
+					req.SetSeq(2);
+					node0->Get(&req);
+					node0->ProcessRequests();
+					JELLY_ASSERT(req.IsCompleted());
+					JELLY_ASSERT(req.GetResult() == RESULT_OK);
+					JELLY_ASSERT(UInt32Blob::GetValue(req.GetBlob()) == 1001);
+				}
+			}
+
 		}
 
 		namespace ReplicationTest
@@ -127,6 +242,9 @@ namespace jelly
 			Run()
 			{
 				_LockNodeReplication();
+
+				_BlobNodeReplication(true); // With memory limit
+				_BlobNodeReplication(false); // Without memory limit
 			}
 
 		}

@@ -87,7 +87,7 @@ namespace jelly
 				t.m_completionEvent->Signal();
 		}
 
-		if(aReplicationNetwork != NULL)
+		if(aReplicationNetwork != NULL && aReplicationNetwork->IsLocalNodeMaster())
 		{
 			Stream::Writer stream(m_compression);
 

@@ -75,9 +75,11 @@ namespace jelly
 			};
 
 			this->m_replicationCallback = [&](
-				Stream::Reader*									aReader)
+				Stream::Reader*									aReader) -> uint32_t
 			{
 				JELLY_ASSERT(this->m_replicationNetwork != NULL);
+
+				uint32_t count = 0;
 
 				if(!this->m_replicationNetwork->IsLocalNodeMaster())
 				{
@@ -88,8 +90,12 @@ namespace jelly
 							break;
 
 						_ReplicateItem(item);
+
+						count++;
 					}
 				}
+
+				return count;
 			};
 		}
 

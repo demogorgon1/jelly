@@ -45,9 +45,9 @@ namespace jelly
 			_Restore();
 			
 			this->m_flushPendingStoreCallback = [&](
-				uint32_t					aStoreId,
-				IStoreWriter*				aWriter,
-				NodeBase::PendingStoreType*	/*aPendingStoreType*/)
+				uint32_t										aStoreId,
+				IStoreWriter*									aWriter,
+				NodeBase::PendingStoreType*						/*aPendingStoreType*/)
 			{ 				
 				size_t itemsProcessed = 0;
 
@@ -81,6 +81,30 @@ namespace jelly
 
 				_ObeyResidentBlobLimits();
  			};
+
+			this->m_replicationCallback = [&](
+				Stream::Reader*									aReader) -> uint32_t
+			{
+				JELLY_ASSERT(this->m_replicationNetwork != NULL);
+
+				uint32_t count = 0;
+
+				if(!this->m_replicationNetwork->IsLocalNodeMaster())
+				{
+					while (!aReader->IsEnd())
+					{
+						Item item;
+						if (!item.Read(aReader, NULL))
+							break;
+
+						_ReplicateItem(item);
+
+						count++;
+					}
+				}
+
+				return count;
+			};
 		}
 
 		virtual 
@@ -372,6 +396,51 @@ namespace jelly
 		}
 
 		void
+		_ReplicateItem(
+			Item&												aItem)
+		{
+			JELLY_ASSERT(this->m_replicationNetwork != NULL && !this->m_replicationNetwork->IsLocalNodeMaster());
+
+			const _KeyType& key = aItem.GetKey();
+			uint32_t seq = aItem.GetSeq();
+			bool hasTombstone = aItem.HasTombstone();
+
+			std::pair<Item*, bool> result = this->m_table.InsertOrUpdate(123, [key, seq, hasTombstone]() -> Item*
+			{
+				if(hasTombstone)
+					return (Item*)NULL;
+				else
+					return new Item(key, seq);
+			});
+
+			if(result.first != NULL && (result.second || seq > result.first->GetSeq()))
+			{
+				JELLY_ASSERT(hasTombstone || aItem.HasBlob());
+				Item* existing = result.first;
+
+				if(existing->HasBlob())
+				{
+					JELLY_ASSERT(m_totalResidentBlobSize >= existing->GetBlob()->GetSize());
+					m_totalResidentBlobSize -= existing->GetBlob()->GetSize();
+					m_residentItems.MoveToTail(existing);
+				}
+				else
+				{
+					m_residentItems.Add(existing);
+				}
+
+				m_totalResidentBlobSize += aItem.GetBlob()->GetSize();
+
+				existing->MoveFrom(&aItem);
+				existing->GetRuntimeState().m_isResident = true;
+
+				this->WriteToWAL(result.first, NULL, NULL);
+
+				_ObeyResidentBlobLimits();
+			}
+		}
+
+		void
 		_InitStatsContext(
 			NodeBase::StatsContext*		aStatsContext)
 		{
@@ -504,13 +573,17 @@ namespace jelly
 						if(item->HasBlob())
 							m_totalResidentBlobSize += item->GetBlob()->GetSize();
 
+						bool wasResident = existing->GetRuntimeState().m_isResident;
+
 						existing->MoveFrom(item.get());
 
 						// Resident items sorted by age (newest at tail, which is this item now)
-						if(itemRuntimeState.m_isResident)
-							m_residentItems.MoveToTail(existing);
-
 						typename Item::RuntimeState& existingRuntimeState = existing->GetRuntimeState();
+
+						if(wasResident)
+							m_residentItems.MoveToTail(existing);
+						else
+							m_residentItems.Add(existing);
 
 						if (existingRuntimeState.m_pendingWAL != NULL)
 						{
@@ -524,6 +597,7 @@ namespace jelly
 							this->m_pendingStore.insert(std::pair<const _KeyType, Item*>(existing->GetKey(), existing));
 						}
 
+						existingRuntimeState.m_isResident = true;
 						existingRuntimeState.m_pendingWAL = aWAL;
 						existingRuntimeState.m_pendingWAL->AddReference();
 					}
@@ -533,6 +607,7 @@ namespace jelly
 					// First time we see this key, add it
 					m_residentItems.Add(item.get());
 
+					itemRuntimeState.m_isResident = true;
 					itemRuntimeState.m_pendingWAL = aWAL;
 					itemRuntimeState.m_pendingWAL->AddReference();
 

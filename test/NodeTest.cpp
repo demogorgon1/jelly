@@ -1652,6 +1652,57 @@ namespace jelly
 				}
 			}
 
+			void
+			_TestBlobNodeRepeatedSets(
+				TestDefaultHost*		aHost,
+				bool					aMemoryLimit)
+			{
+				aHost->DeleteAllFiles(UINT32_MAX);
+				aHost->GetDefaultConfigSource()->Clear();
+
+				if(aMemoryLimit)
+					aHost->GetDefaultConfigSource()->Set(jelly::Config::ID_MAX_RESIDENT_BLOB_COUNT, "0");
+
+				{
+					BlobNodeType blobNode(aHost, 0);
+					
+					// Do a bunch of sets on the same key with increasing sequence numbers
+					for(uint32_t seq = 1; seq <= 5; seq++)
+					{
+						BlobNodeType::Request req;
+						req.SetKey(123);
+						req.SetSeq(seq);
+						req.SetBlob(new UInt32Blob(100 + seq));
+						blobNode.Set(&req);
+						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
+						blobNode.FlushPendingWAL(0);
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_OK);
+					}
+				}
+
+				_VerifyBlobNodeWAL(aHost, 0, 0, { { 123, 1, 101 }, { 123, 2, 102 }, { 123, 3, 103 }, { 123, 4, 104 }, { 123, 5, 105 } });
+
+				// Restart
+
+				{
+					BlobNodeType blobNode(aHost, 0);
+
+					// Do a get, we should have the latest version
+					{
+						BlobNodeType::Request req;
+						req.SetKey(123);
+						req.SetSeq(5);
+						blobNode.Get(&req);
+						JELLY_ASSERT(blobNode.ProcessRequests() == 1);
+						JELLY_ASSERT(req.IsCompleted());
+						JELLY_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ASSERT(req.GetSeq() == 5);
+						JELLY_ASSERT(UInt32Blob::GetValue(req.GetBlob()) == 105);
+					}
+				}
+			}
+
 		}
 
 		namespace NodeTest
@@ -1683,6 +1734,10 @@ namespace jelly
 
 				// Test blob node with memory limit turned on
 				_TestBlobNodeMemoryLimit(&host);
+
+				// Test blob node restart after setting the same item repeatedly (without flush pending store)
+				_TestBlobNodeRepeatedSets(&host, true); // With memory limit
+				_TestBlobNodeRepeatedSets(&host, false); // Without memory limit
 
 				if(aConfig->m_hammerTest)
 				{

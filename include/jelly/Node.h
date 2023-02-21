@@ -80,9 +80,10 @@ namespace jelly
 		}
 
 		/**
-		 * Should be called when replication data is received. This must be called on the main thread.
+		 * Should be called when replication data is received. Returns number of items updated. This must be called 
+		 * on the main thread.
 		 */
-		void
+		uint32_t
 		ProcessReplication(
 			uint32_t				aSourceNodeId,
 			const Stream::Buffer*	aHead)
@@ -91,10 +92,12 @@ namespace jelly
 			
 			if(!m_replicationNetwork->IsLocalNodeMaster() && m_replicationNetwork->GetMasterNodeId() == aSourceNodeId)
 			{
-				Stream::Reader reader(m_host->GetCompressionProvider(), aHead);
+				Stream::Reader reader(_CompressWAL ? m_host->GetCompressionProvider() : NULL, aHead);
 				
-				m_replicationCallback(&reader);
+				return m_replicationCallback(&reader);
 			}
+
+			return 0;
 		}
 
 		/**
@@ -533,7 +536,7 @@ namespace jelly
 
 		typedef std::map<_KeyType, _ItemType*> PendingStoreType;
 		typedef std::function<void(uint32_t, IStoreWriter*, PendingStoreType*)> FlushPendingStoreCallback;
-		typedef std::function<void(Stream::Reader*)> ReplicationCallback;
+		typedef std::function<uint32_t(Stream::Reader*)> ReplicationCallback;
 
 		struct StatsContext
 		{
@@ -670,13 +673,6 @@ namespace jelly
 			}
 
 			return pendingWAL;
-		}
-
-		void
-		_ProcessReplication(
-			const Stream::Buffer* /*aHead*/)
-		{
-			
 		}
 	};
 

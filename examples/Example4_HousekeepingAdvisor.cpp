@@ -5,6 +5,8 @@
 
 #include <jelly/API.h>
 
+#include <thread> // For std::this_thread::yield()
+
 int
 main(
 	int		/*aNumArgs*/,

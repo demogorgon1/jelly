@@ -20,7 +20,7 @@ namespace jelly
 			SetValue(
 				uint32_t		aValue)
 			{
-				JELLY_ASSERT(GetSize() == sizeof(uint32_t));
+				JELLY_ALWAYS_ASSERT(GetSize() == sizeof(uint32_t));
 				*((uint32_t*)GetPointer()) = aValue;
 			}
 
@@ -28,7 +28,7 @@ namespace jelly
 			GetValue(
 				const IBuffer*	aBuffer) 
 			{
-				JELLY_ASSERT(aBuffer->GetSize() == sizeof(uint32_t));
+				JELLY_ALWAYS_ASSERT(aBuffer->GetSize() == sizeof(uint32_t));
 				return *((uint32_t*)aBuffer->GetPointer());
 			}
 		};
@@ -43,12 +43,12 @@ namespace jelly
 		//		const Compression::IProvider*	/*aCompression*/,	
 		//		IBuffer&						aOut) const
 		//	{
-		//		JELLY_ASSERT(m_loaded);
-		//		JELLY_ASSERT(aOut.GetSize() == 0);
+		//		JELLY_ALWAYS_ASSERT(m_loaded);
+		//		JELLY_ALWAYS_ASSERT(aOut.GetSize() == 0);
 		//		BufferWriter writer(aOut);
 
 		//		if(!writer.WriteUInt<uint32_t>(m_value))
-		//			JELLY_ASSERT(false);
+		//			JELLY_ALWAYS_ASSERT(false);
 
 		//		// Add some fluff to make the blob a bit bigger
 		//		uint32_t fluff[10];
@@ -56,7 +56,7 @@ namespace jelly
 		//			fluff[i] = m_value * i;
 
 		//		if(writer.Write(fluff, sizeof(fluff)) != sizeof(fluff))
-		//			JELLY_ASSERT(false);
+		//			JELLY_ALWAYS_ASSERT(false);
 		//	}
 
 		//	void
@@ -69,14 +69,14 @@ namespace jelly
 		//		m_loaded = true;
 
 		//		if(!reader.ReadUInt<uint32_t>(m_value))
-		//			JELLY_ASSERT(false);
+		//			JELLY_ALWAYS_ASSERT(false);
 
 		//		uint32_t fluff[10];
 		//		if (reader.Read(fluff, sizeof(fluff)) != sizeof(fluff))
-		//			JELLY_ASSERT(false);
+		//			JELLY_ALWAYS_ASSERT(false);
 
 		//		for (uint32_t i = 0; i < 10; i++)
-		//			JELLY_ASSERT(fluff[i] == m_value * i);
+		//			JELLY_ALWAYS_ASSERT(fluff[i] == m_value * i);
 		//	}
 
 		//	size_t
@@ -89,7 +89,7 @@ namespace jelly
 		//	operator==(
 		//		const UInt32Blob&				aOther) const 
 		//	{
-		//		JELLY_ASSERT(m_loaded && aOther.m_loaded); 
+		//		JELLY_ALWAYS_ASSERT(m_loaded && aOther.m_loaded); 
 		//		return m_value == aOther.m_value;
 		//	}
 
@@ -97,7 +97,7 @@ namespace jelly
 		//	operator==(
 		//		uint32_t						aOther) const
 		//	{
-		//		JELLY_ASSERT(m_loaded);
+		//		JELLY_ALWAYS_ASSERT(m_loaded);
 		//		return m_value == aOther;
 		//	}
 

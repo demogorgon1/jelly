@@ -47,9 +47,8 @@ namespace jelly
 					const void* aBuffer,
 					size_t		aBufferSize)
 				{
-					JELLY_ASSERT(aBufferSize <= compareRemaining);
-					JELLY_ASSERT(memcmp(aBuffer, comparePointer, aBufferSize) == 0);
-					JELLY_UNUSED(aBuffer);
+					JELLY_ALWAYS_ASSERT(aBufferSize <= compareRemaining);
+					JELLY_ALWAYS_ASSERT(memcmp(aBuffer, comparePointer, aBufferSize) == 0);
 					comparePointer += aBufferSize;
 					compareRemaining -= aBufferSize;
 				});
@@ -58,7 +57,7 @@ namespace jelly
 				{
 					for (size_t i = 0; i < aDataSize; i++)
 					{
-						JELLY_ASSERT(compressor->Write((const uint8_t*)aData + i, 1) == 1);
+						JELLY_ALWAYS_ASSERT(compressor->Write((const uint8_t*)aData + i, 1) == 1);
 
 						if(aFlushAfterEachByte)
 							compressor->Flush();
@@ -69,11 +68,11 @@ namespace jelly
 				}
 				else
 				{
-					JELLY_ASSERT(compressor->Write(aData, aDataSize) == aDataSize);
+					JELLY_ALWAYS_ASSERT(compressor->Write(aData, aDataSize) == aDataSize);
 					compressor->Flush();
 				}
 
-				JELLY_ASSERT(compareRemaining == 0);
+				JELLY_ALWAYS_ASSERT(compareRemaining == 0);
 			}
 
 			template<typename _ProviderType>
@@ -106,7 +105,7 @@ namespace jelly
 				std::unique_ptr<IBuffer> compressedBuffer(compression.CompressBuffer(&sourceBuffer));
 				std::unique_ptr<IBuffer> uncompressedBuffer(compression.DecompressBuffer(compressedBuffer.get()));
 
-				JELLY_ASSERT(sourceBuffer == *uncompressedBuffer);
+				JELLY_ALWAYS_ASSERT(sourceBuffer == *uncompressedBuffer);
 			}
 
 			template<typename _ProviderType>
@@ -123,7 +122,7 @@ namespace jelly
 					for (int i = 0; i < 200; i++)
 					{
 						char buffer[64];
-						JELLY_ASSERT((size_t)snprintf(buffer, sizeof(buffer), "%d", i * 349104) <= sizeof(buffer));
+						JELLY_ALWAYS_ASSERT((size_t)snprintf(buffer, sizeof(buffer), "%d", i * 349104) <= sizeof(buffer));
 						longString << buffer;
 					}
 
@@ -145,7 +144,7 @@ namespace jelly
 					}
 					catch(...)
 					{
-						JELLY_ASSERT(false);
+						JELLY_ALWAYS_ASSERT(false);
 					}
 
 					delete [] bigBuffer;

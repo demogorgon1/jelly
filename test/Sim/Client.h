@@ -33,7 +33,7 @@ namespace jelly::Test::Sim
 				Stats::ID_C_DISCONNECTED_NUM
 			};
 			static_assert(sizeof(IDS) == sizeof(uint32_t) * (size_t)NUM_STATES);
-			JELLY_ASSERT(aState < (uint32_t)NUM_STATES);
+			JELLY_ALWAYS_ASSERT(aState < (uint32_t)NUM_STATES);
 			return IDS[aState];
 		}
 

@@ -27,7 +27,7 @@ namespace jelly
 			case RESULT_OUTDATED:			return "OUTDATED";
 			case RESULT_NOT_MASTER:			return "NOT_MASTER";
 			}
-			JELLY_ASSERT(false);
+			JELLY_ALWAYS_ASSERT(false);
 			return "";
 		}
 
@@ -92,7 +92,7 @@ namespace jelly
 
 				if(!_UpdateRequests())
 				{
-					JELLY_ASSERT(m_nextStepIndex < m_steps.size());
+					JELLY_ALWAYS_ASSERT(m_nextStepIndex < m_steps.size());
 
 					Entry& entry = m_steps[m_nextStepIndex];
 
@@ -168,7 +168,7 @@ namespace jelly
 				{
 					_Message("Process lock node requests");
 
-					JELLY_ASSERT(m_lockNode);
+					JELLY_ALWAYS_ASSERT(m_lockNode);
 					size_t count = m_lockNode->ProcessRequests();
 
 					_Message("(%llu requests processed)", count);
@@ -182,7 +182,7 @@ namespace jelly
 				{
 					_Message("Flush pending lock node WAL");
 
-					JELLY_ASSERT(m_lockNode);
+					JELLY_ALWAYS_ASSERT(m_lockNode);
 					m_lockNode->FlushPendingWAL(0);
 				});
 			}
@@ -194,7 +194,7 @@ namespace jelly
 				{
 					_Message("Flush pending lock node store");
 
-					JELLY_ASSERT(m_lockNode);
+					JELLY_ALWAYS_ASSERT(m_lockNode);
 					m_lockNode->FlushPendingStore();
 				});
 			}
@@ -206,7 +206,7 @@ namespace jelly
 				{
 					_Message("Cleanup lock node WALs");
 
-					JELLY_ASSERT(m_lockNode);
+					JELLY_ALWAYS_ASSERT(m_lockNode);
 					m_lockNode->CleanupWALs();
 				});
 			}
@@ -218,7 +218,7 @@ namespace jelly
 				{
 					_Message("Process blob node requests");
 
-					JELLY_ASSERT(m_blobNode);
+					JELLY_ALWAYS_ASSERT(m_blobNode);
 					size_t count = m_blobNode->ProcessRequests();
 
 					_Message("(%llu requests processed)", count);
@@ -232,7 +232,7 @@ namespace jelly
 				{
 					_Message("Flush pending blob node WAL");
 
-					JELLY_ASSERT(m_blobNode);
+					JELLY_ALWAYS_ASSERT(m_blobNode);
 					m_blobNode->FlushPendingWAL(0);
 				});
 			}
@@ -244,7 +244,7 @@ namespace jelly
 				{
 					_Message("Flush pending blob node store");
 
-					JELLY_ASSERT(m_blobNode);
+					JELLY_ALWAYS_ASSERT(m_blobNode);
 					m_blobNode->FlushPendingStore();
 				});
 			}
@@ -256,7 +256,7 @@ namespace jelly
 				{
 					_Message("Cleanup blob node WALs");
 
-					JELLY_ASSERT(m_blobNode);
+					JELLY_ALWAYS_ASSERT(m_blobNode);
 					m_blobNode->CleanupWALs();
 				});
 			}
@@ -288,8 +288,8 @@ namespace jelly
 				{
 					_Message("Lock: key=%u lock id=%u", m_key, m_lockId);
 
-					JELLY_ASSERT(m_lockNode);
-					JELLY_ASSERT(!m_lockRequest);
+					JELLY_ALWAYS_ASSERT(m_lockNode);
+					JELLY_ALWAYS_ASSERT(!m_lockRequest);
 
 					m_lockRequest = std::make_unique<_LockNodeRequestType>();
 					m_lockRequest->SetKey(m_key);
@@ -305,8 +305,8 @@ namespace jelly
 				{
 					_Message("Unlock: key=%u lock id=%u", m_key, m_lockId);
 
-					JELLY_ASSERT(m_lockNode);
-					JELLY_ASSERT(!m_unlockRequest);
+					JELLY_ALWAYS_ASSERT(m_lockNode);
+					JELLY_ALWAYS_ASSERT(!m_unlockRequest);
 
 					m_unlockRequest = std::make_unique<_LockNodeRequestType>();
 					m_unlockRequest->SetKey(m_key);
@@ -323,8 +323,8 @@ namespace jelly
 				{
 					_Message("Get: key=%u", m_key);
 
-					JELLY_ASSERT(m_blobNode);
-					JELLY_ASSERT(!m_getRequest);
+					JELLY_ALWAYS_ASSERT(m_blobNode);
+					JELLY_ALWAYS_ASSERT(!m_getRequest);
 
 					m_getRequest = std::make_unique<_BlobNodeRequestType>();
 					m_getRequest->SetKey(m_key);
@@ -343,8 +343,8 @@ namespace jelly
 				{
 					_Message("Set: key=%u blob_seq=%u", m_key, m_blobSeq);
 
-					JELLY_ASSERT(m_blobNode);
-					JELLY_ASSERT(!m_setRequest);
+					JELLY_ALWAYS_ASSERT(m_blobNode);
+					JELLY_ALWAYS_ASSERT(!m_setRequest);
 
 					m_setRequest = std::make_unique<_BlobNodeRequestType>();
 					m_setRequest->SetKey(m_key);
@@ -423,7 +423,7 @@ namespace jelly
 							break;
 
 						default:
-							JELLY_ASSERT(m_lockRequest->GetResult() == RESULT_OK);
+							JELLY_ALWAYS_ASSERT(m_lockRequest->GetResult() == RESULT_OK);
 							m_blobSeq = m_lockRequest->GetMeta().m_blobSeq;
 							m_lockRequest.reset();
 							break;
@@ -448,7 +448,7 @@ namespace jelly
 							break;
 
 						default:
-							JELLY_ASSERT(m_unlockRequest->GetResult() == RESULT_OK			// Success
+							JELLY_ALWAYS_ASSERT(m_unlockRequest->GetResult() == RESULT_OK			// Success
 								|| m_unlockRequest->GetResult() == RESULT_NOT_LOCKED		// Was already unlocked
 								|| m_unlockRequest->GetResult() == RESULT_ALREADY_LOCKED);	// Was already unlocked AND locked by someone else
 							m_unlockRequest.reset();
@@ -465,7 +465,7 @@ namespace jelly
 						switch(m_getRequest->GetResult())
 						{
 						case RESULT_OK:
-							JELLY_ASSERT(UInt32Blob::GetValue(m_getRequest->GetBlob()) == m_key);
+							JELLY_ALWAYS_ASSERT(UInt32Blob::GetValue(m_getRequest->GetBlob()) == m_key);
 							m_getRequest.reset();
 							break;
 
@@ -480,7 +480,7 @@ namespace jelly
 							break;
 
 						default:
-							JELLY_ASSERT(m_getRequest->GetResult() == RESULT_DOES_NOT_EXIST);
+							JELLY_ALWAYS_ASSERT(m_getRequest->GetResult() == RESULT_DOES_NOT_EXIST);
 							m_getRequest.reset();
 							break;
 						}
@@ -504,7 +504,7 @@ namespace jelly
 							break;
 
 						default:
-							JELLY_ASSERT(m_setRequest->GetResult() == RESULT_OK);
+							JELLY_ALWAYS_ASSERT(m_setRequest->GetResult() == RESULT_OK);
 							m_setRequest.reset();
 						}
 					}

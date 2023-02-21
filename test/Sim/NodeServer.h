@@ -36,7 +36,7 @@ namespace jelly::Test::Sim
 				_Type == NODE_SERVER_TYPE_LOCK ? Stats::ID_LS_RUNNING_NUM : Stats::ID_BS_RUNNING_NUM,
 			};
 			static_assert(sizeof(IDS) == sizeof(uint32_t) * (size_t)NUM_STATES);
-			JELLY_ASSERT(aState < (uint32_t)NUM_STATES);
+			JELLY_ALWAYS_ASSERT(aState < (uint32_t)NUM_STATES);
 			return IDS[aState];
 		}
 
@@ -136,14 +136,14 @@ namespace jelly::Test::Sim
 							break;
 
 						default:
-							JELLY_ASSERT(false);
+							JELLY_ALWAYS_ASSERT(false);
 						}
 					});						
 				}
 				break;
 
 			default:
-				JELLY_ASSERT(false);
+				JELLY_ALWAYS_ASSERT(false);
 				break;
 			}
 		}
@@ -152,7 +152,7 @@ namespace jelly::Test::Sim
 		UpdateStateStatistics(
 			std::vector<uint32_t>& aStateCounters)
 		{
-			JELLY_ASSERT((size_t)m_state < aStateCounters.size());
+			JELLY_ALWAYS_ASSERT((size_t)m_state < aStateCounters.size());
 			
 			aStateCounters[m_state]++;
 
@@ -194,7 +194,7 @@ namespace jelly::Test::Sim
 		_SetState(
 			State									aState)
 		{
-			JELLY_ASSERT(m_state != aState);
+			JELLY_ALWAYS_ASSERT(m_state != aState);
 			m_stateTimeSampler.ChangeState(m_host->GetStats(), aState);
 			m_state = aState;
 		}

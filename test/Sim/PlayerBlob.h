@@ -37,7 +37,7 @@ namespace jelly::Test::Sim
 		FromBlob(
 			const IBuffer*				aBlob)
 		{
-			JELLY_ASSERT(aBlob->GetSize() == DATA_SIZE + sizeof(m_id));
+			JELLY_ALWAYS_ASSERT(aBlob->GetSize() == DATA_SIZE + sizeof(m_id));
 			memcpy(&m_id, aBlob->GetPointer(), sizeof(m_id));
 			memcpy(m_someData, (const uint8_t*)aBlob->GetPointer() + sizeof(m_id), DATA_SIZE);
 		}

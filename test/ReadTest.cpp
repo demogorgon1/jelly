@@ -64,8 +64,8 @@ namespace jelly
 
 						for(std::unique_ptr<BlobNodeType::Request>& req : requests)
 						{
-							JELLY_ASSERT(req->IsCompleted());
-							JELLY_ASSERT(req->GetResult() == RESULT_OK);
+							JELLY_ALWAYS_ASSERT(req->IsCompleted());
+							JELLY_ALWAYS_ASSERT(req->GetResult() == RESULT_OK);
 
 							const uint8_t* p = (const uint8_t*)req->GetBlob()->GetPointer();
 							JELLY_UNUSED(p);
@@ -74,7 +74,7 @@ namespace jelly
 							{
 								uint8_t expectedByte = (uint8_t)(random() % 64);
 								JELLY_UNUSED(expectedByte);
-								JELLY_ASSERT(p[i] == expectedByte);
+								JELLY_ALWAYS_ASSERT(p[i] == expectedByte);
 							}
 						}
 

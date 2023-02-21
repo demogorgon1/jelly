@@ -56,13 +56,13 @@ namespace jelly
 			{
 				if(m_head == NULL)
 				{
-					JELLY_ASSERT(m_tail == NULL);
+					JELLY_ALWAYS_ASSERT(m_tail == NULL);
 					m_head = new MemoryBuffer();
 					m_tail = m_head;
 				}
 				else
 				{
-					JELLY_ASSERT(m_head != NULL);
+					JELLY_ALWAYS_ASSERT(m_head != NULL);
 					m_tail->m_next = new MemoryBuffer();
 					m_tail = m_tail->m_next;
 				}
@@ -84,14 +84,14 @@ namespace jelly
 					{
 						// If more than one buffer, all of them except last should be max size
 						for(size_t i = 0; i < m_array.size() - 1; i++)
-							JELLY_ASSERT(m_array[i]->m_size == MemoryBuffer::MAX_SIZE);
+							JELLY_ALWAYS_ASSERT(m_array[i]->m_size == MemoryBuffer::MAX_SIZE);
 					}
 				}
 
 				size_t i = aOffset / MemoryBuffer::MAX_SIZE;
-				JELLY_ASSERT(i < m_array.size());
+				JELLY_ALWAYS_ASSERT(i < m_array.size());
 				size_t j = aOffset % MemoryBuffer::MAX_SIZE;
-				JELLY_ASSERT(j < m_array[i]->m_size);
+				JELLY_ALWAYS_ASSERT(j < m_array[i]->m_size);
 				
 				aOutBuffer = m_array[i];
 				aOutBufferOffset = j;
@@ -190,7 +190,7 @@ namespace jelly
 
 				while(remaining > 0 && m_currentBuffer != NULL)
 				{
-					JELLY_ASSERT(m_currentBufferOffset <= m_currentBuffer->m_size);
+					JELLY_ALWAYS_ASSERT(m_currentBufferOffset <= m_currentBuffer->m_size);
 					size_t toCopy = std::min<size_t>(m_currentBuffer->m_size - m_currentBufferOffset, remaining);
 
 					if(toCopy > 0)
@@ -324,7 +324,7 @@ namespace jelly
 					size_t				aOffset,
 					ItemBase*			aItem) override
 				{
-					JELLY_ASSERT(m_bufferList != NULL);
+					JELLY_ALWAYS_ASSERT(m_bufferList != NULL);
 
 					std::unique_ptr<IBuffer> blobBuffer = std::make_unique<Buffer<1>>();
 					blobBuffer->SetSize(aItem->GetStoredBlobSize());
@@ -335,7 +335,7 @@ namespace jelly
 
 					BufferListReader reader(buffer, bufferStartOffset);
 					if(reader.Read(blobBuffer->GetPointer(), blobBuffer->GetSize()) != blobBuffer->GetSize())
-						JELLY_ASSERT(false);
+						JELLY_ALWAYS_ASSERT(false);
 
 					aItem->UpdateBlobBuffer(blobBuffer);
 				}
@@ -343,7 +343,7 @@ namespace jelly
 				void	
 				Close() override
 				{
-					JELLY_ASSERT(m_bufferList != NULL);
+					JELLY_ALWAYS_ASSERT(m_bufferList != NULL);
 					m_bufferList = NULL;
 				}
 
@@ -619,7 +619,7 @@ namespace jelly
 			FileStatsContext*			/*aFileStatsContext*/)
 		{
 			WALMap::iterator i = m_walMap.find(std::make_pair(aNodeId, aId));
-			JELLY_ASSERT(i != m_walMap.end());
+			JELLY_ALWAYS_ASSERT(i != m_walMap.end());
 			return i->second->Read();
 		}
 		
@@ -631,7 +631,7 @@ namespace jelly
 			FileStatsContext*			/*aFileStatsContext*/)
 		{
 			WALMap::iterator i = m_walMap.find(std::make_pair(aNodeId, aId));
-			JELLY_ASSERT(i == m_walMap.end());
+			JELLY_ALWAYS_ASSERT(i == m_walMap.end());
 
 			std::unique_ptr<WAL> wal = std::make_unique<WAL>();
 			std::unique_ptr<IWALWriter> walWriter(wal->Write());
@@ -649,7 +649,7 @@ namespace jelly
 			uint32_t					aId) 
 		{
 			WALMap::iterator i = m_walMap.find(std::make_pair(aNodeId, aId));
-			JELLY_ASSERT(i != m_walMap.end());
+			JELLY_ALWAYS_ASSERT(i != m_walMap.end());
 			delete i->second;
 			m_walMap.erase(i);
 		}
@@ -661,7 +661,7 @@ namespace jelly
 			FileStatsContext*			/*aFileStatsContext*/)
 		{
 			StoreMap::iterator i = m_storeMap.find(std::make_pair(aNodeId, aId));
-			JELLY_ASSERT(i != m_storeMap.end());
+			JELLY_ALWAYS_ASSERT(i != m_storeMap.end());
 			return i->second->ReadStream();
 		}
 		
@@ -672,7 +672,7 @@ namespace jelly
 			FileStatsContext*			/*aFileStatsContext*/)
 		{
 			StoreMap::iterator i = m_storeMap.find(std::make_pair(aNodeId, aId));
-			JELLY_ASSERT(i != m_storeMap.end());
+			JELLY_ALWAYS_ASSERT(i != m_storeMap.end());
 			return i->second->Read();
 		}
 				
@@ -683,7 +683,7 @@ namespace jelly
 			FileStatsContext*			/*aFileStatsContext*/)
 		{
 			StoreMap::iterator i = m_storeMap.find(std::make_pair(aNodeId, aId));
-			JELLY_ASSERT(i == m_storeMap.end());
+			JELLY_ALWAYS_ASSERT(i == m_storeMap.end());
 
 			std::unique_ptr<Store> store = std::make_unique<Store>();
 			std::unique_ptr<IStoreWriter> storeWriter(store->Write());
@@ -701,7 +701,7 @@ namespace jelly
 			uint32_t					aId) 
 		{
 			StoreMap::iterator i = m_storeMap.find(std::make_pair(aNodeId, aId));
-			JELLY_ASSERT(i != m_storeMap.end());
+			JELLY_ALWAYS_ASSERT(i != m_storeMap.end());
 			delete i->second;
 			m_storeMap.erase(i);
 		}
@@ -720,7 +720,7 @@ namespace jelly
 			std::string&				/*aOutName*/,
 			uint32_t&					/*aOutLatestStoreId*/) 
 		{
-			JELLY_ASSERT(false);
+			JELLY_ALWAYS_ASSERT(false);
 			return false;
 		}
 		
@@ -729,7 +729,7 @@ namespace jelly
 			uint32_t					/*aNodeId*/,
 			uint32_t					/*aId*/) 
 		{
-			JELLY_ASSERT(false);
+			JELLY_ALWAYS_ASSERT(false);
 			return "";
 		}
 

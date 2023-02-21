@@ -35,21 +35,21 @@ namespace jelly
 					req.SetSeq(1);
 					req.SetBlob(new UInt32Blob(i));
 					blobNode.Set(&req);
-					JELLY_ASSERT(blobNode.ProcessRequests() == 1);
-					JELLY_ASSERT(blobNode.FlushPendingWAL() == 1);
-					JELLY_ASSERT(blobNode.FlushPendingStore() == 1);
+					JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
+					JELLY_ALWAYS_ASSERT(blobNode.FlushPendingWAL() == 1);
+					JELLY_ALWAYS_ASSERT(blobNode.FlushPendingStore() == 1);
 				}
 
 				// Initial backup
 				{
 					std::unique_ptr<BlobNodeType::BackupType> backup(blobNode.StartBackup("foo"));
-					JELLY_ASSERT(backup);
-					JELLY_ASSERT(!backup->IsIncremental());
+					JELLY_ALWAYS_ASSERT(backup);
+					JELLY_ALWAYS_ASSERT(!backup->IsIncremental());
 
 					if(aCompaction)
-						JELLY_ASSERT(backup->GetIncludedStoreIdCount() == 1);
+						JELLY_ALWAYS_ASSERT(backup->GetIncludedStoreIdCount() == 1);
 					else
-						JELLY_ASSERT(backup->GetIncludedStoreIdCount() == 10);
+						JELLY_ALWAYS_ASSERT(backup->GetIncludedStoreIdCount() == 10);
 
 					backup->Perform();
 					blobNode.FinalizeBackup(backup.get());
@@ -63,22 +63,22 @@ namespace jelly
 					req.SetSeq(1);
 					req.SetBlob(new UInt32Blob(i));
 					blobNode.Set(&req);
-					JELLY_ASSERT(blobNode.ProcessRequests() == 1);
-					JELLY_ASSERT(blobNode.FlushPendingWAL() == 1);
-					JELLY_ASSERT(blobNode.FlushPendingStore() == 1);
+					JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
+					JELLY_ALWAYS_ASSERT(blobNode.FlushPendingWAL() == 1);
+					JELLY_ALWAYS_ASSERT(blobNode.FlushPendingStore() == 1);
 				}
 
 				// Do another backup, this time it should be incremental
 				{
 					std::unique_ptr<BlobNodeType::BackupType> backup(blobNode.StartBackup("bar"));
-					JELLY_ASSERT(backup);
-					JELLY_ASSERT(backup->IsIncremental());
-					JELLY_ASSERT(backup->GetIncrementalDependency() == "foo");
+					JELLY_ALWAYS_ASSERT(backup);
+					JELLY_ALWAYS_ASSERT(backup->IsIncremental());
+					JELLY_ALWAYS_ASSERT(backup->GetIncrementalDependency() == "foo");
 
 					if (aCompaction)
-						JELLY_ASSERT(backup->GetIncludedStoreIdCount() == 1);
+						JELLY_ALWAYS_ASSERT(backup->GetIncludedStoreIdCount() == 1);
 					else
-						JELLY_ASSERT(backup->GetIncludedStoreIdCount() == 10);
+						JELLY_ALWAYS_ASSERT(backup->GetIncludedStoreIdCount() == 10);
 
 					backup->Perform();
 					blobNode.FinalizeBackup(backup.get());

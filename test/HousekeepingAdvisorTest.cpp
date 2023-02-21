@@ -25,12 +25,12 @@ namespace jelly
 				aHousekeepingAdvisor.Update([&](
 					const HousekeepingAdvisorType::Event& aEvent)
 				{
-					JELLY_ASSERT(numEvents < aExpectedEvents.size());
+					JELLY_ALWAYS_ASSERT(numEvents < aExpectedEvents.size());
 					aExpectedEvents[numEvents](aEvent);
 					numEvents++;
 				});
 
-				JELLY_ASSERT(numEvents == aExpectedEvents.size());
+				JELLY_ALWAYS_ASSERT(numEvents == aExpectedEvents.size());
 			}
 
 		}
@@ -62,13 +62,13 @@ namespace jelly
 					req.SetSeq(1);
 					req.SetBlob(new UInt32Blob(123));
 					blobNode.Set(&req);
-					JELLY_ASSERT(blobNode.ProcessRequests() == 1);
+					JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
 				}
 
 				// Since we now have a pending request, advisor should suggest a "flush pending WAL"
 				_UpdateHousekeepingAdvisor(housekeepingAdvisor, 
 				{
-					[](const HousekeepingAdvisorType::Event& aEvent) { JELLY_ASSERT(aEvent.m_type == HousekeepingAdvisorType::Event::TYPE_FLUSH_PENDING_WAL); JELLY_UNUSED(aEvent); }
+					[](const HousekeepingAdvisorType::Event& aEvent) { JELLY_ALWAYS_ASSERT(aEvent.m_type == HousekeepingAdvisorType::Event::TYPE_FLUSH_PENDING_WAL); JELLY_UNUSED(aEvent); }
 				});
 			}
 

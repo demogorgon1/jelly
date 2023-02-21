@@ -103,7 +103,7 @@ namespace jelly::Test::Sim
 			break;
 
 		default:
-			JELLY_ASSERT(false);
+			JELLY_ALWAYS_ASSERT(false);
 			break;
 		}		
 	}
@@ -112,7 +112,7 @@ namespace jelly::Test::Sim
 	Client::UpdateStateStatistics(
 		std::vector<uint32_t>&					aStateCounters)
 	{
-		JELLY_ASSERT((size_t)m_state < aStateCounters.size());
+		JELLY_ALWAYS_ASSERT((size_t)m_state < aStateCounters.size());
 
 		aStateCounters[m_state]++;
 
@@ -125,7 +125,7 @@ namespace jelly::Test::Sim
 	Client::_SetState(
 		State									aState)
 	{	
-		JELLY_ASSERT(m_state != aState);
+		JELLY_ALWAYS_ASSERT(m_state != aState);
 		m_stateTimeSampler.ChangeState(m_network->m_host.GetStats(), aState);
 		m_state = aState;		
 	}

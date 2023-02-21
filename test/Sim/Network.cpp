@@ -85,7 +85,7 @@ namespace jelly::Test::Sim
 	LockServer::LockServerType*
 	Network::GetMasterLockServer()
 	{
-		JELLY_ASSERT(m_lockServers.size() > 0);
+		JELLY_ALWAYS_ASSERT(m_lockServers.size() > 0);
 		return m_lockServers[0];
 	}
 
@@ -93,9 +93,9 @@ namespace jelly::Test::Sim
 	Network::GetBlobServer(
 		uint32_t		aBlobNodeId)
 	{
-		JELLY_ASSERT(aBlobNodeId >= m_firstBlobNodeId);
+		JELLY_ALWAYS_ASSERT(aBlobNodeId >= m_firstBlobNodeId);
 		size_t i = (size_t)(aBlobNodeId - m_firstBlobNodeId);
-		JELLY_ASSERT(i < m_blobServers.size());
+		JELLY_ALWAYS_ASSERT(i < m_blobServers.size());
 		return m_blobServers[i];
 	}
 

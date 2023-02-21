@@ -68,7 +68,7 @@ namespace jelly::Test::Sim
 					
 					for(size_t i = 0; i < m_network->m_gameServers.size() - 1; i++)
 					{
-						JELLY_ASSERT(disconnectsPerGameServer <= count);
+						JELLY_ALWAYS_ASSERT(disconnectsPerGameServer <= count);
 						count -= disconnectsPerGameServer;
 						m_network->m_gameServers[i]->TestUngracefulDisconnectRandomClients(disconnectsPerGameServer);
 					}

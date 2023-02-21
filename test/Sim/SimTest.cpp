@@ -41,14 +41,14 @@ namespace jelly::Test::Sim
 			Add(
 				_T*			aObject)
 			{
-				JELLY_ASSERT(!m_thread);
+				JELLY_ALWAYS_ASSERT(!m_thread);
 				m_objects.push_back(aObject);
 			}
 
 			void
 			Start()
 			{
-				JELLY_ASSERT(!m_thread);
+				JELLY_ALWAYS_ASSERT(!m_thread);
 				m_stopEvent = false;
 				m_thread = std::make_unique<std::thread>(_ThreadMain, this);
 			}

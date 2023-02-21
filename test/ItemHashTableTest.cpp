@@ -26,7 +26,7 @@ namespace jelly
 
 				~TestItem()
 				{
-					JELLY_ASSERT(g_testItemCount > 0);
+					JELLY_ALWAYS_ASSERT(g_testItemCount > 0);
 					g_testItemCount--;
 				}
 
@@ -59,7 +59,7 @@ namespace jelly
 				// Write a bunch of item to an ItemHashTable and an std::unordered_map and verify 
 				// that they're identical at the end
 				{
-					JELLY_ASSERT(g_testItemCount == 0);
+					JELLY_ALWAYS_ASSERT(g_testItemCount == 0);
 
 					std::mt19937 random;
 					std::vector<std::pair<uint32_t, uint32_t>> testItems;
@@ -78,15 +78,15 @@ namespace jelly
 						if(result.second)
 						{
 							// Inserted
-							JELLY_ASSERT(result.first->m_value == 0);
-							JELLY_ASSERT(result.first->m_seq == key * 2);
-							JELLY_ASSERT(result.first->m_key == key);
+							JELLY_ALWAYS_ASSERT(result.first->m_value == 0);
+							JELLY_ALWAYS_ASSERT(result.first->m_seq == key * 2);
+							JELLY_ALWAYS_ASSERT(result.first->m_key == key);
 							result.first->m_value = value;
 						}
 						else
 						{
 							// Updated
-							JELLY_ASSERT(result.first->m_key == key);
+							JELLY_ALWAYS_ASSERT(result.first->m_key == key);
 							result.first->m_value = value;
 							result.first->m_seq = key * 2;
 						}
@@ -94,28 +94,28 @@ namespace jelly
 						tableRef[key] = value;
 					}
 
-					JELLY_ASSERT(tableRef.size() == table.Count());
-					JELLY_ASSERT(g_testItemCount == tableRef.size());
+					JELLY_ALWAYS_ASSERT(tableRef.size() == table.Count());
+					JELLY_ALWAYS_ASSERT(g_testItemCount == tableRef.size());
 
 					for(std::unordered_map<uint32_t, uint32_t>::const_iterator it = tableRef.begin(); it != tableRef.end(); it++)
 					{
 						const TestItem* t = table.Get(it->first);
 						JELLY_UNUSED(t);
-						JELLY_ASSERT(t != NULL);
-						JELLY_ASSERT(t->m_value == it->second);
+						JELLY_ALWAYS_ASSERT(t != NULL);
+						JELLY_ALWAYS_ASSERT(t->m_value == it->second);
 					}
 
 					table.ForEach([&tableRef](
 						const TestItem* aItem)
 					{
 						std::unordered_map<uint32_t, uint32_t>::const_iterator it = tableRef.find(aItem->m_key.m_value);
-						JELLY_ASSERT(it != tableRef.end());
-						JELLY_ASSERT(aItem->m_value == it->second);
+						JELLY_ALWAYS_ASSERT(it != tableRef.end());
+						JELLY_ALWAYS_ASSERT(aItem->m_value == it->second);
 					});
 					
 					table.Clear();
 
-					JELLY_ASSERT(g_testItemCount == 0);
+					JELLY_ALWAYS_ASSERT(g_testItemCount == 0);
 				}
 			}
 		}

@@ -48,7 +48,7 @@ namespace jelly::Test::Sim
 		
 		for (std::pair<uint32_t, Client*> i : m_clients)
 		{
-			JELLY_ASSERT((size_t)i.second->m_state < aStateCounters.size());
+			JELLY_ALWAYS_ASSERT((size_t)i.second->m_state < aStateCounters.size());
 
 			aStateCounters[i.second->m_state]++;
 
@@ -120,7 +120,7 @@ namespace jelly::Test::Sim
 			for (ConnectRequest* connectRequest : connectRequests)
 			{
 				std::unordered_map<uint32_t, Client*>::iterator i = m_clients.find(connectRequest->m_clientId);
-				JELLY_ASSERT(i == m_clients.end());
+				JELLY_ALWAYS_ASSERT(i == m_clients.end());
 				m_clients.insert(std::make_pair(connectRequest->m_clientId, new Client(connectRequest->m_clientId, connectRequest, connectRequest->m_disconnectEvent)));
 			}
 		}
@@ -138,8 +138,8 @@ namespace jelly::Test::Sim
 			for(uint32_t clientId : disconnectRequests)
 			{
 				std::unordered_map<uint32_t, Client*>::iterator i = m_clients.find(clientId);
-				JELLY_ASSERT(i != m_clients.end());
-				JELLY_ASSERT(!i->second->m_disconnectRequested);
+				JELLY_ALWAYS_ASSERT(i != m_clients.end());
+				JELLY_ALWAYS_ASSERT(!i->second->m_disconnectRequested);
 				i->second->m_disconnectRequested = true;								
 			}
 		}
@@ -254,7 +254,7 @@ namespace jelly::Test::Sim
 			else 
 			{
 				// We tried to get the blob from all the specified blob nodes - try to recover latest blob we can find
-				JELLY_ASSERT(false);
+				JELLY_ALWAYS_ASSERT(false);
 			}
 			break;
 
@@ -349,13 +349,13 @@ namespace jelly::Test::Sim
 					return false;
 
 				default:
-					JELLY_ASSERT(false);
+					JELLY_ALWAYS_ASSERT(false);
 				}
 			}
 			break;
 
 		default:
-			JELLY_ASSERT(false);
+			JELLY_ALWAYS_ASSERT(false);
 			break;
 		}
 
@@ -366,7 +366,7 @@ namespace jelly::Test::Sim
 	GameServer::_OnClientConnected(
 		Client*			aClient)
 	{
-		JELLY_ASSERT(aClient->m_pendingConnectRequest != NULL);
+		JELLY_ALWAYS_ASSERT(aClient->m_pendingConnectRequest != NULL);
 		aClient->m_pendingConnectRequest->m_completed.Signal();
 		aClient->m_pendingConnectRequest = NULL;
 
@@ -390,7 +390,7 @@ namespace jelly::Test::Sim
 		Client*			aClient,
 		Client::State	aState)
 	{
-		JELLY_ASSERT(aClient->m_state != aState);
+		JELLY_ALWAYS_ASSERT(aClient->m_state != aState);
 		aClient->m_stateTimeSampler.ChangeState(m_network->m_host.GetStats(), aState);
 		aClient->m_state = aState;
 	}

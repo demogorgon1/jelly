@@ -25,7 +25,7 @@ namespace jelly::Test::Sim
 			uint32_t		aIdTime,
 			uint32_t		aIdCurTime)
 		{
-			JELLY_ASSERT((size_t)aState < m_definitions.size());
+			JELLY_ALWAYS_ASSERT((size_t)aState < m_definitions.size());
 			m_definitions[aState] = Definition{ aIdTime, aIdCurTime };
 		}
 
@@ -37,7 +37,7 @@ namespace jelly::Test::Sim
 			std::chrono::time_point<std::chrono::steady_clock> currentTime = std::chrono::steady_clock::now();
 			uint32_t millisecondsSpentInState = (uint32_t)std::chrono::duration_cast<std::chrono::microseconds>(currentTime - m_stateTimeStamp).count();
 
-			JELLY_ASSERT((size_t)m_currentState < m_definitions.size());
+			JELLY_ALWAYS_ASSERT((size_t)m_currentState < m_definitions.size());
 			uint32_t statsId = m_definitions[m_currentState].m_idTime;
 
 			if(statsId != UINT32_MAX)
@@ -60,7 +60,7 @@ namespace jelly::Test::Sim
 			IStats*												aStats,
 			std::chrono::time_point<std::chrono::steady_clock>	aCurrentTime) const
 		{
-			JELLY_ASSERT((size_t)m_currentState < m_definitions.size());
+			JELLY_ALWAYS_ASSERT((size_t)m_currentState < m_definitions.size());
 			uint32_t statsId = m_definitions[m_currentState].m_idCurTime;
 
 			if (statsId != UINT32_MAX)

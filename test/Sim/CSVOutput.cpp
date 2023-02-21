@@ -17,7 +17,7 @@ namespace jelly::Test::Sim
 		{
 			setlocale(LC_ALL, ""); 
 			const struct lconv* l = localeconv();
-			JELLY_ASSERT(l != NULL);
+			JELLY_ALWAYS_ASSERT(l != NULL);
 			m_decimalPointCharacter = l->decimal_point[0];
 			setlocale(LC_ALL, "C");
 		}
@@ -142,13 +142,13 @@ namespace jelly::Test::Sim
 			case COLUMN_TYPE_SAMPLE_HIST:		value = (float)*(m_columns[i].m_histogramBucket); break; // õ_Ô
 
 			default:
-				JELLY_ASSERT(false);
+				JELLY_ALWAYS_ASSERT(false);
 			}
 
 			// Turn number into string - no trailing zeroes
 			char buf[64];
 			size_t len = (size_t)snprintf(buf, sizeof(buf), "%f", value);
-			JELLY_ASSERT(len > 0 && len <= sizeof(buf));
+			JELLY_ALWAYS_ASSERT(len > 0 && len <= sizeof(buf));
 			char* tail = &buf[len - 1];
 			while(*tail == '0')
 			{

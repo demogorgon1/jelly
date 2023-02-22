@@ -2,9 +2,10 @@
 
 ## Documentation
 
-* [Lock and Blob Nodes](https://github.com/demogorgon1/jelly/wiki/Nodes)
 * [Class Reference](https://demogorgon1.github.io/jelly/annotated.html)
+* [Lock and Blob Nodes](https://github.com/demogorgon1/jelly/wiki/Nodes)
 * [Configuration](https://github.com/demogorgon1/jelly/wiki/Configuration)
+* [Statistics](https://github.com/demogorgon1/jelly/wiki/Statistics)
 
 ## Examples
 

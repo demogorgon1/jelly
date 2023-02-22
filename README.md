@@ -1,8 +1,6 @@
 # jelly
 [![CMake](https://github.com/demogorgon1/jelly/actions/workflows/cmake.yml/badge.svg)](https://github.com/demogorgon1/jelly/actions/workflows/cmake.yml)
 
-___WARNING: This is very much work in progress. Here be dragons. 🐲___
-
 _Jelly_ is a database system designed to function as blob-storage for online games. It's a C++ library that can either be embedded directly
 in a game server or as the inner-most moving parts of a larger distributed database system.
 

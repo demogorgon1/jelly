@@ -405,7 +405,7 @@ namespace jelly
 			uint32_t seq = aItem.GetSeq();
 			bool hasTombstone = aItem.HasTombstone();
 
-			std::pair<Item*, bool> result = this->m_table.InsertOrUpdate(123, [key, seq, hasTombstone]() -> Item*
+			std::pair<Item*, bool> result = this->m_table.InsertOrUpdate(key, [key, seq, hasTombstone]() -> Item*
 			{
 				if(hasTombstone)
 					return (Item*)NULL;
@@ -487,7 +487,7 @@ namespace jelly
 			{
 				struct TimeStampedKey
 				{
-					_KeyType	m_key = 0;
+					_KeyType	m_key;
 					uint64_t	m_timeStamp = 0;
 
 					bool

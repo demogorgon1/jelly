@@ -33,5 +33,6 @@
 #include "Stat.h"
 #include "StringUtils.h"
 #include "UIntKey.h"
+#include "UIntVectorKey.h"
 #include "UIntLock.h"
 #include "ZstdCompression.h"

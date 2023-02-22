@@ -2,6 +2,7 @@
 
 #include "Sim/SimTest.h"
 
+#include "AdvBlobTest.h"
 #include "BackupTest.h"
 #include "CompressionTest.h"
 #include "Config.h"
@@ -41,6 +42,7 @@ namespace jelly
 				CompressionTest::Run();
 				MiscTest::Run();
 				NodeTest::Run(aWorkingDirectory, aConfig);
+				AdvBlobTest::Run();
 				StepTest::Run(aConfig);
 				HousekeepingAdvisorTest::Run();
 				ReplicationTest::Run();

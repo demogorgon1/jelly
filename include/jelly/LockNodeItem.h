@@ -2,7 +2,7 @@
 
 #include "ItemBase.h"
 #include "IWriter.h"
-#include "LockMetaData.h"
+#include "MetaData.h"
 
 namespace jelly
 {

@@ -17,7 +17,7 @@ namespace jelly
 				DefaultHost host(".", "reptest", NULL);
 				host.DeleteAllFiles(UINT32_MAX);
 
-				typedef LockMetaData::StaticSingleBlob<1> LockMetaDataType;
+				typedef MetaData::LockStaticSingleBlob<1> LockMetaDataType;
 				typedef LockNode<UIntKey<uint32_t>, UIntLock<uint32_t>, LockMetaDataType> LockNodeType;
 
 				LockNodeType node0(&host, 0);

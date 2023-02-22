@@ -20,15 +20,15 @@ main(
 	host.DeleteAllFiles();
 
 	// Define the type of additional meta data we'll associate with each lock key.
-	// StaticSingleBlob contains two pieces of information:
+	// LockStaticSingleBlob contains two pieces of information:
 	// 
 	//   1. What the latest blob sequence number is.
 	//   2. Which blob nodes have a copy of the latest blob.
 	// 
-	// StaticSingleBlob assumes that lock and blob keys are the same, but this doesn't need 
-	// to be the case. You could, for example, use some kind of account id as lock key and 
-	// then have a seperate blob for each profile associated with it.
-	typedef jelly::LockMetaData::StaticSingleBlob<> LockMetaType;
+	// LockStaticSingleBlob assumes that lock and blob keys are the same, but this doesn't  
+	// need to be the case. You could, for example, use some kind of account id as lock key  
+	// and then have a seperate blob for each profile associated with it.
+	typedef jelly::MetaData::LockStaticSingleBlob<> LockMetaType;
 
 	// Define the type of our LockNode
 	typedef jelly::LockNode

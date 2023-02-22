@@ -8,7 +8,7 @@
 #include "ItemBase.h"
 #include "IStoreWriter.h"
 #include "IWriter.h"
-#include "LockMetaData.h"
+#include "MetaData.h"
 
 namespace jelly
 {
@@ -16,7 +16,7 @@ namespace jelly
 	class WAL;
 
 	// Blob node item
-	template <typename _KeyType>
+	template <typename _KeyType, typename _MetaType>
 	class BlobNodeItem
 		: public ItemBase
 	{
@@ -44,8 +44,8 @@ namespace jelly
 			bool								m_isResident;
 
 			// Placement in timestamp-sorted linked list used to expell oldest items when memory limit is reached
-			BlobNodeItem<_KeyType>*				m_next;
-			BlobNodeItem<_KeyType>*				m_prev;
+			BlobNodeItem<_KeyType, _MetaType>*	m_next;
+			BlobNodeItem<_KeyType, _MetaType>*	m_prev;
 		};
 
 		BlobNodeItem(
@@ -82,6 +82,13 @@ namespace jelly
 		}
 
 		void
+		SetMeta(
+			const _MetaType&								aMeta)
+		{
+			m_meta = aMeta;
+		}
+
+		void
 		Reset()
 		{
 			JELLY_ASSERT(m_runtimeState.m_pendingWAL == NULL);
@@ -91,6 +98,7 @@ namespace jelly
 			JELLY_ASSERT(!m_runtimeState.m_isResident);
 
 			m_key = _KeyType();
+			m_meta = _MetaType();
 
 			m_runtimeState.m_storeId = 0;
 			m_runtimeState.m_storeOffset = 0;
@@ -106,6 +114,7 @@ namespace jelly
 			m_blob = std::move(aOther->m_blob);
 
 			m_key = aOther->m_key;
+			m_meta = aOther->m_meta;
 
 			m_runtimeState.m_storeId = aOther->m_runtimeState.m_storeId;
 			m_runtimeState.m_storeOffset = aOther->m_runtimeState.m_storeOffset;
@@ -146,13 +155,13 @@ namespace jelly
 			m_runtimeState.m_storeOffset = aNewStoreOffset;
 		}
 
-		BlobNodeItem<_KeyType>*
+		BlobNodeItem<_KeyType, _MetaType>*
 		GetNext()
 		{
 			return m_runtimeState.m_next;
 		}
 
-		BlobNodeItem<_KeyType>*
+		BlobNodeItem<_KeyType, _MetaType>*
 		GetPrev()
 		{
 			return m_runtimeState.m_prev;
@@ -160,14 +169,14 @@ namespace jelly
 
 		void
 		SetNext(
-			BlobNodeItem<_KeyType>*							aNext)
+			BlobNodeItem<_KeyType, _MetaType>*				aNext)
 		{
 			m_runtimeState.m_next = aNext;
 		}
 
 		void
 		SetPrev(
-			BlobNodeItem<_KeyType>*							aPrev)
+			BlobNodeItem<_KeyType, _MetaType>*				aPrev)
 		{
 			m_runtimeState.m_prev = aPrev;
 		}
@@ -181,6 +190,7 @@ namespace jelly
 
 			WriteBase(aWriter);
 			m_key.Write(aWriter);
+			m_meta.Write(aWriter);
 
 			size_t blobOffset = 0; 
 
@@ -213,6 +223,8 @@ namespace jelly
 			if(!ReadBase(aReader))
 				return false;
 			if(!m_key.Read(aReader))
+				return false;
+			if(!m_meta.Read(aReader))
 				return false;
 
 			if(!HasTombstone())
@@ -259,12 +271,14 @@ namespace jelly
 		const IBuffer*			GetBlob() const { JELLY_ASSERT(m_blob); return m_blob.get(); }
 		IBuffer*				GetBlob() { JELLY_ASSERT(m_blob); return m_blob.get(); }
 		bool					HasBlob() const { return (bool)m_blob; }
+		const _MetaType&		GetMeta() const { return m_meta; }
 		const RuntimeState&		GetRuntimeState() const { return m_runtimeState; }
 		RuntimeState&			GetRuntimeState() { return m_runtimeState; }
 	
 	private:
 
 		_KeyType							m_key;
+		_MetaType							m_meta;
 		std::unique_ptr<IBuffer>			m_blob;
 
 		// Runtime state, not serialized

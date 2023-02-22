@@ -39,3 +39,4 @@
 #else
 	#define JELLY_THREAD_LOCAL(_Type) thread_local _Type
 #endif
+

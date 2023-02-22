@@ -16,23 +16,25 @@ namespace jelly
 	 * \brief A node for storing blobs.
 	 * 
 	 * \tparam _KeyType			Key type. For example \ref UIntKey.
+	 * \tparam _BlobMetaType    Meta data type.
 	 */
 	template 
 	<
-		typename _KeyType
+		typename _KeyType,
+		typename _MetaType = MetaData::Dummy
 	>
 	class BlobNode
 		: public Node<
 			_KeyType, 
-			BlobNodeRequest<_KeyType>, 
-			BlobNodeItem<_KeyType>,
+			BlobNodeRequest<_KeyType, _MetaType>, 
+			BlobNodeItem<_KeyType, _MetaType>,
 			false> // Disable streaming compression of WALs (blobs are already compressed)
 	{
 	public:
-		typedef Node<_KeyType, BlobNodeRequest<_KeyType>, BlobNodeItem<_KeyType>, false> NodeBase;
+		typedef Node<_KeyType, BlobNodeRequest<_KeyType, _MetaType>, BlobNodeItem<_KeyType, _MetaType>, false> NodeBase;
 
-		typedef BlobNodeRequest<_KeyType> Request;
-		typedef BlobNodeItem<_KeyType> Item;
+		typedef BlobNodeRequest<_KeyType, _MetaType> Request;
+		typedef BlobNodeItem<_KeyType, _MetaType> Item;
 
 		BlobNode(
 			IHost*												aHost,
@@ -322,6 +324,9 @@ namespace jelly
 			item->SetSeq(aRequest->GetSeq());
 			item->SetTimeStamp(aRequest->GetTimeStamp());
 
+			if(aRequest->GetMeta().has_value())
+				item->SetMeta(aRequest->GetMeta().value());
+
 			if(aDelete)
 				item->SetTombstoneStoreId(this->GetNextStoreId());
 			else
@@ -391,6 +396,7 @@ namespace jelly
 
 			aRequest->SetSeq(item->GetSeq());
 			aRequest->SetTimeStamp(item->GetTimeStamp());
+			aRequest->SetMeta(item->GetMeta());
 
 			return RESULT_OK;
 		}

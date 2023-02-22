@@ -39,7 +39,7 @@ namespace jelly::Test::AdvBlobTest
 		DefaultHost host(".", "advblobtest");
 		host.DeleteAllFiles();
 
-		typedef BlobNode<UIntVectorKey<uint32_t, 2>> BlobNodeType;
+		typedef BlobNode<UIntVectorKey<uint32_t, 2>, MetaData::UInt<uint32_t>> BlobNodeType;
 
 		{
 			BlobNodeType blobNode(&host, 0);
@@ -50,6 +50,7 @@ namespace jelly::Test::AdvBlobTest
 				req.SetKey({ 1, 2 });
 				req.SetSeq(1);
 				req.SetBlob(new UInt32Blob(123));
+				req.SetMeta(9001);
 				blobNode.Set(&req);
 				JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
 				JELLY_ALWAYS_ASSERT(blobNode.FlushPendingWAL() == 1);
@@ -67,6 +68,7 @@ namespace jelly::Test::AdvBlobTest
 				JELLY_ALWAYS_ASSERT(req.IsCompleted());
 				JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
 				JELLY_ALWAYS_ASSERT(UInt32Blob::GetValue(req.GetBlob()) == 123);
+				JELLY_ALWAYS_ASSERT(req.GetMeta() == 9001);
 			}
 		}
 	}

@@ -11,19 +11,6 @@ namespace jelly
 	template <typename _T>
 	struct UIntKey
 	{
-		/**
-		 * \brief Hasher object for unsigned integer key.
-		 */
-		struct Hasher
-		{
-			std::size_t
-			operator()(
-				const UIntKey<_T>& aKey) const
-			{
-				return std::hash<_T>{}(aKey.m_value);
-			}
-		};
-
 		UIntKey(_T aValue = _T(0)) : m_value(aValue) {}
 
 		void		Write(IWriter* aWriter) const { JELLY_CHECK(aWriter->WriteUInt(m_value), "Failed to write uint key."); }

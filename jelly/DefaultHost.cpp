@@ -29,7 +29,7 @@ namespace jelly
 		const Stat::Info*			aExtraApplicationStats,
 		uint32_t					aExtraApplicationStatsCount)
 		: m_root(aRoot)
-		, m_filePrefix(aFilePrefix)
+		, m_filePrefix(aFilePrefix != NULL ? aFilePrefix : "")
 		, m_configSource(aConfigSource)
 	{
 		{

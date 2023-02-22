@@ -188,6 +188,10 @@ namespace jelly
 
 						i++;
 					}
+					else if(strcmp(arg, "-generatedocs") == 0)
+					{
+						m_generateDocs = true;
+					}
 					else
 					{
 						JELLY_FATAL_ERROR("Syntax error.");
@@ -232,6 +236,9 @@ namespace jelly
 			bool									m_readTest = false;
 			uint32_t								m_readTestBlobCount = 0;
 			uint32_t								m_readTestBlobCountMemoryLimit = UINT32_MAX;
+
+			// Documentation (not a test)
+			bool									m_generateDocs = false;
 		};
 
 	}

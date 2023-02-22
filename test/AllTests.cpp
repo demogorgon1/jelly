@@ -6,6 +6,7 @@
 #include "CompressionTest.h"
 #include "Config.h"
 #include "FileTest.h"
+#include "GenerateDocs.h"
 #include "HousekeepingAdvisorTest.h"
 #include "ItemHashTableTest.h"
 #include "MiscTest.h"
@@ -29,6 +30,12 @@ namespace jelly
 				const char*		aWorkingDirectory,
 				const Config*	aConfig)
 			{
+				if(aConfig->m_generateDocs)
+				{
+					GenerateDocs::Run();
+					return;
+				}
+
 				ItemHashTableTest::Run();
 				FileTest::Run();
 				CompressionTest::Run();

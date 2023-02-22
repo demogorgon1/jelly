@@ -155,6 +155,13 @@ namespace jelly
 			return &INFO[aId];
 		}
 
+		//! Get number of statistics
+		inline uint32_t 
+		GetCount()
+		{
+			return (uint32_t)NUM_IDS;
+		}
+
 	}
 
 }

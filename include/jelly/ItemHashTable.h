@@ -138,7 +138,7 @@ namespace jelly
 
 		void
 		ForEach(
-			std::function<void(const _ItemType*)>	aCallback) const
+			std::function<bool(const _ItemType*)>	aCallback) const
 		{
 			const TableEntry* entry = (const TableEntry*)m_table;
 			size_t tableArraySize = m_size * 2;
@@ -148,7 +148,9 @@ namespace jelly
 			{
 				if (entry->m_item != NULL)
 				{
-					aCallback(entry->m_item);
+					if(!aCallback(entry->m_item))
+						break;
+
 					found++;
 				}
 
@@ -158,7 +160,7 @@ namespace jelly
 
 		void
 		ForEach(
-			std::function<void(_ItemType*)>			aCallback) 
+			std::function<bool(_ItemType*)>			aCallback) 
 		{
 			TableEntry* entry = (TableEntry*)m_table;
 			size_t tableArraySize = m_size * 2;
@@ -168,7 +170,9 @@ namespace jelly
 			{
 				if (entry->m_item != NULL)
 				{
-					aCallback(entry->m_item);
+					if(!aCallback(entry->m_item))
+						break;
+
 					found++;
 				}
 

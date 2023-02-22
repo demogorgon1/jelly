@@ -514,7 +514,7 @@ namespace jelly
 				size_t totalSize = 0;
 
 				this->m_table.ForEach([&](
-					Item* aItem)
+					Item* aItem) -> bool
 				{
 					if (aItem->HasBlob())
 					{
@@ -522,6 +522,8 @@ namespace jelly
 
 						totalSize += aItem->GetBlob()->GetSize();
 					}
+
+					return true;
 				});
 
 				JELLY_ASSERT(totalSize == m_totalResidentBlobSize);

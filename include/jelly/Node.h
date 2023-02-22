@@ -616,6 +616,17 @@ namespace jelly
 			}		
 		}
 
+		/**
+		 * Scan through all items in the same order they're stored in the hash table. Must happen on main thread. 
+		 * Beware that this is very slow and shouldn't be haphazardly. Return false from callback to exit early.
+		 */
+		void
+		ForEach(
+			std::function<bool(const _ItemType*)>		aCallback) const
+		{
+			m_table.ForEach(aCallback);
+		}
+
 		//--------------------------------------------------------------------------------------------
 		// Data access
 

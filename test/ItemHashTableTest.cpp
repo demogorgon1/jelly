@@ -106,11 +106,12 @@ namespace jelly
 					}
 
 					table.ForEach([&tableRef](
-						const TestItem* aItem)
+						const TestItem* aItem) -> bool
 					{
 						std::unordered_map<uint32_t, uint32_t>::const_iterator it = tableRef.find(aItem->m_key.m_value);
 						JELLY_ALWAYS_ASSERT(it != tableRef.end());
 						JELLY_ALWAYS_ASSERT(aItem->m_value == it->second);
+						return true;
 					});
 					
 					table.Clear();

@@ -71,6 +71,31 @@ namespace jelly::Test::AdvBlobTest
 				JELLY_ALWAYS_ASSERT(req.GetMeta() == 9001);
 			}
 		}
+
+		// Restart database
+
+		{
+			BlobNodeType blobNode(&host, 0);
+
+			size_t itemCount = 0;
+
+			// Scan whole database
+			blobNode.ForEach([&itemCount](
+				const BlobNodeType::Item* aItem) -> bool
+			{
+				JELLY_ALWAYS_ASSERT(aItem->GetKey().m_values[0] == 1);
+				JELLY_ALWAYS_ASSERT(aItem->GetKey().m_values[1] == 2);
+				JELLY_ALWAYS_ASSERT(aItem->GetMeta() == 9001);
+				JELLY_ALWAYS_ASSERT(aItem->HasBlob());
+				// Note that blob is compressed, not gonna check value
+
+				itemCount++;
+
+				return true;
+			});
+
+			JELLY_ALWAYS_ASSERT(itemCount == 1);
+		}
 	}
 
 }

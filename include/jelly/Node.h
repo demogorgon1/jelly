@@ -122,6 +122,7 @@ namespace jelly
 				if(m_host->GetAvailableDiskSpace() < totalIncludedStoreSize)
 				{
 					// Compaction will require too much disk space temporarily
+					Log::PrintF(Log::LEVEL_WARNING, "Backup: Not enough disk space available for compaction.");
 					return NULL;
 				}
 
@@ -146,9 +147,14 @@ namespace jelly
 		FinalizeBackup(
 			BackupType*			aBackup)
 		{
-			CompactionResultType* compactionResult = aBackup->GetCompactionResult();
-			if(compactionResult != NULL)
-				ApplyCompactionResult(compactionResult);
+			JELLY_ASSERT(aBackup != NULL);
+			
+			if(aBackup->HasCompletedOk())
+			{
+				CompactionResultType* compactionResult = aBackup->GetCompactionResult();
+				if (compactionResult != NULL)
+					ApplyCompactionResult(compactionResult);
+			}
 		}
 
 		/**

@@ -168,14 +168,16 @@ namespace jelly
 		{
 			char buffer[64];
 			double v = (double)aValue;
+			int result = 0;
 			if (v > 1024.0f * 1024.0f * 1024.0f)
-				snprintf(buffer, sizeof(buffer), "%.1fG", v / (1024.0f * 1024.0f * 1024.0f));
+				result = snprintf(buffer, sizeof(buffer), "%.1fG", v / (1024.0f * 1024.0f * 1024.0f));
 			else if (aValue > 1024.0f * 1024.0f)
-				snprintf(buffer, sizeof(buffer), "%.1fM", v / (1024.0f * 1024.0f));
+				result = snprintf(buffer, sizeof(buffer), "%.1fM", v / (1024.0f * 1024.0f));
 			else if (aValue > 1024.0f)
-				snprintf(buffer, sizeof(buffer), "%.1fK", v / (1024.0f));
+				result = snprintf(buffer, sizeof(buffer), "%.1fK", v / (1024.0f));
 			else
-				snprintf(buffer, sizeof(buffer), "%.0f", v);
+				result = snprintf(buffer, sizeof(buffer), "%.0f", v);
+			JELLY_CHECK(result <= sizeof(buffer), "Size string too long.");
 			return buffer;
 		}
 

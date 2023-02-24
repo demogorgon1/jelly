@@ -45,7 +45,7 @@ namespace jelly
 			_InitStatsContext(&this->m_statsContext);
 
 			_Restore();
-			
+
 			this->m_flushPendingStoreCallback = [&](
 				uint32_t										aStoreId,
 				IStoreWriter*									aWriter,
@@ -367,7 +367,8 @@ namespace jelly
 				uint32_t storeId = runtimeState.m_storeId;
 				size_t storeOffset = runtimeState.m_storeOffset;
 				IStoreBlobReader* storeBlobReader = this->m_host->GetStoreBlobReader(this->m_nodeId, storeId, &this->m_statsContext.m_fileStore);
-				JELLY_CHECK(storeBlobReader != NULL, "Failed to open store blob reader: %u %u", this->m_nodeId, storeId);
+				if(storeBlobReader == NULL)
+					return RESULT_FAILED_TO_READ;
 
 				storeBlobReader->ReadItemBlob(storeOffset, item);
 

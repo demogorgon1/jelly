@@ -5,6 +5,7 @@
 #include "IFileStreamReader.h"
 #include "IHost.h"
 #include "IStoreWriter.h"
+#include "Log.h"
 
 namespace jelly
 {
@@ -14,7 +15,7 @@ namespace jelly
 
 		// Do a compaction of just 2 stores
 		template <typename _KeyType, typename _ItemType>
-		void
+		bool
 		PerformOnTwoStores(			
 			IHost*										aHost,
 			uint32_t									aNodeId,
@@ -30,11 +31,15 @@ namespace jelly
 			std::unique_ptr<IFileStreamReader> f2(aHost->ReadStoreStream(aNodeId, aStoreId2, aStoreFileStatsContext));
 
 			if(!f1 || !f2)
-				return; // Could be that the stores no longer exists, just don't do anything then
+				return false; // Could be that the stores no longer exists, just don't do anything then
 
 			{
 				std::unique_ptr<IStoreWriter> fOut(aHost->CreateStore(aNodeId, aNewStoreId, aStoreFileStatsContext));
-				JELLY_CHECK(fOut, "Failed to open compaction store for output: %u", aNewStoreId);
+				if(!fOut)
+				{
+					Log::PrintF(Log::LEVEL_ERROR, "Failed to open compaction store for output: %u", aNewStoreId);
+					return false;
+				}
 
 				_ItemType item1;
 				bool hasItem1 = false;
@@ -124,11 +129,13 @@ namespace jelly
 
 				fOut->Flush();
 			}
+
+			return true;
 		}
 
 		// Do a compaction of more than 2 stores
 		template <typename _KeyType, typename _ItemType>
-		void
+		bool
 		PerformOnStoreList(
 			IHost*										aHost,
 			uint32_t									aNodeId,
@@ -167,12 +174,16 @@ namespace jelly
 				sourceStores.push_back(std::make_unique<SourceStore>(storeId, aHost->ReadStoreStream(aNodeId, storeId, aStoreFileStatsContext)));
 
 				if(!sourceStores[sourceStores.size() - 1]->m_fileStreamReader)
-					return; // One of the source stores doesn't exist
+					return false; // One of the source stores doesn't exist
 			}
 
 			// Open output store
 			std::unique_ptr<IStoreWriter> outputStore(aHost->CreateStore(aNodeId, aNewStoreId, aStoreFileStatsContext));
-			JELLY_CHECK(outputStore, "Failed to open compaction store for output: %u", aNewStoreId);
+			if(!outputStore)
+			{
+				Log::PrintF(Log::LEVEL_ERROR, "Failed to open compaction store for output: %u", aNewStoreId);
+				return false;
+			}
 
 			// Perform the compaction
 			std::vector<SourceStore*> lowestKeySourceStores;
@@ -245,11 +256,13 @@ namespace jelly
 					}
 				}
 			}
+
+			return true;
 		}
 
 		// Do a "minor" compaction 
 		template <typename _KeyType, typename _ItemType>
-		void
+		bool
 		Perform(			
 			IHost*										aHost,
 			uint32_t									aNodeId,
@@ -261,14 +274,14 @@ namespace jelly
 			aOut->SetStoreIds(aCompactionJob.m_storeIds);
 
 			if(aCompactionJob.m_storeIds.size() == 2)
-				PerformOnTwoStores<_KeyType, _ItemType>(aHost, aNodeId, aStoreFileStatsContext, aCompactionJob.m_oldestStoreId, aNewStoreId, aCompactionJob.m_storeIds[0], aCompactionJob.m_storeIds[1], aOut);
+				return PerformOnTwoStores<_KeyType, _ItemType>(aHost, aNodeId, aStoreFileStatsContext, aCompactionJob.m_oldestStoreId, aNewStoreId, aCompactionJob.m_storeIds[0], aCompactionJob.m_storeIds[1], aOut);
 			else
-				PerformOnStoreList<_KeyType, _ItemType>(aHost, aNodeId, aStoreFileStatsContext, aCompactionJob.m_oldestStoreId, aNewStoreId, aCompactionJob.m_storeIds, aOut);
+				return PerformOnStoreList<_KeyType, _ItemType>(aHost, aNodeId, aStoreFileStatsContext, aCompactionJob.m_oldestStoreId, aNewStoreId, aCompactionJob.m_storeIds, aOut);
 		}
 		
 		// Do a "major" compaction of everything.
 		template <typename _KeyType, typename _ItemType>
-		void
+		bool
 		PerformMajorCompaction(
 			IHost*										aHost,
 			uint32_t									aNodeId,
@@ -292,10 +305,12 @@ namespace jelly
 				aOut->SetStoreIds(storeIds);
 
 				if (storeIds.size() == 2)
-					PerformOnTwoStores<_KeyType, _ItemType>(aHost, aNodeId, aStoreFileStatsContext, oldestStoreId, aNewStoreId, storeIds[0], storeIds[1], aOut);
+					return PerformOnTwoStores<_KeyType, _ItemType>(aHost, aNodeId, aStoreFileStatsContext, oldestStoreId, aNewStoreId, storeIds[0], storeIds[1], aOut);
 				else
-					PerformOnStoreList<_KeyType, _ItemType>(aHost, aNodeId, aStoreFileStatsContext, oldestStoreId, aNewStoreId, storeIds, aOut);
+					return PerformOnStoreList<_KeyType, _ItemType>(aHost, aNodeId, aStoreFileStatsContext, oldestStoreId, aNewStoreId, storeIds, aOut);
 			}
+
+			return false;
 		}
 
 	}

@@ -37,6 +37,7 @@ namespace jelly
 			, m_backupPath(aBackupPath)
 			, m_host(aHost)
 			, m_fileStatsContext(aFileStatsContext)
+			, m_result(BACKUP_RESULT_NONE)
 		{
 
 		}
@@ -44,6 +45,76 @@ namespace jelly
 		~Backup()
 		{
 
+		}
+
+		/**
+		 * \brief Perform the backup procedure on any thread. When completed, 
+		 * pass the backup job back to the node with Node::FinalizeBackup() on
+		 * the main thread.
+		 */
+		bool
+		Perform()
+		{
+			if(m_compactionJob.IsSet())
+			{
+				JELLY_ASSERT(m_compactionStoreId.has_value());
+				m_compactionResult = std::make_unique<CompactionResultType>();
+
+				bool ok = Compaction::Perform<_KeyType, _ItemType>(
+					m_host, m_nodeId, m_fileStatsContext, m_compactionStoreId.value(), m_compactionJob, m_compactionResult.get());
+
+				if(!ok)
+				{
+					m_result = BACKUP_RESULT_FAILED;
+					return false;
+				}
+			}
+			
+			std::string rootPath = m_backupPath + "/" + m_name;
+
+			// Create the backup directory
+			if(!std::filesystem::create_directories(rootPath))
+			{
+				Log::PrintF(Log::LEVEL_ERROR, "Backup: Failed to create path: %s", rootPath.c_str());
+				m_result = BACKUP_RESULT_FAILED;
+				return false;
+			}
+
+			// Put hard links to store files in it
+			for(uint32_t storeId : m_includeStoreIds)
+			{
+				std::string storePath = m_host->GetStorePath(m_nodeId, storeId);
+				std::string storeFileName = StringUtils::GetFileNameFromPath(storePath.c_str());
+				std::string backupStorePath = rootPath + "/" + storeFileName;
+				
+				std::error_code errorCode;
+				std::filesystem::create_hard_link(storePath, backupStorePath, errorCode);
+				if(errorCode)
+				{
+					Log::PrintF(Log::LEVEL_ERROR, "Backup: Failed to create hard link: %s (%s -> %s)", errorCode.message().c_str(), storePath.c_str(), backupStorePath.c_str());
+					m_result = BACKUP_RESULT_FAILED;
+					return false;
+				}
+			}
+
+			if(m_prevName.length() > 0)
+			{
+				// Write a little text file with the name of the previous backup that this incremental backup is based on
+				std::string prevPath = rootPath + "/prev.txt";
+				FILE* f = fopen(prevPath.c_str(), "wb");
+				if(f == NULL)
+				{
+					Log::PrintF(Log::LEVEL_ERROR, "Backup: Failed to open file for output: %s", prevPath.c_str());
+					m_result = BACKUP_RESULT_FAILED;
+					return false;
+				}
+				
+				fprintf(f, "%s\r\n", m_prevName.c_str());
+				fclose(f);
+			}
+
+			m_result = BACKUP_RESULT_OK;
+			return true;
 		}
 
 		void
@@ -62,51 +133,6 @@ namespace jelly
 			const std::vector<uint32_t>&	aIncludeStoreIds)
 		{
 			m_includeStoreIds = aIncludeStoreIds;
-		}
-
-		/**
-		 * \brief Perform the backup procedure on any thread. When completed, 
-		 * pass the backup job back to the node with Node::FinalizeBackup() on
-		 * the main thread.
-		 */
-		void
-		Perform()
-		{
-			if(m_compactionJob.IsSet())
-			{
-				JELLY_ASSERT(m_compactionStoreId.has_value());
-				m_compactionResult = std::make_unique<CompactionResultType>();
-
-				Compaction::Perform<_KeyType, _ItemType>(
-					m_host, m_nodeId, m_fileStatsContext, m_compactionStoreId.value(), m_compactionJob, m_compactionResult.get());
-			}
-			
-			char rootPath[1024];
-			snprintf(rootPath, sizeof(rootPath), "%s/%s", m_backupPath.c_str(), m_name.c_str());
-
-			if(!std::filesystem::create_directories(rootPath))
-				JELLY_FATAL_ERROR("Failed to create path: %s", rootPath);
-
-			for(uint32_t storeId : m_includeStoreIds)
-			{
-				std::string storePath = m_host->GetStorePath(m_nodeId, storeId);
-				std::string storeFileName = StringUtils::GetFileNameFromPath(storePath.c_str());
-
-				char backupStorePath[1024];
-				snprintf(backupStorePath, sizeof(backupStorePath), "%s/%s", rootPath, storeFileName.c_str());
-				
-				std::filesystem::create_hard_link(storePath.c_str(), backupStorePath);
-			}
-
-			if(m_prevName.length() > 0)
-			{
-				char prevPath[1024];
-				snprintf(prevPath, sizeof(prevPath), "%s/prev.txt", rootPath);
-				FILE* f = fopen(prevPath, "wb");
-				JELLY_CHECK(f != NULL, "Failed to open file for output: %s", prevPath);
-				fprintf(f, "%s\r\n", m_prevName.c_str());
-				fclose(f);
-			}
 		}
 
 		CompactionResultType*
@@ -133,8 +159,23 @@ namespace jelly
 			return m_prevName;
 		}
 
+		bool
+		HasCompletedOk() const
+		{
+			JELLY_ASSERT(m_result != BACKUP_RESULT_NONE);
+			return m_result == BACKUP_RESULT_OK;
+		}
+
 	private:
 
+		enum BackupResult
+		{
+			BACKUP_RESULT_NONE,
+			BACKUP_RESULT_OK,
+			BACKUP_RESULT_FAILED
+		};
+
+		BackupResult							m_result;
 		IHost*									m_host;
 		FileStatsContext*						m_fileStatsContext;
 		uint32_t								m_nodeId;

@@ -18,14 +18,15 @@ namespace jelly
 		{
 			switch(aResult)
 			{
-			case RESULT_NONE:				return "NONE";
-			case RESULT_OK:					return "OK";
-			case RESULT_CANCELED:			return "CANCELED";
-			case RESULT_ALREADY_LOCKED:		return "ALREADY_LOCKED";
-			case RESULT_NOT_LOCKED:			return "NOT_LOCKED";
-			case RESULT_DOES_NOT_EXIST:		return "DOES_NOT_EXIST";
-			case RESULT_OUTDATED:			return "OUTDATED";
-			case RESULT_NOT_MASTER:			return "NOT_MASTER";
+			case RESULT_NONE:					return "NONE";
+			case RESULT_OK:						return "OK";
+			case RESULT_CANCELED:				return "CANCELED";
+			case RESULT_ALREADY_LOCKED:			return "ALREADY_LOCKED";
+			case RESULT_NOT_LOCKED:				return "NOT_LOCKED";
+			case RESULT_DOES_NOT_EXIST:			return "DOES_NOT_EXIST";
+			case RESULT_OUTDATED:				return "OUTDATED";
+			case RESULT_NOT_MASTER:				return "NOT_MASTER";
+			case RESULT_FAILED_TO_READ:			return "FAILED_TO_READ";
 			}
 			JELLY_ALWAYS_ASSERT(false);
 			return "";

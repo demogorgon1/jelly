@@ -43,7 +43,7 @@ namespace jelly
 			m_internal = new Internal();
 
 			m_internal->m_stream = ZSTD_createCStream();
-			JELLY_CHECK(m_internal->m_stream != NULL, Result::ERROR_ZSTD_STREAM_FAILED_TO_CREATE_COMPRESSOR);
+			JELLY_CHECK(m_internal->m_stream != NULL, Exception::ERROR_ZSTD_STREAM_FAILED_TO_CREATE_COMPRESSOR);
 		}
 
 		Compressor::~Compressor()
@@ -82,7 +82,7 @@ namespace jelly
 				outBuffer.pos = 0;
 
 				size_t result = ZSTD_compressStream2(m_internal->m_stream, &outBuffer, &inBuffer, ZSTD_e_end);
-				JELLY_CHECK(ZSTD_isError(result) == 0, Result::ERROR_ZSTD_STREAM_FAILED_TO_FLUSH, "Msg=%s", ZSTD_getErrorName(result));
+				JELLY_CHECK(ZSTD_isError(result) == 0, Exception::ERROR_ZSTD_STREAM_FAILED_TO_FLUSH, "Msg=%s", ZSTD_getErrorName(result));
 
 				if (outBuffer.pos > 0)
 					m_outputCallback(buffer, outBuffer.pos);					
@@ -117,7 +117,7 @@ namespace jelly
 				outBuffer.pos = 0;
 
 				size_t result = ZSTD_compressStream2(m_internal->m_stream, &outBuffer, &inBuffer, ZSTD_e_continue);
-				JELLY_CHECK(ZSTD_isError(result) == 0, Result::ERROR_ZSTD_STREAM_FAILED_TO_WRITE, "Msg=%s", ZSTD_getErrorName(result));
+				JELLY_CHECK(ZSTD_isError(result) == 0, Exception::ERROR_ZSTD_STREAM_FAILED_TO_WRITE, "Msg=%s", ZSTD_getErrorName(result));
 
 				if(outBuffer.pos > 0)
 					m_outputCallback(buffer, outBuffer.pos);
@@ -139,7 +139,7 @@ namespace jelly
 			m_internal = new Internal();
 
 			m_internal->m_stream = ZSTD_createDStream();
-			JELLY_CHECK(m_internal->m_stream != NULL, Result::ERROR_ZSTD_STREAM_FAILED_TO_CREATE_DECOMPRESSOR);
+			JELLY_CHECK(m_internal->m_stream != NULL, Exception::ERROR_ZSTD_STREAM_FAILED_TO_CREATE_DECOMPRESSOR);
 		}
 
 		Decompressor::~Decompressor()
@@ -180,7 +180,7 @@ namespace jelly
 				outBuffer.pos = 0;
 
 				size_t result = ZSTD_decompressStream(m_internal->m_stream, &outBuffer, &inBuffer);
-				JELLY_CHECK(ZSTD_isError(result) == 0, Result::ERROR_ZSTD_STREAM_FAILED_TO_READ, "Msg=%s", ZSTD_getErrorName(result));
+				JELLY_CHECK(ZSTD_isError(result) == 0, Exception::ERROR_ZSTD_STREAM_FAILED_TO_READ, "Msg=%s", ZSTD_getErrorName(result));
 
 				if (outBuffer.pos > 0)
 					m_outputCallback(buffer, outBuffer.pos);

@@ -62,7 +62,7 @@ namespace jelly
 			}
 			else
 			{
-				JELLY_FAIL(Result::ERROR_INVALID_COMPRESSION_METHOD, "Method=%s", compressionMethod);
+				JELLY_FAIL(Exception::ERROR_INVALID_COMPRESSION_METHOD, "Method=%s", compressionMethod);
 			}
 		}
 
@@ -95,7 +95,7 @@ namespace jelly
 
 			std::error_code errorCode;
 			std::filesystem::directory_iterator it(m_root, errorCode);
-			JELLY_CHECK(!errorCode, Result::ERROR_FAILED_TO_GET_TOTAL_DISK_USAGE, "Path=%s;Msg=%s", m_root.c_str(), errorCode.message().c_str());
+			JELLY_CHECK(!errorCode, Exception::ERROR_FAILED_TO_GET_TOTAL_DISK_USAGE, "Path=%s;Msg=%s", m_root.c_str(), errorCode.message().c_str());
 
 			for (const std::filesystem::directory_entry& entry : it)
 			{
@@ -127,7 +127,7 @@ namespace jelly
 
 		std::error_code errorCode;
 		std::filesystem::directory_iterator it(m_root, errorCode);
-		JELLY_CHECK(!errorCode, Result::ERROR_FAILED_TO_DELETE_ALL_FILES, "Path=%s;NodeId=%u;Msg=%s", m_root.c_str(), aNodeId, errorCode.message().c_str());
+		JELLY_CHECK(!errorCode, Exception::ERROR_FAILED_TO_DELETE_ALL_FILES, "Path=%s;NodeId=%u;Msg=%s", m_root.c_str(), aNodeId, errorCode.message().c_str());
 
 		for (const std::filesystem::directory_entry& entry : it)
 		{
@@ -173,7 +173,7 @@ namespace jelly
 	{
 		std::error_code errorCode;
 		std::filesystem::space_info si = std::filesystem::space(m_root, errorCode);
-		JELLY_CHECK(!errorCode, Result::ERROR_FAILED_TO_GET_AVAILABLE_DISK_SPACE, "Path=%s;Msg=%s", m_root.c_str(), errorCode.message().c_str());
+		JELLY_CHECK(!errorCode, Exception::ERROR_FAILED_TO_GET_AVAILABLE_DISK_SPACE, "Path=%s;Msg=%s", m_root.c_str(), errorCode.message().c_str());
 		return (size_t)si.available;;
 	}
 
@@ -185,7 +185,7 @@ namespace jelly
 	{
 		std::error_code errorCode;
 		std::filesystem::directory_iterator it(m_root, errorCode);
-		JELLY_CHECK(!errorCode, Result::ERROR_FAILED_TO_ENUMERATE_FILES, "NodeId=%u;Path=%s;Msg=%s", aNodeId, m_root.c_str(), errorCode.message().c_str());
+		JELLY_CHECK(!errorCode, Exception::ERROR_FAILED_TO_ENUMERATE_FILES, "NodeId=%u;Path=%s;Msg=%s", aNodeId, m_root.c_str(), errorCode.message().c_str());
 
 		for (const std::filesystem::directory_entry& entry : it)
 		{
@@ -217,7 +217,7 @@ namespace jelly
 	{
 		std::error_code errorCode;
 		std::filesystem::directory_iterator it(m_root, errorCode);
-		JELLY_CHECK(!errorCode, Result::ERROR_FAILED_TO_GET_STORE_INFO, "NodeId=%u;Path=%s;Msg=%s", aNodeId, m_root.c_str(), errorCode.message().c_str());
+		JELLY_CHECK(!errorCode, Exception::ERROR_FAILED_TO_GET_STORE_INFO, "NodeId=%u;Path=%s;Msg=%s", aNodeId, m_root.c_str(), errorCode.message().c_str());
 
 		for (const std::filesystem::directory_entry& entry : it)
 		{
@@ -300,7 +300,7 @@ namespace jelly
 	{
 		std::error_code errorCode;
 		std::filesystem::remove(PathUtils::MakePath(m_root.c_str(), m_filePrefix.c_str(), PathUtils::FILE_TYPE_WAL, aNodeId, aId).c_str(), errorCode);
-		JELLY_CHECK(!errorCode, Result::ERROR_FAILED_TO_DELETE_WAL, "NodeId=%u;Id=%u;Msg=%s", aNodeId, aNodeId, errorCode.message().c_str());
+		JELLY_CHECK(!errorCode, Exception::ERROR_FAILED_TO_DELETE_WAL, "NodeId=%u;Id=%u;Msg=%s", aNodeId, aNodeId, errorCode.message().c_str());
 	}
 	
 	IFileStreamReader*
@@ -400,7 +400,7 @@ namespace jelly
 
 		std::error_code errorCode;
 		std::filesystem::directory_iterator it(aBackupPath, errorCode);
-		JELLY_CHECK(!errorCode, Result::ERROR_FAILED_TO_GET_LATEST_BACKUP, "NodeId=%u;Path=%s;Msg=%s", aNodeId, aBackupPath, errorCode.message().c_str());
+		JELLY_CHECK(!errorCode, Exception::ERROR_FAILED_TO_GET_LATEST_BACKUP, "NodeId=%u;Path=%s;Msg=%s", aNodeId, aBackupPath, errorCode.message().c_str());
 
 		for (const std::filesystem::directory_entry& entry : it)
 		{

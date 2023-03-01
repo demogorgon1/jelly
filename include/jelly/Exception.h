@@ -1,22 +1,20 @@
 #pragma once
 
 /**
- * \file Result.h
+ * \file Exception.h
  */
 
 namespace jelly
 {
 
-	namespace Result
+	namespace Exception
 	{
 
 		/**
-		 * Most API calls will return a result code, which will contain details
+		 * Most API calls will return a exception code, which will contain details
 		 * about any error that might have occurred. A value of 0 indicates no error.
 		 */
 		typedef uint32_t Code;
-
-		static const Code OK = 0;
 
 		static const uint32_t ERROR_BIT_MASK				= 0xFFF;
 		static const uint32_t ERROR_BIT_OFFSET				= 0;
@@ -40,7 +38,6 @@ namespace jelly
 			CONTEXT_NODE_START_BACKUP,				//!< While starting a backup
 			CONTEXT_NODE_FINALIZE_BACKUP,			//!< While finalazing a backup
 			CONTEXT_NODE_PROCESS_REPLICATION,		//!< While processing replication data from another node
-			CONTEXT_NODE_STOP,						//!< While stopping
 			CONTEXT_NODE_PROCESS_REQUESTS,			//!< While processing requests
 			CONTEXT_NODE_FLUSH_PENDING_WAL,			//!< While flushing pending WALs
 			CONTEXT_NODE_FLUSH_PENDING_STORE,		//!< While flushing a pending store
@@ -86,6 +83,7 @@ namespace jelly
 			CATEGORY_COMPRESSION,					//!< Compression related error
 			CATEGORY_DECOMPRESSION,					//!< Decompression related error
 			CATEGORY_SYSTEM,						//!< System error
+			CATEGORY_CONFIGURATION,					//!< Configuration error
 
 			NUM_CATEGORIES
 		};
@@ -168,7 +166,6 @@ namespace jelly
 			"NODE_START_BACKUP",
 			"NODE_FINALIZE_BACKUP",
 			"NODE_PROCESS_REPLICATION",
-			"NODE_STOP",
 			"NODE_PROCESS_REQUESTS",
 			"NODE_FLUSH_PENDING_WAL",
 			"NODE_FLUSH_PENDING_STORE",
@@ -203,7 +200,8 @@ namespace jelly
 			"COMPACTION",
 			"COMPRESSION",
 			"DECOMPRESSION",
-			"SYSTEM"
+			"SYSTEM",
+			"CONFIGURATION"
 		};
 
 		/**
@@ -236,8 +234,8 @@ namespace jelly
 			{ "FILE_READ_RANDOM_FAILED_TO_READ_HEADER",		CATEGORY_DISK_READ,				"Failed to read header from random access file." },
 			{ "FILE_READ_RANDOM_HEADER_MISMATCH",			CATEGORY_DISK_READ,				"Random access file opened has a bad header." },
 			{ "FILE_READ_RANDOM_FAILED_TO_READ",			CATEGORY_DISK_READ,				"Failed to read data from random access file." },
-			{ "FILE_LOCK_ALREADY_LOCKED",					CATEGORY_NONE,					"Named lock has already been acquired. Probably some other node process already running with same node id." },
-			{ "FILE_LOCK_FAILED_TO_OPEN",					CATEGORY_NONE,					"Failed to open named lock." },
+			{ "FILE_LOCK_ALREADY_LOCKED",					CATEGORY_CONFIGURATION,			"Named lock has already been acquired. Probably some other node process already running with same node id." },
+			{ "FILE_LOCK_FAILED_TO_OPEN",					CATEGORY_SYSTEM,				"Failed to open named lock." },
 			{ "ZSTD_STREAM_FAILED_TO_CREATE_COMPRESSOR",	CATEGORY_COMPRESSION,			"Failed to initialize ZSTD stream compression." },
 			{ "ZSTD_STREAM_FAILED_TO_READ",					CATEGORY_DECOMPRESSION,			"Failed to read from ZSTD stream." },
 			{ "ZSTD_STREAM_FAILED_TO_CREATE_DECOMPRESSOR",	CATEGORY_DECOMPRESSION,			"Failed to initialize ZSTD stream decompression." },
@@ -248,18 +246,18 @@ namespace jelly
 			{ "ZSTD_BUFFER_INVALID",						CATEGORY_DECOMPRESSION,			"Not a valid ZSTD buffer." },
 			{ "ZSTD_BUFFER_TOO_LARGE_TO_UNCOMPRESS",		CATEGORY_DECOMPRESSION,			"Unable to decompress ZSTD buffer as result would be too large. Buffer might be corrupted or not a ZSTD buffer." },
 			{ "ZSTD_BUFFER_DECOMPRESSION_FAILED",			CATEGORY_DECOMPRESSION,			"Failed to ZSTD decompress a buffer." },
-			{ "PATH_TOO_LONG",								CATEGORY_NONE,					"Store or WAL path is too long." },
-			{ "INVALID_CHARACTER_IN_FILE_PREFIX",			CATEGORY_NONE,					"Invalid character encountered in file prefix." },
+			{ "PATH_TOO_LONG",								CATEGORY_CONFIGURATION,			"Store or WAL path is too long." },
+			{ "INVALID_CHARACTER_IN_FILE_PREFIX",			CATEGORY_CONFIGURATION,			"Invalid character encountered in file prefix." },
 			{ "STORE_WRITER_RENAME_FAILED",					CATEGORY_DISK_CREATE_FILE,		"Failed to rename created store from temporary to target name." },
-			{ "INVALID_UINT32",								CATEGORY_NONE,					"Failed to parse invalid uint32 string." },
-			{ "INVALID_SIZE",								CATEGORY_NONE,					"Failed to parse invalid size string." },
-			{ "INVALID_BOOL",								CATEGORY_NONE,					"Failed to parse invalid bool string." },
-			{ "INVALID_INTERVAL",							CATEGORY_NONE,					"Failed to parse invalid interval string." },
-			{ "INTERVAL_OUT_OF_BOUNDS",						CATEGORY_NONE,					"Parsed interval string is out of bounts. Must be equal to or shorter than 2^32 seconds." },
-			{ "SIZE_STRING_TOO_LONG",						CATEGORY_NONE,					"Unable to create size string as it would be too long." },
-			{ "PATH_IS_EMPTY",								CATEGORY_NONE,					"Unable to get file name from path as path is empty." },
+			{ "INVALID_UINT32",								CATEGORY_CONFIGURATION,			"Failed to parse invalid uint32 string." },
+			{ "INVALID_SIZE",								CATEGORY_CONFIGURATION,			"Failed to parse invalid size string." },
+			{ "INVALID_BOOL",								CATEGORY_CONFIGURATION,			"Failed to parse invalid bool string." },
+			{ "INVALID_INTERVAL",							CATEGORY_CONFIGURATION,			"Failed to parse invalid interval string." },
+			{ "INTERVAL_OUT_OF_BOUNDS",						CATEGORY_CONFIGURATION,			"Parsed interval string is out of bounts. Must be equal to or shorter than 2^32 seconds." },
+			{ "SIZE_STRING_TOO_LONG",						CATEGORY_CONFIGURATION,			"Unable to create size string as it would be too long." },
+			{ "PATH_IS_EMPTY",								CATEGORY_CONFIGURATION,			"Unable to get file name from path as path is empty." },
 			{ "FAILED_TO_GET_MEMORY_INFO",					CATEGORY_SYSTEM,				"Failed to get current memory usage information." },
-			{ "INVALID_COMPRESSION_METHOD",					CATEGORY_NONE,					"Invalid compression method." },
+			{ "INVALID_COMPRESSION_METHOD",					CATEGORY_CONFIGURATION,			"Invalid compression method." },
 			{ "FAILED_TO_GET_AVAILABLE_DISK_SPACE",			CATEGORY_SYSTEM,				"Failed to get available disk space in path." },
 			{ "FAILED_TO_ENUMERATE_FILES",					CATEGORY_SYSTEM,				"Error occured while finding store and WAL files in root directory." },
 			{ "FAILED_TO_GET_STORE_INFO",					CATEGORY_SYSTEM,				"Failed to enumerate information about stores in root directory." },
@@ -280,11 +278,11 @@ namespace jelly
 		static_assert(sizeof(ERROR_INFO) / sizeof(ErrorInfo) == NUM_ERRORS);
 
 		/**
-		 * Make a result code from: error, context, request type, and log fingerprint. The log fingerprint
+		 * Make a exception code from: error, context, request type, and log fingerprint. The log fingerprint
 		 * is a (somewhat) unique number that can be used to associate a log line with a specific result code.
 		 */
 		inline constexpr uint32_t
-		MakeResultCode(
+		MakeExceptionCode(
 			uint32_t		aError,
 			uint32_t		aContext,
 			uint32_t		aRequestType,
@@ -297,40 +295,40 @@ namespace jelly
 		}
 
 		/**
-		 * Extract error from result code.
+		 * Extract error from exception code.
 		 */
 		inline constexpr Error
-		GetResultCodeError(
+		GetExceptionCodeError(
 			uint32_t		aResultCode) noexcept
 		{
 			return (Error)((aResultCode >> ERROR_BIT_OFFSET) & ERROR_BIT_MASK);
 		}
 
 		/**
-		 * Extract context from result code.
+		 * Extract context from exception code.
 		 */
 		inline constexpr Context
-		GetResultCodeContext(
+		GetExceptionCodeContext(
 			uint32_t		aResultCode) noexcept
 		{
 			return (Context)((aResultCode >> CONTEXT_BIT_OFFSET) & CONTEXT_BIT_MASK);
 		}
 
 		/**
-		 * Extract request type from result code.
+		 * Extract request type from exception code.
 		 */
 		inline constexpr RequestType
-		GetResultCodeRequestType(
+		GetExceptionCodeRequestType(
 			uint32_t		aResultCode) noexcept
 		{
 			return (RequestType)((aResultCode >> REQUEST_TYPE_BIT_OFFSET) & REQUEST_TYPE_BIT_MASK);
 		}
 
 		/**
-		 * Extract log fingerprint from result code.
+		 * Extract log fingerprint from exception code.
 		 */
 		inline constexpr uint32_t
-		GetResultCodeLogFingerprint(
+		GetExceptionCodeLogFingerprint(
 			uint32_t		aResultCode) noexcept
 		{
 			return (aResultCode >> LOG_FINGERPRINT_BIT_OFFSET) & LOG_FINGERPRINT_BIT_MASK;
@@ -376,50 +374,6 @@ namespace jelly
 			return CONTEXT_STRINGS[aId];
 		}
 
-		/**
-		 * Convert result code to size_t.
-		 */
-		inline constexpr size_t
-		ErrorToSize(
-			Code			aCode) noexcept
-		{
-			return (1ULL << 63ULL) | (size_t)aCode;
-		}
-
-		/**
-		 * Convert size_t to result code
-		 */
-		inline constexpr Code
-		SizeToError(
-			size_t			aSize) noexcept
-		{
-			if ((aSize & (1ULL << 63ULL)) != 0)
-				return Result::OK;
-
-			return (Code)(aSize & ~(1ULL << 63ULL));
-		}
-
-		/** 
-		 * Check if a size is an error.
-		 */
-		inline constexpr bool
-		IsError(
-			size_t			aSize) noexcept
-		{
-			if((aSize & (1ULL << 63ULL)) != 0)
-				return true;
-			return (aSize & ~(1ULL << 63ULL)) != 0;
-		}
-
-		/**
-		 * Check if a result is an error.
-		 */
-		inline constexpr bool
-		IsError(
-			Code			aCode) noexcept
-		{
-			return aCode != Result::OK;
-		}
 	}
 
 }

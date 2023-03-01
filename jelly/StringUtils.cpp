@@ -24,7 +24,7 @@ namespace jelly
 			const char* aString)
 		{
 			uintmax_t value = strtoumax(aString, NULL, 10);
-			JELLY_CHECK(value <= UINT32_MAX, Result::ERROR_INVALID_UINT32, "String=%s", aString);
+			JELLY_CHECK(value <= UINT32_MAX, Exception::ERROR_INVALID_UINT32, "String=%s", aString);
 			return (uint32_t)value;
 		}
 		
@@ -34,7 +34,7 @@ namespace jelly
 		{
 			char* suffix = NULL;
 			uintmax_t value = strtoumax(aString, &suffix, 10);
-			JELLY_CHECK(value <= SIZE_MAX, Result::ERROR_INVALID_SIZE, "String=%s", aString);
+			JELLY_CHECK(value <= SIZE_MAX, Exception::ERROR_INVALID_SIZE, "String=%s", aString);
 
 			if(suffix != NULL)
 			{
@@ -48,35 +48,35 @@ namespace jelly
 					{
 					case 'K':
 					case 'k':
-						JELLY_CHECK(!multiplier.has_value() || hasByteTag, Result::ERROR_INVALID_SIZE, "String=%s", aString);
-						JELLY_CHECK((value & ((1024ULL - 1ULL) << (SIZE_BITS - 10ULL))) == 0, Result::ERROR_INVALID_SIZE, "String=%s", aString);
+						JELLY_CHECK(!multiplier.has_value() || hasByteTag, Exception::ERROR_INVALID_SIZE, "String=%s", aString);
+						JELLY_CHECK((value & ((1024ULL - 1ULL) << (SIZE_BITS - 10ULL))) == 0, Exception::ERROR_INVALID_SIZE, "String=%s", aString);
 						multiplier = 1024ULL;
 						break;
 
 					case 'M':
 					case 'm':
-						JELLY_CHECK(!multiplier.has_value() || hasByteTag, Result::ERROR_INVALID_SIZE, "String=%s", aString);
-						JELLY_CHECK((value & (((1024ULL * 1024ULL) - 1ULL) << (SIZE_BITS - 10ULL))) == 0, Result::ERROR_INVALID_SIZE, "String=%s", aString);
+						JELLY_CHECK(!multiplier.has_value() || hasByteTag, Exception::ERROR_INVALID_SIZE, "String=%s", aString);
+						JELLY_CHECK((value & (((1024ULL * 1024ULL) - 1ULL) << (SIZE_BITS - 10ULL))) == 0, Exception::ERROR_INVALID_SIZE, "String=%s", aString);
 						multiplier = 1024ULL * 1024ULL;
 						break;
 
 					case 'G':
 					case 'g':
-						JELLY_CHECK(!multiplier.has_value() || hasByteTag, Result::ERROR_INVALID_SIZE, "String=%s", aString);
-						JELLY_CHECK((value & (((1024ULL * 1024ULL * 1024ULL) - 1ULL) << (SIZE_BITS - 30ULL))) == 0, Result::ERROR_INVALID_SIZE, "String=%s", aString);
+						JELLY_CHECK(!multiplier.has_value() || hasByteTag, Exception::ERROR_INVALID_SIZE, "String=%s", aString);
+						JELLY_CHECK((value & (((1024ULL * 1024ULL * 1024ULL) - 1ULL) << (SIZE_BITS - 30ULL))) == 0, Exception::ERROR_INVALID_SIZE, "String=%s", aString);
 						multiplier = 1024ULL * 1024ULL * 1024ULL;
 						break;
 
 					case 'T':
 					case 't':
-						JELLY_CHECK(!multiplier.has_value() || hasByteTag, Result::ERROR_INVALID_SIZE, "String=%s", aString);
-						JELLY_CHECK((value & (((1024ULL * 1024ULL * 1024ULL * 1024ULL) - 1ULL) << (SIZE_BITS - 40ULL))) == 0, Result::ERROR_INVALID_SIZE, "String=%s", aString);
+						JELLY_CHECK(!multiplier.has_value() || hasByteTag, Exception::ERROR_INVALID_SIZE, "String=%s", aString);
+						JELLY_CHECK((value & (((1024ULL * 1024ULL * 1024ULL * 1024ULL) - 1ULL) << (SIZE_BITS - 40ULL))) == 0, Exception::ERROR_INVALID_SIZE, "String=%s", aString);
 						multiplier = 1024ULL * 1024ULL * 1024ULL * 1024ULL;
 						break;
 
 					case 'B':
 					case 'b':
-						JELLY_CHECK(!hasByteTag, Result::ERROR_INVALID_SIZE, "String=%s", aString);
+						JELLY_CHECK(!hasByteTag, Exception::ERROR_INVALID_SIZE, "String=%s", aString);
 						hasByteTag = true;
 						break;
 
@@ -85,7 +85,7 @@ namespace jelly
 						break;
 
 					default:
-						JELLY_FAIL(Result::ERROR_INVALID_SIZE, "String=%s", aString);
+						JELLY_FAIL(Exception::ERROR_INVALID_SIZE, "String=%s", aString);
 					}
 
 					suffix++;
@@ -107,7 +107,7 @@ namespace jelly
 			if (strcmp(aString, "false") == 0 || strcmp(aString, "0") == 0)
 				return false;
 
-			JELLY_FAIL(Result::ERROR_INVALID_BOOL, "String=%s", aString);
+			JELLY_FAIL(Exception::ERROR_INVALID_BOOL, "String=%s", aString);
 			return false;
 		}
 
@@ -123,7 +123,7 @@ namespace jelly
 			{
 				char* next = NULL;
 				uintmax_t value = strtoumax(p, &next, 10);
-				JELLY_CHECK(value <= UINT32_MAX, Result::ERROR_INVALID_INTERVAL, "String=%s", aString);
+				JELLY_CHECK(value <= UINT32_MAX, Exception::ERROR_INVALID_INTERVAL, "String=%s", aString);
 				p = next;
 
 				if(p != NULL && *p != '\0')
@@ -157,7 +157,7 @@ namespace jelly
 				v += value;
 			}
 
-			JELLY_CHECK(v <= UINT32_MAX, Result::ERROR_INTERVAL_OUT_OF_BOUNDS, "String=%s", aString);
+			JELLY_CHECK(v <= UINT32_MAX, Exception::ERROR_INTERVAL_OUT_OF_BOUNDS, "String=%s", aString);
 
 			return (uint32_t)v;
 		}
@@ -177,7 +177,7 @@ namespace jelly
 				result = snprintf(buffer, sizeof(buffer), "%.1fK", v / (1024.0f));
 			else
 				result = snprintf(buffer, sizeof(buffer), "%.0f", v);
-			JELLY_CHECK((size_t)result <= sizeof(buffer), Result::ERROR_SIZE_STRING_TOO_LONG, "Size=%zu", aValue);
+			JELLY_CHECK((size_t)result <= sizeof(buffer), Exception::ERROR_SIZE_STRING_TOO_LONG, "Size=%zu", aValue);
 			return buffer;
 		}
 
@@ -186,7 +186,7 @@ namespace jelly
 			const char*		aPath)
 		{
 			size_t strLen = strlen(aPath);
-			JELLY_CHECK(strLen > 0, Result::ERROR_PATH_IS_EMPTY);
+			JELLY_CHECK(strLen > 0, Exception::ERROR_PATH_IS_EMPTY);
 
 			for(size_t i = 0; i < strLen; i++)
 			{

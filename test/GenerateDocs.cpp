@@ -108,6 +108,32 @@ namespace jelly::Test::GenerateDocs
 
 			printf("\n");
 		}
+
+		// Errors
+		{
+			std::vector<const jelly::Exception::ErrorInfo*> errors;
+			for(uint32_t i = 1; i < (uint32_t)jelly::Exception::NUM_ERRORS; i++)
+				errors.push_back(jelly::Exception::GetErrorInfo(i));
+
+			std::sort(errors.begin(), errors.end(), [](
+				const jelly::Exception::ErrorInfo* aLHS,
+				const jelly::Exception::ErrorInfo* aRHS)
+			{
+				if(aLHS->m_category == aRHS->m_category)
+					return strcmp(aLHS->m_string, aRHS->m_string) < 0;
+				return (uint32_t)aLHS->m_category < (uint32_t)aRHS->m_category;
+			});
+
+			printf("Id|Category|Description\n");
+			printf(":-|:-|:-\n");
+
+			for(const jelly::Exception::ErrorInfo* t : errors)
+			{
+				printf("%s|%s|%s\n", t->m_string, jelly::Exception::GetCategoryString(t->m_category), t->m_description);
+			}
+
+			printf("\n");
+		}
 	}
 
 }

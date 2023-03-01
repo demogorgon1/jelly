@@ -42,6 +42,8 @@ namespace jelly
 			: NodeBase(aHost, aNodeId)
 			, m_totalResidentBlobSize(0)
 		{
+			JELLY_CONTEXT(Exception::CONTEXT_BLOB_NODE_INIT);
+
 			_InitStatsContext(&this->m_statsContext);
 
 			_Restore();
@@ -135,6 +137,8 @@ namespace jelly
 
 			aRequest->SetExecutionCallback([=, this]()
 			{
+				JELLY_REQUEST_TYPE(Exception::REQUEST_TYPE_BLOB_NODE_SET);
+
 				ScopedTimeSampler timerSampler(this->m_host->GetStats(), Stat::ID_BLOB_SET_TIME);
 
 				aRequest->SetResult(_Update(aRequest, false)); // Update: Set
@@ -165,6 +169,8 @@ namespace jelly
 
 			aRequest->SetExecutionCallback([=, this]()
 			{
+				JELLY_REQUEST_TYPE(Exception::REQUEST_TYPE_BLOB_NODE_GET);
+					
 				ScopedTimeSampler timerSampler(this->m_host->GetStats(), Stat::ID_BLOB_GET_TIME);
 
 				aRequest->SetResult(_Get(aRequest));
@@ -194,6 +200,8 @@ namespace jelly
 
 			aRequest->SetExecutionCallback([=, this]()
 			{
+				JELLY_REQUEST_TYPE(Exception::REQUEST_TYPE_BLOB_NODE_DELETE);
+				
 				ScopedTimeSampler timerSampler(this->m_host->GetStats(), Stat::ID_BLOB_DELETE_TIME);
 
 				aRequest->SetResult(_Update(aRequest, true)); // Update: Delete
@@ -367,7 +375,7 @@ namespace jelly
 				uint32_t storeId = runtimeState.m_storeId;
 				size_t storeOffset = runtimeState.m_storeOffset;
 				IStoreBlobReader* storeBlobReader = this->m_host->GetStoreBlobReader(this->m_nodeId, storeId, &this->m_statsContext.m_fileStore);
-				JELLY_CHECK(storeBlobReader != NULL, Result::ERROR_FAILED_TO_GET_BLOB_READER, "NodeId=%u;StoreId=%u", this->m_nodeId, storeId);
+				JELLY_CHECK(storeBlobReader != NULL, Exception::ERROR_FAILED_TO_GET_BLOB_READER, "NodeId=%u;StoreId=%u", this->m_nodeId, storeId);
 
 				storeBlobReader->ReadItemBlob(storeOffset, item);
 

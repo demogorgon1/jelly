@@ -35,7 +35,7 @@ namespace jelly
 
 			{
 				std::unique_ptr<IStoreWriter> fOut(aHost->CreateStore(aNodeId, aNewStoreId, aStoreFileStatsContext));
-				JELLY_CHECK(fOut, Result::ERROR_COMPACTION_FAILED_TO_OPEN_OUTPUT_STORE, "NewStoreId=%u", aNewStoreId);
+				JELLY_CHECK(fOut, Exception::ERROR_COMPACTION_FAILED_TO_OPEN_OUTPUT_STORE, "NewStoreId=%u", aNewStoreId);
 
 				_ItemType item1;
 				bool hasItem1 = false;
@@ -178,7 +178,7 @@ namespace jelly
 
 			// Open output store
 			std::unique_ptr<IStoreWriter> outputStore(aHost->CreateStore(aNodeId, aNewStoreId, aStoreFileStatsContext));
-			JELLY_CHECK(outputStore, Result::ERROR_COMPACTION_FAILED_TO_OPEN_OUTPUT_STORE, "NewStoreId=%u", aNewStoreId);
+			JELLY_CHECK(outputStore, Exception::ERROR_COMPACTION_FAILED_TO_OPEN_OUTPUT_STORE, "NewStoreId=%u", aNewStoreId);
 
 			// Perform the compaction
 			std::vector<SourceStore*> lowestKeySourceStores;

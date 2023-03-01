@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Result.h"
+#include "Exception.h"
 #include "Log.h"
 #include "StringUtils.h"
 
@@ -30,6 +30,9 @@
 #else
 	#define JELLY_ASSERT(...) do { } while(false)
 #endif
+
+#define JELLY_CONTEXT(_Context) ErrorUtils::ScopedContext scopedContext(_Context)
+#define JELLY_REQUEST_TYPE(_RequestType) ErrorUtils::ScopedRequestType scopedRequestType(_RequestType)
 
 namespace jelly
 {
@@ -63,7 +66,7 @@ namespace jelly
 							const char*			aMessageFormat,
 							...);
 		void			CheckFailed(
-							Result::Error		aError,
+							Exception::Error	aError,
 							const char*			aMessageFormat,
 							...);
 		void			DebugBreak();
@@ -74,7 +77,7 @@ namespace jelly
 		EnterContext(
 			uint32_t			aContext) noexcept
 		{
-			JELLY_ASSERT(g_threadCurrentContext == Result::CONTEXT_NONE);
+			JELLY_ASSERT(g_threadCurrentContext == Exception::CONTEXT_NONE);
 			g_threadCurrentContext = aContext;
 		}
 		
@@ -89,14 +92,14 @@ namespace jelly
 			uint32_t			aContext) noexcept
 		{
 			JELLY_ASSERT(g_threadCurrentContext == aContext);
-			g_threadCurrentContext = Result::CONTEXT_NONE;
+			g_threadCurrentContext = Exception::CONTEXT_NONE;
 		}
 		
 		inline void
 		EnterRequestType(
 			uint32_t			aRequestType) noexcept
 		{
-			JELLY_ASSERT(g_threadCurrentRequestType == Result::REQUEST_TYPE_NONE);
+			JELLY_ASSERT(g_threadCurrentRequestType == Exception::REQUEST_TYPE_NONE);
 			g_threadCurrentRequestType = aRequestType;
 		}
 
@@ -111,8 +114,44 @@ namespace jelly
 			uint32_t			aRequestType) noexcept
 		{
 			JELLY_ASSERT(g_threadCurrentRequestType == aRequestType);
-			g_threadCurrentRequestType = Result::REQUEST_TYPE_NONE;
+			g_threadCurrentRequestType = Exception::REQUEST_TYPE_NONE;
 		}
+
+		//----------------------------------------------------------------------------------------
+
+		struct ScopedContext
+		{
+			ScopedContext(
+				uint32_t		aContext)
+				: m_context(aContext)
+			{
+				EnterContext(m_context);
+			}
+
+			~ScopedContext()
+			{
+				LeaveContext(m_context);
+			}
+
+			uint32_t		m_context;
+		};
+
+		struct ScopedRequestType
+		{
+			ScopedRequestType(
+				uint32_t		aRequestType)
+				: m_requestType(aRequestType)
+			{
+				EnterRequestType(m_requestType);
+			}
+
+			~ScopedRequestType()
+			{
+				LeaveRequestType(m_requestType);
+			}
+
+			uint32_t		m_requestType;
+		};
 
 	}
 

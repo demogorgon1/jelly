@@ -79,6 +79,8 @@ namespace jelly
 		StartBackup(
 			const char*						aName)
 		{
+			JELLY_CONTEXT(Exception::CONTEXT_NODE_START_BACKUP);
+			
 			std::string prevName;
 			std::string backupPath = m_config.GetString(Config::ID_BACKUP_PATH);
 			uint32_t latestStoreId = UINT32_MAX;
@@ -106,7 +108,7 @@ namespace jelly
 				}				
 			}
 
-			JELLY_CHECK(includeStoreIds.size() > 0, Result::ERROR_NOTHING_TO_BACKUP, "Incremental=%u", incremental);
+			JELLY_CHECK(includeStoreIds.size() > 0, Exception::ERROR_NOTHING_TO_BACKUP, "Incremental=%u", incremental);
 
 			std::unique_ptr<BackupType> backup = std::make_unique<BackupType>(
 				m_host,
@@ -120,7 +122,7 @@ namespace jelly
 			{
 				size_t availableDiskSpace = m_host->GetAvailableDiskSpace();
 
-				JELLY_CHECK(availableDiskSpace >= totalIncludedStoreSize, Result::ERROR_NOT_ENOUGH_AVAILABLE_SPACE_FOR_BACKUP, "Available=%s;MoreRequired=%s", 
+				JELLY_CHECK(availableDiskSpace >= totalIncludedStoreSize, Exception::ERROR_NOT_ENOUGH_AVAILABLE_SPACE_FOR_BACKUP, "Available=%s;MoreRequired=%s", 
 					StringUtils::MakeSizeString(availableDiskSpace).c_str(), 
 					StringUtils::MakeSizeString(totalIncludedStoreSize - availableDiskSpace).c_str());
 
@@ -145,6 +147,7 @@ namespace jelly
 		FinalizeBackup(
 			BackupType*			aBackup)
 		{
+			JELLY_CONTEXT(Exception::CONTEXT_NODE_FINALIZE_BACKUP);
 			JELLY_ASSERT(aBackup != NULL);
 		
 			if (aBackup->HasCompletedOk())
@@ -160,7 +163,7 @@ namespace jelly
 		 */
 		void
 		SetReplicationNetwork(
-			ReplicationNetwork*	aReplicationNetwork)
+			ReplicationNetwork*	aReplicationNetwork) noexcept
 		{
 			m_replicationNetwork = aReplicationNetwork;
 		}
@@ -174,6 +177,7 @@ namespace jelly
 			uint32_t				aSourceNodeId,
 			const Stream::Buffer*	aHead)
 		{
+			JELLY_CONTEXT(Exception::CONTEXT_NODE_PROCESS_REPLICATION);
 			JELLY_ASSERT(m_replicationNetwork != NULL);
 			
 			if (!m_replicationNetwork->IsLocalNodeMaster() && m_replicationNetwork->GetMasterNodeId() == aSourceNodeId)
@@ -231,6 +235,8 @@ namespace jelly
 		size_t
 		ProcessRequests()
 		{
+			JELLY_CONTEXT(Exception::CONTEXT_NODE_PROCESS_REQUESTS);
+
 			Queue<_RequestType>* queue = NULL;
 
 			ScopedTimeSampler timeSampler(m_host->GetStats(), m_statsContext.m_idProcessRequestsTime);
@@ -292,6 +298,8 @@ namespace jelly
 		FlushPendingWAL(
 			uint32_t		aWALConcurrentIndex = UINT32_MAX)
 		{
+			JELLY_CONTEXT(Exception::CONTEXT_NODE_FLUSH_PENDING_WAL);
+
 			size_t count = 0;
 
 			if (aWALConcurrentIndex == UINT32_MAX)
@@ -349,6 +357,8 @@ namespace jelly
 		size_t
 		FlushPendingStore()
 		{		
+			JELLY_CONTEXT(Exception::CONTEXT_NODE_FLUSH_PENDING_STORE);
+
 			if (m_pendingStore.size() == 0)
 				return 0;
 
@@ -412,33 +422,28 @@ namespace jelly
 		size_t
 		CleanupWALs()
 		{
+			JELLY_CONTEXT(Exception::CONTEXT_NODE_CLEANUP_WALS);
+
 			size_t deletedWALs = 0;
 
-			try
-			{
-				ScopedTimeSampler timeSampler(m_host->GetStats(), m_statsContext.m_idCleanupWALsTime);
+			ScopedTimeSampler timeSampler(m_host->GetStats(), m_statsContext.m_idCleanupWALsTime);
 
-				for (size_t i = 0; i < m_wals.size(); i++)
+			for (size_t i = 0; i < m_wals.size(); i++)
+			{
+				WAL* wal = m_wals[i];
+
+				if (wal->GetRefCount() == 0 && wal->IsClosed())
 				{
-					WAL* wal = m_wals[i];
+					uint32_t id = wal->GetId();
 
-					if (wal->GetRefCount() == 0 && wal->IsClosed())
-					{
-						uint32_t id = wal->GetId();
+					delete wal;
+					m_wals.erase(m_wals.begin() + i);
+					i--;
 
-						delete wal;
-						m_wals.erase(m_wals.begin() + i);
-						i--;
+					m_host->DeleteWAL(m_nodeId, id);
 
-						m_host->DeleteWAL(m_nodeId, id);
-
-						deletedWALs++;
-					}
+					deletedWALs++;
 				}
-			}
-			catch (Result::Code error)
-			{
-				return Result::ErrorToSize(error);
 			}
 
 			return deletedWALs;
@@ -453,6 +458,7 @@ namespace jelly
 		PerformCompaction(
 			const CompactionJob&						aCompactionJob)
 		{
+			JELLY_CONTEXT(Exception::CONTEXT_NODE_PERFORM_COMPACTION);
 			JELLY_ASSERT(aCompactionJob.Validate());
 
 			ScopedTimeSampler timeSampler(m_host->GetStats(), m_statsContext.m_idPerformCompactionTime);
@@ -462,10 +468,10 @@ namespace jelly
 			{
 				std::lock_guard lock(m_currentCompactionStoreIdsLock);
 
-				JELLY_CHECK(!m_currentCompactionIsMajor, Result::ERROR_MAJOR_COMPACTION_IN_PROGRESS);
+				JELLY_CHECK(!m_currentCompactionIsMajor, Exception::ERROR_MAJOR_COMPACTION_IN_PROGRESS);
 
 				for (uint32_t storeId : aCompactionJob.m_storeIds)
-					JELLY_CHECK(m_currentCompactionStoreIds.find(storeId) == m_currentCompactionStoreIds.end(), Result::ERROR_COMPACTION_IN_PROGRESS, "StoreId=%u", storeId);
+					JELLY_CHECK(m_currentCompactionStoreIds.find(storeId) == m_currentCompactionStoreIds.end(), Exception::ERROR_COMPACTION_IN_PROGRESS, "StoreId=%u", storeId);
 
 				for (uint32_t storeId : aCompactionJob.m_storeIds)
 					m_currentCompactionStoreIds.insert(storeId);
@@ -490,6 +496,8 @@ namespace jelly
 		CompactionResultType*
 		PerformMajorCompaction()
 		{
+			JELLY_CONTEXT(Exception::CONTEXT_NODE_PERFORM_MAJOR_COMPECTION);
+
 			ScopedTimeSampler timeSampler(m_host->GetStats(), m_statsContext.m_idPerformMajorCompactionTime);
 
 			std::unique_ptr<CompactionResultType> result(new CompactionResultType());
@@ -497,7 +505,7 @@ namespace jelly
 			{
 				std::lock_guard lock(m_currentCompactionStoreIdsLock);
 
-				JELLY_CHECK(!m_currentCompactionIsMajor && m_currentCompactionStoreIds.size() == 0, Result::ERROR_COMPACTION_IN_PROGRESS);
+				JELLY_CHECK(!m_currentCompactionIsMajor && m_currentCompactionStoreIds.size() == 0, Exception::ERROR_COMPACTION_IN_PROGRESS);
 
 				m_currentCompactionIsMajor = true;
 			}
@@ -522,6 +530,8 @@ namespace jelly
 		ApplyCompactionResult(
 			CompactionResultType*						aCompactionResult)
 		{
+			JELLY_CONTEXT(Exception::CONTEXT_NODE_APPLY_COMPACTION_RESULT);
+
 			ScopedTimeSampler timeSampler(m_host->GetStats(), m_statsContext.m_idApplyCompactionTime);
 
 			size_t updatedItemCount = 0;

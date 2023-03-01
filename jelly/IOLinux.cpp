@@ -63,10 +63,10 @@ namespace jelly
 			: m_path(aPath)
 		{
 			m_handle = open(aPath, O_RDWR | O_CREAT, 0666);
-			JELLY_CHECK(m_handle.IsSet(), Result::ERROR_FILE_LOCK_FAILED_TO_OPEN, "Path=%s;ErrorCode=%d", aPath, errno);
+			JELLY_CHECK(m_handle.IsSet(), Exception::ERROR_FILE_LOCK_FAILED_TO_OPEN, "Path=%s;ErrorCode=%d", aPath, errno);
 
 			int result = flock(m_handle, LOCK_EX | LOCK_NB);
-			JELLY_CHECK(result == 0, Result::ERROR_FILE_LOCK_ALREADY_LOCKED, "Path=%s;ErrorCode=%d", aPath, errno);
+			JELLY_CHECK(result == 0, Exception::ERROR_FILE_LOCK_ALREADY_LOCKED, "Path=%s;ErrorCode=%d", aPath, errno);
 		}
 		
 		FileLock::~FileLock()
@@ -93,14 +93,14 @@ namespace jelly
 			if(!m_handle.IsSet())
 			{
 				int errorCode = errno;
-				JELLY_CHECK(errorCode == ENOENT, Result::ERROR_FILE_READ_RANDOM_FAILED_TO_OPEN, "Path=%s;ErrorCode=%d", aPath, errorCode);
+				JELLY_CHECK(errorCode == ENOENT, Exception::ERROR_FILE_READ_RANDOM_FAILED_TO_OPEN, "Path=%s;ErrorCode=%d", aPath, errorCode);
 			}
 			else
 			{
 				FileHeader header;
 				ssize_t bytes = read(m_handle, &header, sizeof(header));
-				JELLY_CHECK((size_t)bytes == sizeof(header), Result::ERROR_FILE_READ_RANDOM_FAILED_TO_READ_HEADER, "Path=%s;ErrorCode=%d", aPath, errno);
-				JELLY_CHECK(header == aHeader, Result::ERROR_FILE_READ_RANDOM_HEADER_MISMATCH, "Path=%s", aPath);
+				JELLY_CHECK((size_t)bytes == sizeof(header), Exception::ERROR_FILE_READ_RANDOM_FAILED_TO_READ_HEADER, "Path=%s;ErrorCode=%d", aPath, errno);
+				JELLY_CHECK(header == aHeader, Exception::ERROR_FILE_READ_RANDOM_HEADER_MISMATCH, "Path=%s", aPath);
 			}
 		}
 		
@@ -124,7 +124,7 @@ namespace jelly
 			JELLY_ASSERT(m_handle.IsSet());
 
 			ssize_t bytes = pread(m_handle, aBuffer, aBufferSize, (off_t)aOffset);
-			JELLY_CHECK((size_t)bytes == aBufferSize, Result::ERROR_FILE_READ_RANDOM_FAILED_TO_READ, "Offset=%zu;BufferSize=%zu", aOffset, aBufferSize);
+			JELLY_CHECK((size_t)bytes == aBufferSize, Exception::ERROR_FILE_READ_RANDOM_FAILED_TO_READ, "Offset=%zu;BufferSize=%zu", aOffset, aBufferSize);
 		}
 
 		//-----------------------------------------------------------------------------------
@@ -142,7 +142,7 @@ namespace jelly
 			if (!m_handle.IsSet())
 			{
 				int errorCode = errno;
-				JELLY_CHECK(errorCode == ENOENT, Result::ERROR_FILE_READ_STREAM_FAILED_TO_OPEN, "Path=%s;ErrorCode=%d", aPath, errorCode);
+				JELLY_CHECK(errorCode == ENOENT, Exception::ERROR_FILE_READ_STREAM_FAILED_TO_OPEN, "Path=%s;ErrorCode=%d", aPath, errorCode);
 			}
 			else
 			{
@@ -157,8 +157,8 @@ namespace jelly
 				{
 					FileHeader header;
 					ssize_t bytes = read(m_handle, &header, sizeof(header));
-					JELLY_CHECK((size_t)bytes == sizeof(header), Result::ERROR_FILE_READ_STREAM_FAILED_TO_READ_HEADER, "Path=%s;ErrorCode=%d", aPath, errno);
-					JELLY_CHECK(header == aHeader, Result::ERROR_FILE_READ_STREAM_HEADER_MISMATCH, "Path=%s", aPath);
+					JELLY_CHECK((size_t)bytes == sizeof(header), Exception::ERROR_FILE_READ_STREAM_FAILED_TO_READ_HEADER, "Path=%s;ErrorCode=%d", aPath, errno);
+					JELLY_CHECK(header == aHeader, Exception::ERROR_FILE_READ_STREAM_HEADER_MISMATCH, "Path=%s", aPath);
 
 					m_totalBytesRead = sizeof(header);
 				}
@@ -237,7 +237,7 @@ namespace jelly
 			std::unique_ptr<FileReadBuffer> readBuffer = std::make_unique<FileReadBuffer>();
 			
 			ssize_t bytes = read(m_handle, readBuffer->m_buffer, FileReadBuffer::SIZE);
-			JELLY_CHECK(bytes >= 0, Result::ERROR_FILE_READ_STREAM_FAILED_TO_READ, "ErrorCode=%d", errno);
+			JELLY_CHECK(bytes >= 0, Exception::ERROR_FILE_READ_STREAM_FAILED_TO_READ, "ErrorCode=%d", errno);
 
 			readBuffer->m_bytes = (size_t)bytes;
 
@@ -256,7 +256,7 @@ namespace jelly
 			int mode = S_IRUSR | S_IWUSR;
 
 			m_handle = open(aPath, flags, mode);
-			JELLY_CHECK(m_handle.IsSet(), Result::ERROR_FILE_WRITE_STREAM_FAILED_TO_OPEN, "Path=%s;ErrorCode=%d", aPath, errno);
+			JELLY_CHECK(m_handle.IsSet(), Exception::ERROR_FILE_WRITE_STREAM_FAILED_TO_OPEN, "Path=%s;ErrorCode=%d", aPath, errno);
 
 			Write(&aHeader, sizeof(aHeader));
 		}
@@ -279,7 +279,7 @@ namespace jelly
 			}
 
 			int result = fsync(m_handle);
-			JELLY_CHECK(result != -1, Result::ERROR_FILE_WRITE_STREAM_FAILED_TO_FLUSH, "ErrorCode=%d", errno);
+			JELLY_CHECK(result != -1, Exception::ERROR_FILE_WRITE_STREAM_FAILED_TO_FLUSH, "ErrorCode=%d", errno);
 
 			size_t flushedBytes = m_nonFlushedBytes;
 			m_nonFlushedBytes = 0;
@@ -332,7 +332,7 @@ namespace jelly
 			FileWriteBuffer*	aWriteBuffer)
 		{
 			ssize_t bytes = write(m_handle, aWriteBuffer->m_buffer, aWriteBuffer->m_bytes);
-			JELLY_CHECK((size_t)bytes == aWriteBuffer->m_bytes, Result::ERROR_FILE_WRITE_STREAM_FAILED_TO_WRITE, "ErrorCode=%d", errno);
+			JELLY_CHECK((size_t)bytes == aWriteBuffer->m_bytes, Exception::ERROR_FILE_WRITE_STREAM_FAILED_TO_WRITE, "ErrorCode=%d", errno);
 
 			m_nonFlushedBytes += aWriteBuffer->m_bytes;
 		}

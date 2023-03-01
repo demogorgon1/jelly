@@ -21,7 +21,7 @@ namespace jelly::SystemUtils
 
 		#if defined(_WIN32)			
 			HANDLE h = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,	FALSE, GetCurrentProcessId());
-			JELLY_CHECK(h != INVALID_HANDLE_VALUE, Result::ERROR_FAILED_TO_GET_MEMORY_INFO, "SysCall=OpenProcess;ErrorCode=%u", GetLastError());
+			JELLY_CHECK(h != INVALID_HANDLE_VALUE, Exception::ERROR_FAILED_TO_GET_MEMORY_INFO, "SysCall=OpenProcess;ErrorCode=%u", GetLastError());
 			
 			PROCESS_MEMORY_COUNTERS_EX t;			
 			BOOL result = GetProcessMemoryInfo(h, (PPROCESS_MEMORY_COUNTERS)&t, (DWORD)sizeof(t));
@@ -29,7 +29,7 @@ namespace jelly::SystemUtils
 			if(result == 0)
 			{
 				CloseHandle(h);
-				JELLY_FAIL(Result::ERROR_FAILED_TO_GET_MEMORY_INFO, "SysCall=GetProcessMemoryInfo;ErrorCode=%u", GetLastError());
+				JELLY_FAIL(Exception::ERROR_FAILED_TO_GET_MEMORY_INFO, "SysCall=GetProcessMemoryInfo;ErrorCode=%u", GetLastError());
 			}
 
 			CloseHandle(h);
@@ -38,7 +38,7 @@ namespace jelly::SystemUtils
 		#else
 			const char* path = "/proc/self/statm";
 			FILE* fp = fopen(path, "r");
-			JELLY_CHECK(fp != NULL, Result::ERROR_FAILED_TO_GET_MEMORY_INFO, "SysCall=fopen;ErrorCode=%d", errno);
+			JELLY_CHECK(fp != NULL, Exception::ERROR_FAILED_TO_GET_MEMORY_INFO, "SysCall=fopen;ErrorCode=%d", errno);
 
 			uint32_t rss;
 			int result = fscanf(fp, "%*s%u", &rss);
@@ -46,7 +46,7 @@ namespace jelly::SystemUtils
 			if(result != 1)
 			{
 				fclose(fp);
-				JELLY_FAIL(Result::ERROR_FAILED_TO_GET_MEMORY_INFO, "SysCall=fscanf;ErrorCode=%d", errno);
+				JELLY_FAIL(Exception::ERROR_FAILED_TO_GET_MEMORY_INFO, "SysCall=fscanf;ErrorCode=%d", errno);
 			}
 
 			fclose(fp);

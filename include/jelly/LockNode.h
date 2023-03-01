@@ -41,6 +41,8 @@ namespace jelly
 			uint32_t											aNodeId)
 			: NodeBase(aHost, aNodeId)
 		{
+			JELLY_CONTEXT(Exception::CONTEXT_LOCK_NODE_INIT);
+
 			_InitStatsContext(&this->m_statsContext);
 
 			_Restore();
@@ -125,6 +127,8 @@ namespace jelly
 
 			aRequest->SetExecutionCallback([=, this]()
 			{
+				JELLY_REQUEST_TYPE(Exception::REQUEST_TYPE_LOCK_NODE_LOCK);
+
 				ScopedTimeSampler timerSampler(this->m_host->GetStats(), Stat::ID_LOCK_TIME);
 
 				aRequest->SetResult(_Lock(aRequest));
@@ -150,6 +154,8 @@ namespace jelly
 
 			aRequest->SetExecutionCallback([=, this]()
 			{
+				JELLY_REQUEST_TYPE(Exception::REQUEST_TYPE_LOCK_NODE_UNLOCK);
+
 				ScopedTimeSampler timerSampler(this->m_host->GetStats(), Stat::ID_UNLOCK_TIME);
 				
 				aRequest->SetResult(_Unlock(aRequest));
@@ -173,6 +179,8 @@ namespace jelly
 
 			aRequest->SetExecutionCallback([=, this]()
 			{
+				JELLY_REQUEST_TYPE(Exception::REQUEST_TYPE_LOCK_NODE_DELETE);
+
 				ScopedTimeSampler timerSampler(this->m_host->GetStats(), Stat::ID_LOCK_DELETE_TIME);
 
 				aRequest->SetResult(_Delete(aRequest));

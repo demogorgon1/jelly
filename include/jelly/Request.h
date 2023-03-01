@@ -18,7 +18,7 @@ namespace jelly
 			, m_next(NULL)
 			, m_timeStamp(0)
 			, m_hasPendingWrite(false)
-			, m_error(0)
+			, m_exception(0)
 		{
 
 		}
@@ -55,11 +55,11 @@ namespace jelly
 			{
 				m_executionCallback();
 			}
-			catch(Result::Code error)
+			catch(Exception::Code e)
 			{
-				m_error = error;
+				m_exception = e;
 
-				m_result = REQUEST_RESULT_ERROR;
+				m_result = REQUEST_RESULT_EXCEPTION;
 				
 				SignalCompletion();
 			}				
@@ -100,7 +100,7 @@ namespace jelly
 		bool			IsCompleted() const noexcept { return m_completed.Poll(); }		//!< Poll request for completion.
 		RequestResult	GetResult() const noexcept { return m_result; }					//!< Returns result after completion.
 		uint64_t		GetTimeStamp() const noexcept { return m_timeStamp; }			//!< Returns time stamp after completion.
-		Result::Code	GetError() const noexcept { return m_error; }					//!< Returns error code if GetResult() is RESULT_ERROR.
+		Exception::Code	GetException() const noexcept { return m_exception; }			//!< Returns exception if GetResult() is RESULT_EXCEPTION.
 
 		_RequestType*	GetNext() noexcept { return m_next; }
 		bool			HasPendingWrite() const noexcept { return m_hasPendingWrite; }
@@ -109,7 +109,7 @@ namespace jelly
 		
 		uint64_t						m_timeStamp;
 		RequestResult					m_result;		
-		Result::Code					m_error;
+		Exception::Code					m_exception;
 		CompletionEvent					m_completed;		
 		bool							m_hasPendingWrite;
 		_RequestType*					m_next;

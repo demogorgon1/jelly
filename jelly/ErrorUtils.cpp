@@ -27,8 +27,8 @@ namespace jelly
 
 		//----------------------------------------------------------------------------------------
 
-		JELLY_THREAD_LOCAL(uint32_t) g_threadCurrentContext = Result::CONTEXT_NONE;
-		JELLY_THREAD_LOCAL(uint32_t) g_threadCurrentRequestType = Result::REQUEST_TYPE_NONE;
+		JELLY_THREAD_LOCAL(uint32_t) g_threadCurrentContext = Exception::CONTEXT_NONE;
+		JELLY_THREAD_LOCAL(uint32_t) g_threadCurrentRequestType = Exception::REQUEST_TYPE_NONE;
 
 		//----------------------------------------------------------------------------------------
 
@@ -78,8 +78,8 @@ namespace jelly
 
 		void			
 		CheckFailed(
-			Result::Error	aError,
-			const char*		aMessageFormat,
+			Exception::Error	aError,
+			const char*			aMessageFormat,
 			...)
 		{
 			uint32_t requestType = g_threadCurrentRequestType;
@@ -90,18 +90,18 @@ namespace jelly
 			static std::atomic_uint32_t counter = 0;			
 			counter++;
 			uint32_t logFingerprint = (uint32_t)std::hash<uint32_t>{}(counter ^ g_processFingerprint.m_fingerprint);
-			logFingerprint &= Result::LOG_FINGERPRINT_BIT_MASK;
+			logFingerprint &= Exception::LOG_FINGERPRINT_BIT_MASK;
 
 			// Log message
-			JELLY_ASSERT(aError < Result::NUM_ERRORS);
-			const Result::ErrorInfo* info = Result::GetErrorInfo(aError);
-			const char* categoryString = Result::GetCategoryString(info->m_category);
+			JELLY_ASSERT(aError < Exception::NUM_ERRORS);
+			const Exception::ErrorInfo* info = Exception::GetErrorInfo(aError);
+			const char* categoryString = Exception::GetCategoryString(info->m_category);
 
-			JELLY_ASSERT(requestType < Result::NUM_REQUEST_TYPES);
-			const char* requestTypeString = Result::GetRequestTypeString(requestType);
+			JELLY_ASSERT(requestType < Exception::NUM_REQUEST_TYPES);
+			const char* requestTypeString = Exception::GetRequestTypeString(requestType);
 
-			JELLY_ASSERT(contextType < Result::NUM_CONTEXTS);
-			const char* contextString = Result::GetContextString(contextType);
+			JELLY_ASSERT(contextType < Exception::NUM_CONTEXTS);
+			const char* contextString = Exception::GetContextString(contextType);
 
 			char messageBuffer[2048];
 			JELLY_STRING_FORMAT_VARARGS(messageBuffer, sizeof(messageBuffer), aMessageFormat);
@@ -114,8 +114,8 @@ namespace jelly
 				logFingerprint,
 				messageBuffer);
 
-			// Assemble result code and throw it
-			throw Result::MakeResultCode(aError, contextType, requestType, logFingerprint);
+			// Assemble exception code and throw it
+			throw Exception::MakeExceptionCode(aError, contextType, requestType, logFingerprint);
 		}
 
 		void

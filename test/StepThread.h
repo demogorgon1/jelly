@@ -26,7 +26,7 @@ namespace jelly
 			case REQUEST_RESULT_DOES_NOT_EXIST:		return "DOES_NOT_EXIST";
 			case REQUEST_RESULT_OUTDATED:			return "OUTDATED";
 			case REQUEST_RESULT_NOT_MASTER:			return "NOT_MASTER";
-			case REQUEST_RESULT_ERROR:				return "ERROR";
+			case REQUEST_RESULT_EXCEPTION:			return "EXCEPTION";
 			}
 			JELLY_ALWAYS_ASSERT(false);
 			return "";

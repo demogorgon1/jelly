@@ -55,6 +55,8 @@ namespace jelly
 		void
 		Perform()
 		{
+			JELLY_CONTEXT(Exception::CONTEXT_BACKUP_PERFORM);
+
 			if(m_compactionJob.IsSet())
 			{
 				JELLY_ASSERT(m_compactionStoreId.has_value());
@@ -63,14 +65,14 @@ namespace jelly
 				size_t compactedCount = Compaction::Perform<_KeyType, _ItemType>(
 					m_host, m_nodeId, m_fileStatsContext, m_compactionStoreId.value(), m_compactionJob, m_compactionResult.get());
 
-				JELLY_CHECK(compactedCount == m_compactionJob.m_storeIds.size(), Result::ERROR_BACKUP_FAILED_COMPACTION, "Name=%s", m_name.c_str());
+				JELLY_CHECK(compactedCount == m_compactionJob.m_storeIds.size(), Exception::ERROR_BACKUP_FAILED_COMPACTION, "Name=%s", m_name.c_str());
 			}
 			
 			std::string rootPath = m_backupPath + "/" + m_name;
 
 			// Create the backup directory
 			bool ok = std::filesystem::create_directories(rootPath);
-			JELLY_CHECK(ok, Result::ERROR_BACKUP_FAILED_TO_CREATE_DIRECTORY, "Name=%s;Path=%s", m_name.c_str(), rootPath.c_str());
+			JELLY_CHECK(ok, Exception::ERROR_BACKUP_FAILED_TO_CREATE_DIRECTORY, "Name=%s;Path=%s", m_name.c_str(), rootPath.c_str());
 
 			// Put hard links to store files in it
 			for(uint32_t storeId : m_includeStoreIds)
@@ -81,7 +83,7 @@ namespace jelly
 				
 				std::error_code errorCode;
 				std::filesystem::create_hard_link(storePath, backupStorePath, errorCode);
-				JELLY_CHECK(!errorCode, Result::ERROR_BACKUP_FAILED_TO_CREATE_HARD_LINK, "Name=%s;Msg=%s;Path=%s;Backup=%s", m_name.c_str(), errorCode.message().c_str(), storePath.c_str(), backupStorePath.c_str());
+				JELLY_CHECK(!errorCode, Exception::ERROR_BACKUP_FAILED_TO_CREATE_HARD_LINK, "Name=%s;Msg=%s;Path=%s;Backup=%s", m_name.c_str(), errorCode.message().c_str(), storePath.c_str(), backupStorePath.c_str());
 			}
 
 			if(m_prevName.length() > 0)
@@ -89,7 +91,7 @@ namespace jelly
 				// Write a little text file with the name of the previous backup that this incremental backup is based on
 				std::string prevPath = rootPath + "/prev.txt";
 				FILE* f = fopen(prevPath.c_str(), "wb");
-				JELLY_CHECK(f != NULL, Result::ERROR_BACKUP_FAILED_TO_CREATE_PREV_FILE, "Name=%s;Path=%s", m_name.c_str(), prevPath.c_str());
+				JELLY_CHECK(f != NULL, Exception::ERROR_BACKUP_FAILED_TO_CREATE_PREV_FILE, "Name=%s;Path=%s", m_name.c_str(), prevPath.c_str());
 				
 				fprintf(f, "%s\r\n", m_prevName.c_str());
 				fclose(f);

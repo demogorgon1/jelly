@@ -55,7 +55,7 @@ namespace jelly
 		// Rename temp path to final target path
 		std::error_code errorCode;
 		std::filesystem::rename(m_tempPath, m_targetPath, errorCode);
-		JELLY_CHECK(!errorCode, Result::ERROR_STORE_WRITER_RENAME_FAILED, "Temp=%s;Target=%s;Msg=%s", m_tempPath.c_str(), m_targetPath.c_str(), errorCode.message().c_str());
+		JELLY_CHECK(!errorCode, Exception::ERROR_STORE_WRITER_RENAME_FAILED, "Temp=%s;Target=%s;Msg=%s", m_tempPath.c_str(), m_targetPath.c_str(), errorCode.message().c_str());
 
 		m_isFlushed = true;
 	}

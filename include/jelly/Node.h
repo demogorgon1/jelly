@@ -647,7 +647,7 @@ namespace jelly
 	protected:
 
 		typedef std::map<_KeyType, _ItemType*> PendingStoreType;
-		typedef std::function<void(size_t, IStoreWriter*, PendingStoreType*)> FlushPendingStoreCallback;
+		typedef std::function<void(uint32_t, IStoreWriter*, PendingStoreType*)> FlushPendingStoreCallback;
 		typedef std::function<size_t(Stream::Reader*)> ReplicationCallback;
 
 		struct StatsContext

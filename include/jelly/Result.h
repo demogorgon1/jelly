@@ -159,7 +159,7 @@ namespace jelly
 		static_assert((uint32_t)NUM_ERRORS <= ERROR_BIT_MASK); 
 
 		// IMPORTANT: Must match Context enum
-		static const char* CONTEXT_STRINGS[] =
+		static constexpr const char* CONTEXT_STRINGS[] =
 		{
 			"NONE",
 			"BACKUP_PERFORM",
@@ -179,7 +179,7 @@ namespace jelly
 		};
 
 		// IMPORTANT: Must match RequestType enum
-		static const char* REQUEST_TYPE_STRINGS[] =
+		static constexpr const char* REQUEST_TYPE_STRINGS[] =
 		{
 			"NONE",
 			"BLOB_NODE_SET",
@@ -191,7 +191,7 @@ namespace jelly
 		};
 
 		// IMPORTANT: Must match Category enum
-		static const char* CATEGORY_STRINGS[] = 
+		static constexpr const char* CATEGORY_STRINGS[] =
 		{
 			"NONE",
 			"DISK_READ",
@@ -217,7 +217,7 @@ namespace jelly
 		};
 
 		// IMPORTANT: Must match Error enum
-		static const ErrorInfo ERROR_INFO[] =
+		static constexpr ErrorInfo ERROR_INFO[] =
 		{
 			{ "NONE",										CATEGORY_NONE,					"No error." },
 			{ "BACKUP_FAILED_COMPACTION",					CATEGORY_BACKUP,				"Something went wrong during compacting store to be backed up." },

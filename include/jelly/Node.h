@@ -106,7 +106,7 @@ namespace jelly
 				}				
 			}
 
-			JELLY_CHECK(includeStoreIds.size() == 0, Result::ERROR_NOTHING_TO_BACKUP, "Incremental=%u", incremental);
+			JELLY_CHECK(includeStoreIds.size() > 0, Result::ERROR_NOTHING_TO_BACKUP, "Incremental=%u", incremental);
 
 			std::unique_ptr<BackupType> backup = std::make_unique<BackupType>(
 				m_host,

@@ -3,7 +3,6 @@
 
 #include <optional>
 #include <random>
-#include <thread>
 #include <unordered_set>
 
 #include <jelly/API.h>

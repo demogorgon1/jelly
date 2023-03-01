@@ -177,7 +177,7 @@ namespace jelly
 				result = snprintf(buffer, sizeof(buffer), "%.1fK", v / (1024.0f));
 			else
 				result = snprintf(buffer, sizeof(buffer), "%.0f", v);
-			JELLY_CHECK(result <= sizeof(buffer), Result::ERROR_SIZE_STRING_TOO_LONG, "Size=%zu", aValue);
+			JELLY_CHECK((size_t)result <= sizeof(buffer), Result::ERROR_SIZE_STRING_TOO_LONG, "Size=%zu", aValue);
 			return buffer;
 		}
 

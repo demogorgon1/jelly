@@ -75,11 +75,11 @@ namespace jelly
 			};
 
 			this->m_replicationCallback = [&](
-				Stream::Reader*									aReader) -> uint32_t
+				Stream::Reader*									aReader) -> size_t
 			{
 				JELLY_ASSERT(this->m_replicationNetwork != NULL);
 
-				uint32_t count = 0;
+				size_t count = 0;
 
 				if(!this->m_replicationNetwork->IsLocalNodeMaster())
 				{
@@ -121,7 +121,7 @@ namespace jelly
 		Lock(
 			Request*											aRequest)
 		{
-			JELLY_ASSERT(aRequest->GetResult() == RESULT_NONE);
+			JELLY_ASSERT(aRequest->GetResult() == REQUEST_RESULT_NONE);
 
 			aRequest->SetExecutionCallback([=, this]()
 			{
@@ -146,7 +146,7 @@ namespace jelly
 		Unlock(
 			Request*											aRequest)
 		{
-			JELLY_ASSERT(aRequest->GetResult() == RESULT_NONE);
+			JELLY_ASSERT(aRequest->GetResult() == REQUEST_RESULT_NONE);
 
 			aRequest->SetExecutionCallback([=, this]()
 			{
@@ -169,7 +169,7 @@ namespace jelly
 		Delete(
 			Request*											aRequest)
 		{
-			JELLY_ASSERT(aRequest->GetResult() == RESULT_NONE);
+			JELLY_ASSERT(aRequest->GetResult() == REQUEST_RESULT_NONE);
 
 			aRequest->SetExecutionCallback([=, this]()
 			{
@@ -183,7 +183,7 @@ namespace jelly
 
 	private:
 		
-		Result
+		RequestResult
 		_Lock(
 			Request*											aRequest)
 		{
@@ -215,7 +215,7 @@ namespace jelly
 					{
 						// Fail
 						aRequest->SetLock(item->GetLock());
-						return RESULT_ALREADY_LOCKED;
+						return REQUEST_RESULT_ALREADY_LOCKED;
 					}
 				}
 				else
@@ -223,7 +223,7 @@ namespace jelly
 					// Same lock, no need to write anything - return meta data and timestamp					
 					aRequest->SetMeta(item->GetMeta());
 					aRequest->SetTimeStamp(item->GetTimeStamp());
-					return RESULT_OK;
+					return REQUEST_RESULT_OK;
 				}
 			}
 
@@ -236,10 +236,10 @@ namespace jelly
 
 			aRequest->WriteToWAL(this, item);
 
-			return RESULT_OK;
+			return REQUEST_RESULT_OK;
 		}
 
-		Result
+		RequestResult
 		_Unlock(
 			Request*											aRequest)
 		{
@@ -248,17 +248,17 @@ namespace jelly
 			if (item == NULL)
 			{
 				// Doesn't exist
-				return RESULT_DOES_NOT_EXIST;
+				return REQUEST_RESULT_DOES_NOT_EXIST;
 			}
 			else if(!item->GetLock().IsSet())
 			{
 				// It wasn't locked, fail
-				return RESULT_NOT_LOCKED;
+				return REQUEST_RESULT_NOT_LOCKED;
 			}
 			else if(item->GetLock() != aRequest->GetLock() && !aRequest->IsForced())
 			{
 				// Locked by someone else, fail
-				return RESULT_ALREADY_LOCKED;
+				return REQUEST_RESULT_ALREADY_LOCKED;
 			}
 			
 			item->GetLock().Clear();
@@ -269,10 +269,10 @@ namespace jelly
 	
 			aRequest->WriteToWAL(this, item);
 
-			return RESULT_OK;
+			return REQUEST_RESULT_OK;
 		}
 
-		Result
+		RequestResult
 		_Delete(
 			Request*											aRequest)
 		{
@@ -281,12 +281,12 @@ namespace jelly
 			if (item == NULL)
 			{
 				// Doesn't exist
-				return RESULT_DOES_NOT_EXIST;
+				return REQUEST_RESULT_DOES_NOT_EXIST;
 			}
 			else if (item->GetLock().IsSet() && !aRequest->IsForced())
 			{
 				// It is locked, fail
-				return RESULT_ALREADY_LOCKED;
+				return REQUEST_RESULT_ALREADY_LOCKED;
 			}
 
 			item->SetMeta(_LockMetaType());
@@ -297,7 +297,7 @@ namespace jelly
 
 			aRequest->WriteToWAL(this, item);
 
-			return RESULT_OK;
+			return REQUEST_RESULT_OK;
 		}
 
 		void

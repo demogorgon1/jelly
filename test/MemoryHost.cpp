@@ -121,7 +121,7 @@ namespace jelly
 			}
 
 			// IWriter implementation
-			size_t	
+			void	
 			Write(
 				const void* aBuffer,
 				size_t		aBufferSize) override
@@ -146,8 +146,6 @@ namespace jelly
 				}
 
 				m_bufferList->m_totalBytes += aBufferSize;
-
-				return aBufferSize;
 			}
 
 			size_t
@@ -469,7 +467,7 @@ namespace jelly
 				WriteItem(
 					const ItemBase*		aItem,
 					CompletionEvent*	aCompletionEvent,
-					Result*				aResult) override
+					RequestResult*		aResult) override
 				{
 					BufferListWriter writer(m_bufferList);
 					aItem->Write(&writer);
@@ -494,7 +492,7 @@ namespace jelly
 				{
 					for (size_t i = 0; i < m_pending.size(); i++)
 					{
-						*(m_pending[i].second) = RESULT_CANCELED;
+						*(m_pending[i].second) = REQUEST_RESULT_CANCELED;
 						m_pending[i].first->Signal();
 					}
 
@@ -508,8 +506,8 @@ namespace jelly
 				}
 
 				// Public data
-				BufferList*											m_bufferList;
-				std::vector<std::pair<CompletionEvent*, Result*>>	m_pending;
+				BufferList*													m_bufferList;
+				std::vector<std::pair<CompletionEvent*, RequestResult*>>	m_pending;
 			};
 		};
 

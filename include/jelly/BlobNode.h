@@ -85,11 +85,11 @@ namespace jelly
  			};
 
 			this->m_replicationCallback = [&](
-				Stream::Reader*									aReader) -> uint32_t
+				Stream::Reader*									aReader) -> size_t
 			{
 				JELLY_ASSERT(this->m_replicationNetwork != NULL);
 
-				uint32_t count = 0;
+				size_t count = 0;
 
 				if(!this->m_replicationNetwork->IsLocalNodeMaster())
 				{
@@ -125,13 +125,13 @@ namespace jelly
 		 * 
 		 * Output | <!-- -->
 		 * -------|-----------------------------------------------------------------------------------
-		 * m_seq  | If RESULT_OUTDATED this returns the sequence number of the currently stored blob.
+		 * m_seq  | If REQUEST_RESULT_OUTDATED this returns the sequence number of the currently stored blob.
 		 */
 		void
 		Set(
 			Request*										aRequest)
 		{
-			JELLY_ASSERT(aRequest->GetResult() == RESULT_NONE);
+			JELLY_ASSERT(aRequest->GetResult() == REQUEST_RESULT_NONE);
 
 			aRequest->SetExecutionCallback([=, this]()
 			{
@@ -149,7 +149,7 @@ namespace jelly
 		 * Input  | <!-- -->
 		 * -------|-----------------------------------------------------------------------------------------------
 		 * m_key  | Request key.
-		 * m_seq  | Minimum sequence number of the blob (RESULT_OUTDATED if sequence number isn't at least this).
+		 * m_seq  | Minimum sequence number of the blob (REQUEST_RESULT_OUTDATED if sequence number isn't at least this).
 		 * m_blob | The blob.
 		 * 
 		 * Output | <!-- -->
@@ -161,7 +161,7 @@ namespace jelly
 		Get(
 			Request*										aRequest)
 		{
-			JELLY_ASSERT(aRequest->GetResult() == RESULT_NONE);
+			JELLY_ASSERT(aRequest->GetResult() == REQUEST_RESULT_NONE);
 
 			aRequest->SetExecutionCallback([=, this]()
 			{
@@ -184,13 +184,13 @@ namespace jelly
 		* Output | <!-- -->
 		* -------|-----------------------------------------------------------------------------------------------
 		* m_blob | The blob.
-		* m_seq  | If RESULT_OUTDATED this returns the sequence number of the currently stored blob.
+		* m_seq  | If REQUEST_RESULT_OUTDATED this returns the sequence number of the currently stored blob.
 		*/
 		void
 		Delete(
 			Request*										aRequest)
 		{
-			JELLY_ASSERT(aRequest->GetResult() == RESULT_NONE);
+			JELLY_ASSERT(aRequest->GetResult() == REQUEST_RESULT_NONE);
 
 			aRequest->SetExecutionCallback([=, this]()
 			{
@@ -224,7 +224,7 @@ namespace jelly
 
 		List<Item>								m_residentItems;
 
-		Result
+		RequestResult
 		_Update(
 			Request*									aRequest,
 			bool										aDelete)
@@ -260,7 +260,7 @@ namespace jelly
 			{
 				if(aDelete)
 				{
-					return RESULT_DOES_NOT_EXIST;
+					return REQUEST_RESULT_DOES_NOT_EXIST;
 				}
 				else
 				{
@@ -278,7 +278,7 @@ namespace jelly
 				{
 					// Trying to set an old version - return latest sequence number to requester
 					aRequest->SetSeq(item->GetSeq());
-					return RESULT_OUTDATED;
+					return REQUEST_RESULT_OUTDATED;
 				}
 
 				if(item->HasBlob())
@@ -337,25 +337,25 @@ namespace jelly
 			if(obeyResidentBlobSizeLimit)
 				_ObeyResidentBlobLimits();
 
-			return RESULT_OK;
+			return REQUEST_RESULT_OK;
 		}
 
-		Result
+		RequestResult
 		_Get(
 			Request*										aRequest)
 		{
 			Item* item = this->m_table.Get(aRequest->GetKey());
 			if(item == NULL)
-				return RESULT_DOES_NOT_EXIST;
+				return REQUEST_RESULT_DOES_NOT_EXIST;
 
 			if(item->HasTombstone())
-				return RESULT_DOES_NOT_EXIST;
+				return REQUEST_RESULT_DOES_NOT_EXIST;
 
 			if(item->GetSeq() < aRequest->GetSeq())
 			{
 				// Return stored sequence number
 				aRequest->SetSeq(item->GetSeq());
-				return RESULT_OUTDATED;
+				return REQUEST_RESULT_OUTDATED;
 			}
 
 			if(!item->HasBlob())
@@ -367,8 +367,7 @@ namespace jelly
 				uint32_t storeId = runtimeState.m_storeId;
 				size_t storeOffset = runtimeState.m_storeOffset;
 				IStoreBlobReader* storeBlobReader = this->m_host->GetStoreBlobReader(this->m_nodeId, storeId, &this->m_statsContext.m_fileStore);
-				if(storeBlobReader == NULL)
-					return RESULT_FAILED_TO_READ;
+				JELLY_CHECK(storeBlobReader != NULL, Result::ERROR_FAILED_TO_GET_BLOB_READER, "NodeId=%u;StoreId=%u", this->m_nodeId, storeId);
 
 				storeBlobReader->ReadItemBlob(storeOffset, item);
 
@@ -399,7 +398,7 @@ namespace jelly
 			aRequest->SetTimeStamp(item->GetTimeStamp());
 			aRequest->SetMeta(item->GetMeta());
 
-			return RESULT_OK;
+			return REQUEST_RESULT_OK;
 		}
 
 		void

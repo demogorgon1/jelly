@@ -26,7 +26,7 @@ namespace jelly
 							~CompactionAdvisor();
 
 		void				Update();
-		CompactionJob		GetNextSuggestion();
+		CompactionJob		GetNextSuggestion() noexcept;
 
 	private:
 

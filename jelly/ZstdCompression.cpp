@@ -49,7 +49,7 @@ namespace jelly
 	ZstdCompression::CompressBuffer(
 		const IBuffer*				aBuffer) const 
 	{
-		JELLY_CHECK(aBuffer->GetSize() <= MAX_UNCOMPRESSED_BUFFER_SIZE, "Buffer exceeds maximum uncompressed buffer size.");
+		JELLY_CHECK(aBuffer->GetSize() <= MAX_UNCOMPRESSED_BUFFER_SIZE, Result::ERROR_ZSTD_BUFFER_TOO_LARGE_TO_COMPRESS, "Size=%zu;Max=%zu", aBuffer->GetSize(), MAX_UNCOMPRESSED_BUFFER_SIZE);
 
 		size_t compressBound = ZSTD_compressBound(aBuffer->GetSize()) + sizeof(uint32_t);
 
@@ -61,7 +61,7 @@ namespace jelly
 		size_t compressOutputSize = compressBound - sizeof(uint32_t);
 
 		size_t result = ZSTD_compress(compressOutputPtr, compressOutputSize, aBuffer->GetPointer(), aBuffer->GetSize(), (int)m_bufferCompressionLevel);
-		JELLY_CHECK(!ZSTD_isError(result), "ZSTD_compress() failed.");
+		JELLY_CHECK(ZSTD_isError(result) == 0, Result::ERROR_ZSTD_BUFFER_COMPRESSION_FAILED, "Size=%zu;Msg=%s", aBuffer->GetSize(), ZSTD_getErrorName(result));
 
 		*((uint32_t*)outputBuffer) = (uint32_t)aBuffer->GetSize(); // Store uncompressed size
 
@@ -74,112 +74,24 @@ namespace jelly
 	ZstdCompression::DecompressBuffer(
 		const IBuffer*				aBuffer) const 
 	{
-		JELLY_CHECK(aBuffer->GetSize() >= sizeof(uint32_t), "Invalid compressed buffer.");
+		JELLY_CHECK(aBuffer->GetSize() >= sizeof(uint32_t), Result::ERROR_ZSTD_BUFFER_INVALID);
 
 		std::unique_ptr<Buffer<1>> uncompressed = std::make_unique<Buffer<1>>();
 		size_t uncompressedSize = (size_t)*((uint32_t*)aBuffer->GetPointer());
 		if (uncompressedSize == 0)
 			return uncompressed.release();
 
-		JELLY_CHECK(uncompressedSize <= MAX_UNCOMPRESSED_BUFFER_SIZE, "Unable to decompress buffer as uncompressed size is too large.");
+		JELLY_CHECK(uncompressedSize <= MAX_UNCOMPRESSED_BUFFER_SIZE, Result::ERROR_ZSTD_BUFFER_TOO_LARGE_TO_UNCOMPRESS, "Size=%zu;Max=%zu", aBuffer->GetSize(), MAX_UNCOMPRESSED_BUFFER_SIZE);
 		uncompressed->SetSize(uncompressedSize);
 
 		const uint8_t* decompressInputPtr = (const uint8_t*)aBuffer->GetPointer() + sizeof(uint32_t);
 		size_t decompressInputSize = aBuffer->GetSize() - sizeof(uint32_t);
 
 		size_t result = ZSTD_decompress(uncompressed->GetPointer(), uncompressedSize, decompressInputPtr, decompressInputSize);
-		JELLY_CHECK(!ZSTD_isError(result), "ZSTD_decompress() failed.");
+		JELLY_CHECK(ZSTD_isError(result) == 0, Result::ERROR_ZSTD_BUFFER_DECOMPRESSION_FAILED, "Compressed=%zu;Uncompressed=%zu;Msg=%s", aBuffer->GetSize(), uncompressedSize, ZSTD_getErrorName(result));
 
 		return uncompressed.release();
 	}
-
-	/*void					
-	ZstdCompression::CompressBuffer(
-		const void*					aBuffer,
-		size_t						aBufferSize,
-		Compression::OutputCallback	aOutputCallback) const
-	{
-		JELLY_CHECK(aBufferSize <= MAX_UNCOMPRESSED_BUFFER_SIZE, "Buffer exceeds maximum uncompressed buffer size.");
-
-		uint8_t staticBuffer[32768];
-		uint8_t* outputBuffer = staticBuffer;
-		size_t outputBufferSize = sizeof(staticBuffer);
-
-		size_t compressBound = ZSTD_compressBound(aBufferSize) + sizeof(uint32_t);
-
-		if(compressBound > outputBufferSize)
-		{
-			outputBuffer = new uint8_t[compressBound];
-			outputBufferSize = compressBound;
-		}
-
-		try
-		{
-			uint8_t* compressOutputPtr = outputBuffer + sizeof(uint32_t);
-			size_t compressOutputSize = outputBufferSize - sizeof(uint32_t);
-
-			size_t result = ZSTD_compress(compressOutputPtr, compressOutputSize, aBuffer, aBufferSize, (int)m_bufferCompressionLevel);
-			JELLY_CHECK(!ZSTD_isError(result), "ZSTD_compress() failed.");
-
-			*((uint32_t*)outputBuffer) = (uint32_t)aBufferSize; // Store uncompressed size
-
-			aOutputCallback(outputBuffer, result + sizeof(uint32_t));
-		}
-		catch(...)
-		{
-			JELLY_FATAL_ERROR("Unhandled exception when compressing buffer.");
-		}
-
-		if(outputBuffer != staticBuffer)
-			delete [] outputBuffer;
-	}
-		
-	void					
-	ZstdCompression::DecompressBuffer(
-		const void*					aBuffer,
-		size_t						aBufferSize,
-		Compression::OutputCallback	aOutputCallback) const
-	{
-		JELLY_CHECK(aBufferSize >= sizeof(uint32_t), "Invalid compressed buffer.");
-
-		uint8_t staticBuffer[32768];
-		uint8_t* outputBuffer = staticBuffer;
-		size_t outputBufferSize = sizeof(staticBuffer);
-
-		size_t uncompressedSize = (size_t)*((uint32_t*)aBuffer);
-
-		if(uncompressedSize == 0)
-		{
-			aOutputCallback(NULL, 0);
-			return;
-		}
-
-		JELLY_CHECK(uncompressedSize <= MAX_UNCOMPRESSED_BUFFER_SIZE, "Unable to decompress buffer as uncompressed size is too large.");
-
-		if (uncompressedSize > outputBufferSize)
-		{
-			outputBuffer = new uint8_t[uncompressedSize];
-			outputBufferSize = uncompressedSize;
-		}
-
-		try
-		{
-			const uint8_t* decompressInputPtr = (const uint8_t*)aBuffer + sizeof(uint32_t);
-			size_t decompressInputSize = aBufferSize - sizeof(uint32_t);
-
-			size_t result = ZSTD_decompress(outputBuffer, outputBufferSize, decompressInputPtr, decompressInputSize);
-			JELLY_CHECK(!ZSTD_isError(result), "ZSTD_decompress() failed.");
-
-			aOutputCallback(outputBuffer, result);
-		}
-		catch(...)
-		{
-			JELLY_FATAL_ERROR("Unhandled exception when decompressing buffer.");
-		}
-
-		if(outputBuffer != staticBuffer)
-			delete [] outputBuffer;
-	}*/
 
 }
 

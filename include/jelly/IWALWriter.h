@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Result.h"
+#include "RequestResult.h"
 
 namespace jelly
 {
@@ -20,7 +20,7 @@ namespace jelly
 		virtual void	WriteItem(
 							const ItemBase*		aItem,
 							CompletionEvent*	aCompletionEvent,
-							Result*				aResult) = 0;
+							RequestResult*		aResult) = 0;
 		virtual size_t	Flush(
 							ReplicationNetwork*	aReplicationNetwork) = 0;
 		virtual void	Cancel() = 0;

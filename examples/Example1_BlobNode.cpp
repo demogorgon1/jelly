@@ -83,8 +83,8 @@ main(
 		// Now the request will be completed.
 		JELLY_ASSERT(req.IsCompleted());
 
-		// RESULT_OK means everything went as expected.
-		JELLY_ASSERT(req.GetResult() == jelly::RESULT_OK);
+		// REQUEST_RESULT_OK means everything went as expected.
+		JELLY_ASSERT(req.GetResult() == jelly::REQUEST_RESULT_OK);
 	}
 
 	// Now try to load it back
@@ -111,8 +111,8 @@ main(
 		// they'll be flagged as completed immediately after being processed.
 		JELLY_ASSERT(req.IsCompleted());
 
-		// Again RESULT_OK means everything is great.
-		JELLY_ASSERT(req.GetResult() == jelly::RESULT_OK);
+		// Again REQUEST_RESULT_OK means everything is great.
+		JELLY_ASSERT(req.GetResult() == jelly::REQUEST_RESULT_OK);
 
 		// Read the blob and make sure we got the right data back.
 		const jelly::IBuffer* blob = req.GetBlob();

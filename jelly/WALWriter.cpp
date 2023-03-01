@@ -29,8 +29,7 @@ namespace jelly
 				const void* aBuffer,
 				size_t		aBufferSize)
 			{				
-				if(m_file.Write(aBuffer, aBufferSize) != aBufferSize)
-					JELLY_FATAL_ERROR("Failed to write compressed data to file: %s", m_file.GetPath());
+				m_file.Write(aBuffer, aBufferSize);
 			});
 		}
 	}
@@ -57,7 +56,7 @@ namespace jelly
 	WALWriter::WriteItem(
 		const ItemBase*					aItem,
 		CompletionEvent*				aCompletionEvent,
-		Result*							aResult) 
+		RequestResult*					aResult) 
 	{
 		m_pendingItemWrites.push_back({aItem, aCompletionEvent, aResult});
 	}
@@ -108,7 +107,7 @@ namespace jelly
 		for (PendingItemWrite& t : m_pendingItemWrites)
 		{
 			if(t.m_result != NULL)
-				*t.m_result = RESULT_CANCELED;
+				*t.m_result = REQUEST_RESULT_CANCELED;
 
 			if(t.m_completionEvent != NULL)
 				t.m_completionEvent->Signal();

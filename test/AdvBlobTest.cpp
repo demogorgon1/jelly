@@ -55,7 +55,7 @@ namespace jelly::Test::AdvBlobTest
 				JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
 				JELLY_ALWAYS_ASSERT(blobNode.FlushPendingWAL() == 1);
 				JELLY_ALWAYS_ASSERT(req.IsCompleted());
-				JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+				JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 			}
 
 			// Read it back
@@ -66,7 +66,7 @@ namespace jelly::Test::AdvBlobTest
 				blobNode.Get(&req);
 				JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
 				JELLY_ALWAYS_ASSERT(req.IsCompleted());
-				JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+				JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 				JELLY_ALWAYS_ASSERT(UInt32Blob::GetValue(req.GetBlob()) == 123);
 				JELLY_ALWAYS_ASSERT(req.GetMeta() == 9001);
 			}

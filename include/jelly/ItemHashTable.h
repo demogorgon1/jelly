@@ -26,7 +26,7 @@ namespace jelly
 		}
 
 		void
-		Grow()
+		Grow() noexcept
 		{
 			size_t newSize = m_size * 2;
 			
@@ -35,7 +35,7 @@ namespace jelly
 		}
 
 		void
-		Clear()
+		Clear() noexcept
 		{
 			if(m_table != NULL)
 			{
@@ -60,7 +60,7 @@ namespace jelly
 		std::pair<_ItemType*, bool>
 		InsertOrUpdate(
 			const _KeyType&				aKey,
-			std::function<_ItemType*()>	aItemCreator)
+			std::function<_ItemType*()>	aItemCreator) noexcept
 		{
 			uint64_t hash = aKey.GetHash();
 
@@ -88,7 +88,7 @@ namespace jelly
 		void
 		Insert(
 			const _KeyType&				aKey,
-			_ItemType*					aItem)
+			_ItemType*					aItem) noexcept
 		{
 			uint64_t hash = aKey.GetHash();			
 			JELLY_ASSERT(_TryGet(hash, aKey) == NULL);
@@ -105,7 +105,7 @@ namespace jelly
 
 		const _ItemType*
 		Get(
-			const _KeyType&				aKey) const
+			const _KeyType&				aKey) const noexcept
 		{
 			uint64_t hash = aKey.GetHash();
 
@@ -113,8 +113,8 @@ namespace jelly
 		}
 
 		_ItemType*
-		Get(
-			const _KeyType&				aKey) 
+		Get( 
+			const _KeyType&				aKey) noexcept
 		{
 			uint64_t hash = aKey.GetHash();
 
@@ -122,7 +122,7 @@ namespace jelly
 		}
 
 		uint32_t
-		GetLoadFactor() const
+		GetLoadFactor() const noexcept
 		{
 			if (m_size == 0)
 				return 0;
@@ -131,7 +131,7 @@ namespace jelly
 		}
 
 		size_t
-		Count() const
+		Count() const noexcept
 		{
 			return m_count;
 		}

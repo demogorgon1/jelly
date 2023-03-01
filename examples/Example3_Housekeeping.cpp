@@ -70,7 +70,7 @@ main(
 	for (uint32_t i = 0; i < NUM_SAVES; i++)
 	{
 		JELLY_ASSERT(reqs[i].IsCompleted());
-		JELLY_ASSERT(reqs[i].GetResult() == jelly::RESULT_OK);
+		JELLY_ASSERT(reqs[i].GetResult() == jelly::REQUEST_RESULT_OK);
 	}
 
 	// If you look at your file system at this point, you'll find that there is 
@@ -157,8 +157,7 @@ main(
 		// this on another worker thread. You can have any number of minor
 		// compactions happening at the same time, as long as the don't touch the 
 		// same stores.
-		std::unique_ptr<BlobNodeType::CompactionResultType> compactionResult(
-			blobNode.PerformCompaction(compactionJob));
+		std::unique_ptr<BlobNodeType::CompactionResultType> compactionResult(blobNode.PerformCompaction(compactionJob));
 
 		// The compaction is completed, but it hasn't to be applied yet. The main
 		// implication of this is that store id 0 and 1 still exists on disk.

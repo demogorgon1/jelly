@@ -33,6 +33,7 @@ namespace jelly
 		std::string m_targetPath;
 
 		File		m_file;
+		bool		m_isFlushed;
 	};
 
 }

@@ -20,7 +20,7 @@ namespace jelly
 
 		void
 		Add(
-			_Type*	aItem)
+			_Type*	aItem) noexcept
 		{
 			#if defined(JELLY_EXTRA_CONSISTENCY_CHECKS)
 				JELLY_ASSERT(!Has(aItem));
@@ -43,7 +43,7 @@ namespace jelly
 
 		void
 		Remove(
-			_Type*	aItem)
+			_Type*	aItem) noexcept
 		{
 			#if defined(JELLY_EXTRA_CONSISTENCY_CHECKS)
 				JELLY_ASSERT(Has(aItem));
@@ -68,21 +68,21 @@ namespace jelly
 
 		void
 		MoveToTail(
-			_Type*	aItem)
+			_Type*	aItem) noexcept
 		{
 			Remove(aItem);
 			Add(aItem);
 		}
 
 		bool
-		IsEmpty() const
+		IsEmpty() const noexcept
 		{
 			return m_count == 0;
 		}
 
 		bool
 		Has(
-			const _Type*	aItem) const
+			const _Type*	aItem) const noexcept
 		{
 			for(_Type* i = m_head; i != NULL; i = i->GetNext())
 			{

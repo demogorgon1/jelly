@@ -77,7 +77,7 @@ namespace jelly
 	ItemBase::WriteBase(
 		IWriter*						aWriter) const
 	{
-		JELLY_CHECK(aWriter->WritePOD(m_data), "Failed to write item base data.");
+		aWriter->WritePOD(m_data);
 	}
 	
 	bool			

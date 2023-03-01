@@ -37,10 +37,11 @@ namespace jelly
 			Write(
 				IWriter*						aWriter) const
 			{
-				JELLY_CHECK(aWriter->WriteUInt(m_blobSeq), "Failed to write lock blob sequence number.");
-				JELLY_CHECK(aWriter->WriteUInt(m_blobNodeIdCount), "Failed to write lock blob node id count.");
+				aWriter->WriteUInt(m_blobSeq); 
+				aWriter->WriteUInt(m_blobNodeIdCount);
+				
 				for(uint32_t i = 0; i < m_blobNodeIdCount; i++)
-					JELLY_CHECK(aWriter->WriteUInt(m_blobNodeIds[i]), "Failed to write lock blob node id.");
+					aWriter->WriteUInt(m_blobNodeIds[i]);
 			}
 
 			bool

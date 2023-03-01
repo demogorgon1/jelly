@@ -23,7 +23,7 @@ namespace jelly::Test::Sim
 		}
 
 		m_f = fopen(aPath, "wb");
-		JELLY_CHECK(m_f != NULL, "fopen() failed: %s", aPath);
+		JELLY_ALWAYS_ASSERT(m_f != NULL, "fopen() failed: %s", aPath);
 	}
 
 	CSVOutput::~CSVOutput()
@@ -43,11 +43,11 @@ namespace jelly::Test::Sim
 
 		ColumnType columnType = COLUMN_TYPE_UNDEFINED;
 
-		JELLY_CHECK(tokens.size() > 0, "CSV column syntax error: %s", aColumn);
+		JELLY_ALWAYS_ASSERT(tokens.size() > 0, "CSV column syntax error: %s", aColumn);
 		
 		if(tokens[0] == "s")
 		{
-			JELLY_CHECK(tokens.size() == 3, "CSV column syntax error: %s", aColumn);
+			JELLY_ALWAYS_ASSERT(tokens.size() == 3, "CSV column syntax error: %s", aColumn);
 
 			if(tokens[1] == "avg")
 				columnType = COLUMN_TYPE_SAMPLE_AVG;
@@ -68,9 +68,9 @@ namespace jelly::Test::Sim
 			else
 			{
 				uint32_t id = m_stats->GetIdByString(tokens[2].c_str());
-				JELLY_CHECK(id != UINT32_MAX, "Invalid sampler: %s", aColumn);
+				JELLY_ALWAYS_ASSERT(id != UINT32_MAX, "Invalid sampler: %s", aColumn);
 				IStats::SamplerHistogramView histogram = m_stats->GetSamplerHistogramView(id);
-				JELLY_CHECK(histogram.m_buckets != NULL, "No histogram associated with sampler: %s", aColumn);
+				JELLY_ALWAYS_ASSERT(histogram.m_buckets != NULL, "No histogram associated with sampler: %s", aColumn);
 				
 				for(size_t i = 0; i < histogram.m_buckets->size(); i++)
 				{
@@ -83,7 +83,7 @@ namespace jelly::Test::Sim
 		}
 		else if(tokens[0] == "g")
 		{
-			JELLY_CHECK(tokens.size() == 2, "CSV column syntax error: %s", aColumn);
+			JELLY_ALWAYS_ASSERT(tokens.size() == 2, "CSV column syntax error: %s", aColumn);
 			
 			columnType = COLUMN_TYPE_GAUGE;
 
@@ -91,7 +91,7 @@ namespace jelly::Test::Sim
 		}
 		else if (tokens[0] == "c")
 		{
-			JELLY_CHECK(tokens.size() == 3, "CSV column syntax error: %s", aColumn);
+			JELLY_ALWAYS_ASSERT(tokens.size() == 3, "CSV column syntax error: %s", aColumn);
 
 			if (tokens[1] == "total")
 				columnType = COLUMN_TYPE_COUNTER;
@@ -107,7 +107,7 @@ namespace jelly::Test::Sim
 		}
 		else
 		{
-			JELLY_FATAL_ERROR("CSV column syntax error: %s", aColumn);
+			JELLY_ALWAYS_ASSERT(false, "CSV column syntax error: %s", aColumn);
 		}
 	}
 
@@ -190,9 +190,9 @@ namespace jelly::Test::Sim
 		const char*			aHeaderSuffix,
 		const uint32_t*		aHistogramBucket)
 	{
-		JELLY_CHECK(aColumnType != COLUMN_TYPE_UNDEFINED, "CSV column syntax error: %s", aColumn);
+		JELLY_ALWAYS_ASSERT(aColumnType != COLUMN_TYPE_UNDEFINED, "CSV column syntax error: %s", aColumn);
 		uint32_t id = m_stats->GetIdByString(aStatsString);
-		JELLY_CHECK(id != UINT32_MAX, "Invalid statistics: %s", aColumn);
+		JELLY_ALWAYS_ASSERT(id != UINT32_MAX, "Invalid statistics: %s", aColumn);
 		m_columns.push_back({ aColumnType, aStatsString, aHeaderSuffix, id, aHistogramBucket });
 	}
 

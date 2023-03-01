@@ -45,7 +45,7 @@ namespace jelly
 		bool		IsEnd() const;
 
 		// IWriter implementation
-		size_t		Write(
+		void		Write(
 						const void*			aBuffer,
 						size_t				aBufferSize) override;
 		size_t		GetTotalBytesWritten() const override;
@@ -57,7 +57,7 @@ namespace jelly
 		size_t		GetTotalBytesRead() const override;
 
 		// Data access
-		const char*	GetPath() const { return m_path.c_str(); }
+		const char*	GetPath() const noexcept { return m_path.c_str(); }
 
 	private:
 

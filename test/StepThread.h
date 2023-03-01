@@ -14,19 +14,19 @@ namespace jelly
 
 		const char*
 		_ResultToString(
-			Result									aResult)
+			RequestResult							aResult)
 		{
 			switch(aResult)
 			{
-			case RESULT_NONE:					return "NONE";
-			case RESULT_OK:						return "OK";
-			case RESULT_CANCELED:				return "CANCELED";
-			case RESULT_ALREADY_LOCKED:			return "ALREADY_LOCKED";
-			case RESULT_NOT_LOCKED:				return "NOT_LOCKED";
-			case RESULT_DOES_NOT_EXIST:			return "DOES_NOT_EXIST";
-			case RESULT_OUTDATED:				return "OUTDATED";
-			case RESULT_NOT_MASTER:				return "NOT_MASTER";
-			case RESULT_FAILED_TO_READ:			return "FAILED_TO_READ";
+			case REQUEST_RESULT_NONE:				return "NONE";
+			case REQUEST_RESULT_OK:					return "OK";
+			case REQUEST_RESULT_CANCELED:			return "CANCELED";
+			case REQUEST_RESULT_ALREADY_LOCKED:		return "ALREADY_LOCKED";
+			case REQUEST_RESULT_NOT_LOCKED:			return "NOT_LOCKED";
+			case REQUEST_RESULT_DOES_NOT_EXIST:		return "DOES_NOT_EXIST";
+			case REQUEST_RESULT_OUTDATED:			return "OUTDATED";
+			case REQUEST_RESULT_NOT_MASTER:			return "NOT_MASTER";
+			case REQUEST_RESULT_ERROR:				return "ERROR";
 			}
 			JELLY_ALWAYS_ASSERT(false);
 			return "";
@@ -415,8 +415,8 @@ namespace jelly
 
 						switch(m_lockRequest->GetResult())
 						{
-						case RESULT_ALREADY_LOCKED:
-						case RESULT_CANCELED:
+						case REQUEST_RESULT_ALREADY_LOCKED:
+						case REQUEST_RESULT_CANCELED:
 							m_lockRequest = std::make_unique<_LockNodeRequestType>();
 							m_lockRequest->SetKey(m_key);
 							m_lockRequest->SetLock(m_lockId);
@@ -424,7 +424,7 @@ namespace jelly
 							break;
 
 						default:
-							JELLY_ALWAYS_ASSERT(m_lockRequest->GetResult() == RESULT_OK);
+							JELLY_ALWAYS_ASSERT(m_lockRequest->GetResult() == REQUEST_RESULT_OK);
 							m_blobSeq = m_lockRequest->GetMeta().m_blobSeq;
 							m_lockRequest.reset();
 							break;
@@ -440,7 +440,7 @@ namespace jelly
 
 						switch(m_unlockRequest->GetResult())
 						{
-						case RESULT_CANCELED:
+						case REQUEST_RESULT_CANCELED:
 							m_unlockRequest = std::make_unique<_LockNodeRequestType>();
 							m_unlockRequest->SetKey(m_key);
 							m_unlockRequest->SetLock(m_lockId);
@@ -449,9 +449,9 @@ namespace jelly
 							break;
 
 						default:
-							JELLY_ALWAYS_ASSERT(m_unlockRequest->GetResult() == RESULT_OK			// Success
-								|| m_unlockRequest->GetResult() == RESULT_NOT_LOCKED		// Was already unlocked
-								|| m_unlockRequest->GetResult() == RESULT_ALREADY_LOCKED);	// Was already unlocked AND locked by someone else
+							JELLY_ALWAYS_ASSERT(m_unlockRequest->GetResult() == REQUEST_RESULT_OK			// Success
+								|| m_unlockRequest->GetResult() == REQUEST_RESULT_NOT_LOCKED		// Was already unlocked
+								|| m_unlockRequest->GetResult() == REQUEST_RESULT_ALREADY_LOCKED);	// Was already unlocked AND locked by someone else
 							m_unlockRequest.reset();
 						}
 					}
@@ -465,12 +465,12 @@ namespace jelly
 
 						switch(m_getRequest->GetResult())
 						{
-						case RESULT_OK:
+						case REQUEST_RESULT_OK:
 							JELLY_ALWAYS_ASSERT(UInt32Blob::GetValue(m_getRequest->GetBlob()) == m_key);
 							m_getRequest.reset();
 							break;
 
-						case RESULT_CANCELED:
+						case REQUEST_RESULT_CANCELED:
 							m_getRequest = std::make_unique<_BlobNodeRequestType>();
 							m_getRequest->SetKey(m_key);
 
@@ -481,7 +481,7 @@ namespace jelly
 							break;
 
 						default:
-							JELLY_ALWAYS_ASSERT(m_getRequest->GetResult() == RESULT_DOES_NOT_EXIST);
+							JELLY_ALWAYS_ASSERT(m_getRequest->GetResult() == REQUEST_RESULT_DOES_NOT_EXIST);
 							m_getRequest.reset();
 							break;
 						}
@@ -496,7 +496,7 @@ namespace jelly
 
 						switch (m_setRequest->GetResult())
 						{
-						case RESULT_CANCELED:
+						case REQUEST_RESULT_CANCELED:
 							m_setRequest = std::make_unique<_BlobNodeRequestType>();
 							m_setRequest->SetKey(m_key);
 							m_setRequest->SetSeq(++m_blobSeq);
@@ -505,7 +505,7 @@ namespace jelly
 							break;
 
 						default:
-							JELLY_ALWAYS_ASSERT(m_setRequest->GetResult() == RESULT_OK);
+							JELLY_ALWAYS_ASSERT(m_setRequest->GetResult() == REQUEST_RESULT_OK);
 							m_setRequest.reset();
 						}
 					}

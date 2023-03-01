@@ -8,7 +8,6 @@ namespace jelly
 	DefaultConfigSource::DefaultConfigSource()
 		: m_version(0)
 	{
-
 		for (uint32_t i = 0; i < (uint32_t)Config::NUM_IDS; i++)
 		{
 			const jelly::Config::Info* info = jelly::Config::GetInfo(i);
@@ -24,22 +23,29 @@ namespace jelly
 
 	}
 
-	void		
+	bool		
 	DefaultConfigSource::SetString(
 		const char*						aString,
-		const char*						aValue)
+		const char*						aValue) noexcept
 	{
 		std::unordered_map<std::string, uint32_t>::const_iterator i = m_stringIdTable.find(aString);
-		JELLY_CHECK(i != m_stringIdTable.end(), "Invalid configuration id: %s", aString);
+		if(i == m_stringIdTable.end())
+		{
+			Log::PrintF(Log::LEVEL_WARNING, "DefaultConfigSource: invalid configuration id: %s (attempted to set it to '%s')", aString, aValue);
+			return false;
+		}
+
 		m_config[i->second] = aValue;
 
 		m_version++;
+
+		return true;
 	}
 
 	void
 	DefaultConfigSource::Set(
 		uint32_t						aConfigId,
-		const char*						aValue)
+		const char*						aValue) noexcept
 	{
 		JELLY_ASSERT(aConfigId < Config::NUM_IDS);
 		m_config[aConfigId] = aValue;
@@ -48,7 +54,7 @@ namespace jelly
 	}
 
 	void
-	DefaultConfigSource::Clear()
+	DefaultConfigSource::Clear() noexcept
 	{
 		for (uint32_t i = 0; i < (uint32_t)Config::NUM_IDS; i++)
 			m_config[i].reset();
@@ -59,17 +65,17 @@ namespace jelly
 	//--------------------------------------------------------------------------
 
 	uint32_t	
-	DefaultConfigSource::GetVersion() const
+	DefaultConfigSource::GetVersion() const noexcept
 	{
 		return m_version;
 	}
 
 	const char* 
 	DefaultConfigSource::Get(
-		const char*						aId) const
+		const char*						aId) const noexcept
 	{
 		std::unordered_map<std::string, uint32_t>::const_iterator i = m_stringIdTable.find(aId);
-		JELLY_CHECK(i != m_stringIdTable.end(), "Invalid configuration id: %s", aId);
+		JELLY_ASSERT(i != m_stringIdTable.end());
 
 		uint32_t configId = i->second;
 		const std::optional<std::string>& config = m_config[configId];

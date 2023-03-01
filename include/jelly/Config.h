@@ -105,9 +105,9 @@ namespace jelly
 			   "HousekeepingAdvisor: Maximum time between WAL cleanups. Usually they'll be triggered after each pending store flush as well. " },
 			/* ID_MIN_COMPACTION_INTERVAL_MS */             { TYPE_INTERVAL, "min_compaction_interval",                "5s",          false,
 			   "HousekeepingAdvisor: Duration between compactions will never be shorter than this." },
-			/* ID_PENDING_STORE_ITEM_LIMIT */               { TYPE_UINT32,   "pending_store_item_limit",               "30000",       false,
+			/* ID_PENDING_STORE_ITEM_LIMIT */               { TYPE_SIZE,     "pending_store_item_limit",               "30000",       false,
 			   "HousekeepingAdvisor: If number of unique pending items exceed this threshold a pending store flush will be triggered." },
-			/* ID_PENDING_STORE_WAL_ITEM_LIMIT */           { TYPE_UINT32,   "pending_store_wal_item_limit",           "300000",      false,
+			/* ID_PENDING_STORE_WAL_ITEM_LIMIT */           { TYPE_SIZE,     "pending_store_wal_item_limit",           "300000",      false,
 			   "HousekeepingAdvisor: If number of items written to pending WALs exceed this a pending store flush will be triggered." },
 			/* ID_PENDING_STORE_WAL_SIZE_LIMIT */           { TYPE_SIZE,     "pending_store_wal_size_limit",           "128MB",       false,
 			   "HousekeepingAdvisor: If total size of all WALs exceed this a pending store flush will be triggered." },
@@ -128,7 +128,7 @@ namespace jelly
 		//! Query information about a configuration value
 		inline const Info*
 		GetInfo(
-			uint32_t		aId)
+			uint32_t		aId) noexcept
 		{
 			JELLY_ASSERT(aId < (uint32_t)NUM_IDS);
 			return &INFO[aId];
@@ -136,7 +136,7 @@ namespace jelly
 
 		//! Returns number of configuration values available
 		inline uint32_t 
-		GetCount() 
+		GetCount() noexcept
 		{
 			return (uint32_t)NUM_IDS;
 		}
@@ -144,7 +144,7 @@ namespace jelly
 		//! Get configuration value id from string
 		inline uint32_t
 		StringToId(
-			const char*		aString)
+			const char*		aString) noexcept
 		{
 			for(uint32_t i = 0; i < (uint32_t)NUM_IDS; i++)
 			{

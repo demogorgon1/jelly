@@ -65,7 +65,7 @@ namespace jelly
 						for(std::unique_ptr<BlobNodeType::Request>& req : requests)
 						{
 							JELLY_ALWAYS_ASSERT(req->IsCompleted());
-							JELLY_ALWAYS_ASSERT(req->GetResult() == RESULT_OK);
+							JELLY_ALWAYS_ASSERT(req->GetResult() == REQUEST_RESULT_OK);
 
 							const uint8_t* p = (const uint8_t*)req->GetBlob()->GetPointer();
 							JELLY_UNUSED(p);

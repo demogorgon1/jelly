@@ -31,7 +31,7 @@ namespace jelly
 
 			void
 			Encode(
-				_T							aValue)
+				_T							aValue) noexcept
 			{
 				uint8_t* p = m_buffer;
 				m_size = 0;
@@ -54,8 +54,8 @@ namespace jelly
 			}
 
 			// Data access
-			const void*		GetBuffer() const { return m_buffer; }
-			size_t			GetBufferSize() const { return m_size; }			
+			const void*		GetBuffer() const noexcept { return m_buffer; }
+			size_t			GetBufferSize() const noexcept { return m_size; }
 
 		private:
 

@@ -124,7 +124,7 @@ namespace jelly
 		}
 
 		//! Updates the housekeeping advisor, invoking the event handler if it wants the application to do something
-		void	
+		void
 		Update(
 			EventHandler		aEventHandler)
 		{
@@ -179,11 +179,11 @@ namespace jelly
 			EventHandler		aEventHandler)
 		{
 			size_t pendingStoreItemCount = m_node->GetPendingStoreItemCount();	
-			uint32_t pendingStoreWALItemCount = m_node->GetPendingStoreWALItemCount();
+			size_t pendingStoreWALItemCount = m_node->GetPendingStoreWALItemCount();
 			size_t totalWALSize = m_node->GetTotalWALSize();
 
-			if(pendingStoreWALItemCount > m_config.GetUInt32(Config::ID_PENDING_STORE_WAL_ITEM_LIMIT) 
-				|| pendingStoreItemCount > m_config.GetUInt32(Config::ID_PENDING_STORE_ITEM_LIMIT)
+			if(pendingStoreWALItemCount > m_config.GetSize(Config::ID_PENDING_STORE_WAL_ITEM_LIMIT) 
+				|| pendingStoreItemCount > m_config.GetSize(Config::ID_PENDING_STORE_ITEM_LIMIT)
 				|| totalWALSize > m_config.GetSize(Config::ID_PENDING_STORE_WAL_SIZE_LIMIT))
 			{
 				aEventHandler(EventFlushPendingStore());

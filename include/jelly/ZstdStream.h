@@ -22,7 +22,7 @@ namespace jelly
 			void	SetOutputCallback(
 						Compression::OutputCallback	aOutputCallback) override;
 			void	Flush() override;
-			size_t	Write(
+			void	Write(
 						const void*					aBuffer,
 						size_t						aBufferSize) override;
 			size_t	GetTotalBytesWritten() const override;
@@ -30,7 +30,6 @@ namespace jelly
 		private:
 
 			Compression::OutputCallback	m_outputCallback;
-			bool						m_error;
 			size_t						m_totalBytesWritten;
 				
 			struct Internal;
@@ -54,7 +53,6 @@ namespace jelly
 		private:
 
 			Compression::OutputCallback	m_outputCallback;
-			bool						m_error;
 				
 			struct Internal;
 			Internal*					m_internal;

@@ -1,10 +1,14 @@
 #pragma once
 
-#define JELLY_CHECK(_Condition, ...)										\
+#include "Result.h"
+#include "Log.h"
+#include "StringUtils.h"
+
+#define JELLY_CHECK(_Condition, _Error, ...)								\
 	do																		\
 	{																		\
 		if(!(_Condition))													\
-			jelly::ErrorUtils::Terminate("" __VA_ARGS__);					\
+			jelly::ErrorUtils::CheckFailed(_Error, "" __VA_ARGS__);			\
 	} while(false)
 
 #define JELLY_ALWAYS_ASSERT(_Condition, ...)								\
@@ -17,9 +21,9 @@
 				#_Condition, 												\
 				"" __VA_ARGS__);											\
 	} while(false)
-	
-#define JELLY_FATAL_ERROR(...)												\
-	jelly::ErrorUtils::Terminate("" __VA_ARGS__)
+
+#define JELLY_FAIL(_Error, ...)												\
+	jelly::ErrorUtils::CheckFailed(_Error, "" __VA_ARGS__)	
 
 #if !defined(NDEBUG)
 	#define JELLY_ASSERT JELLY_ALWAYS_ASSERT
@@ -33,6 +37,22 @@ namespace jelly
 	namespace ErrorUtils
 	{
 
+		struct ProcessFingerprint
+		{
+			ProcessFingerprint();
+
+			uint32_t						m_fingerprint;
+		};
+
+		extern ProcessFingerprint			g_processFingerprint;
+
+		//----------------------------------------------------------------------------------------
+
+		extern JELLY_THREAD_LOCAL(uint32_t)	g_threadCurrentContext;
+		extern JELLY_THREAD_LOCAL(uint32_t)	g_threadCurrentRequestType;
+
+		//----------------------------------------------------------------------------------------
+
 		void			Terminate(
 							const char*			aFormat,
 							...);
@@ -42,7 +62,57 @@ namespace jelly
 							const char*			aAssertString,
 							const char*			aMessageFormat,
 							...);
+		void			CheckFailed(
+							Result::Error		aError,
+							const char*			aMessageFormat,
+							...);
 		void			DebugBreak();
+
+		//----------------------------------------------------------------------------------------
+
+		inline void			
+		EnterContext(
+			uint32_t			aContext) noexcept
+		{
+			JELLY_ASSERT(g_threadCurrentContext == Result::CONTEXT_NONE);
+			g_threadCurrentContext = aContext;
+		}
+		
+		inline uint32_t
+		GetContext() noexcept
+		{
+			return g_threadCurrentContext;
+		}
+
+		inline void
+		LeaveContext(
+			uint32_t			aContext) noexcept
+		{
+			JELLY_ASSERT(g_threadCurrentContext == aContext);
+			g_threadCurrentContext = Result::CONTEXT_NONE;
+		}
+		
+		inline void
+		EnterRequestType(
+			uint32_t			aRequestType) noexcept
+		{
+			JELLY_ASSERT(g_threadCurrentRequestType == Result::REQUEST_TYPE_NONE);
+			g_threadCurrentRequestType = aRequestType;
+		}
+
+		inline uint32_t
+		GetRequestType() noexcept
+		{
+			return g_threadCurrentRequestType;
+		}
+		
+		inline void
+		LeaveRequestType(
+			uint32_t			aRequestType) noexcept
+		{
+			JELLY_ASSERT(g_threadCurrentRequestType == aRequestType);
+			g_threadCurrentRequestType = Result::REQUEST_TYPE_NONE;
+		}
 
 	}
 

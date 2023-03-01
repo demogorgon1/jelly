@@ -34,7 +34,7 @@ namespace jelly
 
 		void
 		SetTimeout(
-			uint32_t		aMilliseconds)
+			uint32_t		aMilliseconds) noexcept
 		{
 			JELLY_ASSERT(m_config == NULL);
 			m_interval = std::chrono::milliseconds(aMilliseconds);
@@ -42,7 +42,7 @@ namespace jelly
 		}
 
 		bool
-		HasExpired()
+		HasExpired() noexcept
 		{
 			std::chrono::time_point<std::chrono::steady_clock> currentTime = std::chrono::steady_clock::now();
 			if(currentTime < m_expiresAt)
@@ -57,7 +57,7 @@ namespace jelly
 		}
 
 		void
-		Reset()
+		Reset() noexcept
 		{
 			if (m_config != NULL)
 				m_interval = std::chrono::milliseconds(m_config->GetInterval((Config::Id)m_configId));

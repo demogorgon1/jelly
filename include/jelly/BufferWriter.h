@@ -44,22 +44,20 @@ namespace jelly
 
 		//------------------------------------------------------------------------------
 		// IWriter implementation
-		size_t	
+		void		
 		Write(
 			const void*		aBuffer,
-			size_t			aBufferSize) override
+			size_t			aBufferSize) noexcept override
 		{
 			size_t writeOffset = m_buffer.GetSize();
 
 			m_buffer.SetSize(writeOffset + aBufferSize);
 
 			memcpy((uint8_t*)m_buffer.GetPointer() + writeOffset, aBuffer, aBufferSize);
-
-			return aBufferSize;
 		}
 
 		size_t
-		GetTotalBytesWritten() const override
+		GetTotalBytesWritten() const noexcept override
 		{
 			return m_buffer.GetSize();
 		}

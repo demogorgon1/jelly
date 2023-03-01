@@ -75,7 +75,7 @@ namespace jelly
 				{
 					File f(&context, "testfile.tmp", File::MODE_WRITE_STREAM, FileHeader());
 					JELLY_ALWAYS_ASSERT(f.IsValid());
-					JELLY_ALWAYS_ASSERT(f.Write(TEST_DATA, testDataSize) == testDataSize);
+					f.Write(TEST_DATA, testDataSize);
 					JELLY_ALWAYS_ASSERT(f.GetSize() == testDataSize + sizeof(FileHeader));
 					JELLY_ALWAYS_ASSERT(f.Flush() == testDataSize + sizeof(FileHeader));
 					JELLY_ALWAYS_ASSERT(fileStats.m_counters[FileStats::ID_READ] == 0);

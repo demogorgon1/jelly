@@ -41,7 +41,7 @@ namespace jelly
 			IWriter*					aWriter) const 
 		{ 
 			for(size_t i = 0; i < _Size; i++)
-				JELLY_CHECK(aWriter->WriteUInt(m_values[i]), "Failed to write uint vector key."); 
+				aWriter->WriteUInt(m_values[i]); 
 		}
 		
 		bool		

@@ -17,36 +17,33 @@ namespace jelly
 
 		//! Writes a variably sized unsigned integer.
 		template <typename _T>
-		bool
+		void
 		WriteUInt(
 			_T							aValue)
 		{
 			VarSizeUInt::Encoder<_T> t;
 			t.Encode(aValue);
-			if(Write(t.GetBuffer(), t.GetBufferSize()) != t.GetBufferSize())
-				return false;
-			
-			return true;
+			Write(t.GetBuffer(), t.GetBufferSize());
 		}
 
 		//! Writes a POD type.
 		template <typename _T>
-		bool
+		void
 		WritePOD(
 			const _T&					aValue)
 		{
-			return Write(&aValue, sizeof(_T)) == sizeof(_T);
+			Write(&aValue, sizeof(_T));
 		}
 
 		//------------------------------------------------------------------------------------
 		// Virtual interface
 
-		//! Writes a buffer. Returns number of bytes written.
-		virtual size_t	Write(
+		//! Writes a buffer.
+		virtual void	Write(
 							const void*	aBuffer,
 							size_t		aBufferSize) = 0;
 
-		//! Returns number of bytes written in total
+		//! Returns number of bytes written in total.
 		virtual size_t	GetTotalBytesWritten() const = 0;
 	};
 

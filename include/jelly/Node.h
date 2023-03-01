@@ -11,7 +11,7 @@
 #include "PerfTimer.h"
 #include "Queue.h"
 #include "ReplicationNetwork.h"
-#include "Result.h"
+#include "RequestResult.h"
 #include "ScopedTimeSampler.h"
 #include "Stat.h"
 #include "WAL.h"
@@ -77,7 +77,7 @@ namespace jelly
 		 */
 		BackupType*
 		StartBackup(
-			const char*			aName)
+			const char*						aName)
 		{
 			std::string prevName;
 			std::string backupPath = m_config.GetString(Config::ID_BACKUP_PATH);
@@ -106,8 +106,7 @@ namespace jelly
 				}				
 			}
 
-			if(includeStoreIds.size() == 0)
-				return NULL;
+			JELLY_CHECK(includeStoreIds.size() == 0, Result::ERROR_NOTHING_TO_BACKUP, "Incremental=%u", incremental);
 
 			std::unique_ptr<BackupType> backup = std::make_unique<BackupType>(
 				m_host,
@@ -119,12 +118,11 @@ namespace jelly
 
 			if(m_config.GetBool(Config::ID_BACKUP_COMPACTION))
 			{
-				if(m_host->GetAvailableDiskSpace() < totalIncludedStoreSize)
-				{
-					// Compaction will require too much disk space temporarily
-					Log::PrintF(Log::LEVEL_WARNING, "Backup: Not enough disk space available for compaction.");
-					return NULL;
-				}
+				size_t availableDiskSpace = m_host->GetAvailableDiskSpace();
+
+				JELLY_CHECK(availableDiskSpace >= totalIncludedStoreSize, Result::ERROR_NOT_ENOUGH_AVAILABLE_SPACE_FOR_BACKUP, "Available=%s;MoreRequired=%s", 
+					StringUtils::MakeSizeString(availableDiskSpace).c_str(), 
+					StringUtils::MakeSizeString(totalIncludedStoreSize - availableDiskSpace).c_str());
 
 				uint32_t compactionStoreId = CreateStoreId();
 
@@ -148,8 +146,8 @@ namespace jelly
 			BackupType*			aBackup)
 		{
 			JELLY_ASSERT(aBackup != NULL);
-			
-			if(aBackup->HasCompletedOk())
+		
+			if (aBackup->HasCompletedOk())
 			{
 				CompactionResultType* compactionResult = aBackup->GetCompactionResult();
 				if (compactionResult != NULL)
@@ -171,17 +169,17 @@ namespace jelly
 		 * Should be called when replication data is received. Returns number of items updated. This must be called 
 		 * on the main thread.
 		 */
-		uint32_t
+		size_t
 		ProcessReplication(
 			uint32_t				aSourceNodeId,
 			const Stream::Buffer*	aHead)
 		{
 			JELLY_ASSERT(m_replicationNetwork != NULL);
 			
-			if(!m_replicationNetwork->IsLocalNodeMaster() && m_replicationNetwork->GetMasterNodeId() == aSourceNodeId)
+			if (!m_replicationNetwork->IsLocalNodeMaster() && m_replicationNetwork->GetMasterNodeId() == aSourceNodeId)
 			{
 				Stream::Reader reader(_CompressWAL ? m_host->GetCompressionProvider() : NULL, aHead);
-				
+
 				return m_replicationCallback(&reader);
 			}
 
@@ -192,7 +190,7 @@ namespace jelly
 		 * Stop accepting new requests and cancel all pending requests, including the ones currently waiting for a WAL.
 		 */
 		void
-		Stop()
+		Stop() noexcept
 		{
 			std::vector<_RequestType*> pendingRequests;
 
@@ -217,7 +215,7 @@ namespace jelly
 			// Cancel all pending requests
 			for(_RequestType* request : pendingRequests)
 			{
-				request->SetResult(RESULT_CANCELED);
+				request->SetResult(REQUEST_RESULT_CANCELED);
 				request->SignalCompletion();
 			}
 
@@ -230,7 +228,7 @@ namespace jelly
 		 * Process all pending requests and return the number of requests processed. Must be called on the main thread.
 		 * Returns number of requests processed.
 		 */
-		uint32_t
+		size_t
 		ProcessRequests()
 		{
 			Queue<_RequestType>* queue = NULL;
@@ -247,13 +245,13 @@ namespace jelly
 				m_requestsWriteIndex = (m_requestsWriteIndex + 1) % 2;
 			}
 
-			uint32_t count = queue->m_count;
+			size_t count = queue->m_count;
 
 			queue->SetGuard();
 
-			if (queue->m_first != NULL)					
+			if (queue->m_first != NULL)
 			{
-				if(m_replicationNetwork == NULL || m_replicationNetwork->IsLocalNodeMaster())
+				if (m_replicationNetwork == NULL || m_replicationNetwork->IsLocalNodeMaster())
 				{
 					for (_RequestType* request = queue->m_first; request != NULL; request = request->GetNext())
 						request->Execute();
@@ -261,7 +259,7 @@ namespace jelly
 				else
 				{
 					for (_RequestType* request = queue->m_first; request != NULL; request = request->GetNext())
-						request->SetResult(RESULT_NOT_MASTER);
+						request->SetResult(REQUEST_RESULT_NOT_MASTER);
 				}
 
 				_RequestType* request = queue->m_first;
@@ -296,10 +294,10 @@ namespace jelly
 		{
 			size_t count = 0;
 
-			if(aWALConcurrentIndex == UINT32_MAX)
+			if (aWALConcurrentIndex == UINT32_MAX)
 			{
 				// Flush all pending WALs
-				for(WAL* pendingWAL : m_pendingWALs)
+				for (WAL* pendingWAL : m_pendingWALs)
 				{
 					if (pendingWAL != NULL)
 					{
@@ -332,7 +330,7 @@ namespace jelly
 		 */
 		size_t
 		GetPendingWALRequestCount(
-			uint32_t		aWALConcurrentIndex) const
+			uint32_t		aWALConcurrentIndex) const noexcept
 		{
 			JELLY_ASSERT(aWALConcurrentIndex < m_pendingWALs.size());
 
@@ -350,8 +348,8 @@ namespace jelly
 		 */
 		size_t
 		FlushPendingStore()
-		{			
-			if(m_pendingStore.size() == 0)
+		{		
+			if (m_pendingStore.size() == 0)
 				return 0;
 
 			ScopedTimeSampler timeSampler(m_host->GetStats(), m_statsContext.m_idFlushPendingStoreTime);
@@ -378,7 +376,7 @@ namespace jelly
 		 * WAL. Must be called from the main thread.
 		 */
 		size_t
-		GetPendingStoreItemCount() const
+		GetPendingStoreItemCount() const noexcept
 		{
 			return m_pendingStore.size();
 		}
@@ -388,8 +386,8 @@ namespace jelly
 		 * than GetPendingStoreItemCount() if the same item has been written multiple times between pending store 
 		 * flushes. Must be called from the main thread.
 		 */
-		uint32_t
-		GetPendingStoreWALItemCount() const
+		size_t
+		GetPendingStoreWALItemCount() const noexcept
 		{
 			return m_pendingStoreWALItemCount;
 		}
@@ -398,7 +396,7 @@ namespace jelly
 		 * Return total size of all WALs on disk. Must be called from the main thread.
 		 */
 		size_t
-		GetTotalWALSize() const
+		GetTotalWALSize() const noexcept
 		{
 			size_t totalSize = 0;
 
@@ -414,26 +412,33 @@ namespace jelly
 		size_t
 		CleanupWALs()
 		{
-			ScopedTimeSampler timeSampler(m_host->GetStats(), m_statsContext.m_idCleanupWALsTime);
-
 			size_t deletedWALs = 0;
 
-			for(size_t i = 0; i < m_wals.size(); i++)
+			try
 			{
-				WAL* wal = m_wals[i];
+				ScopedTimeSampler timeSampler(m_host->GetStats(), m_statsContext.m_idCleanupWALsTime);
 
-				if(wal->GetRefCount() == 0 && wal->IsClosed())
+				for (size_t i = 0; i < m_wals.size(); i++)
 				{
-					uint32_t id = wal->GetId();
+					WAL* wal = m_wals[i];
 
-					delete wal;
-					m_wals.erase(m_wals.begin() + i);
-					i--;
+					if (wal->GetRefCount() == 0 && wal->IsClosed())
+					{
+						uint32_t id = wal->GetId();
 
-					m_host->DeleteWAL(m_nodeId, id);
+						delete wal;
+						m_wals.erase(m_wals.begin() + i);
+						i--;
 
-					deletedWALs++;
+						m_host->DeleteWAL(m_nodeId, id);
+
+						deletedWALs++;
+					}
 				}
+			}
+			catch (Result::Code error)
+			{
+				return Result::ErrorToSize(error);
 			}
 
 			return deletedWALs;
@@ -457,16 +462,12 @@ namespace jelly
 			{
 				std::lock_guard lock(m_currentCompactionStoreIdsLock);
 
-				if(m_currentCompactionIsMajor)
-					return result.release();
+				JELLY_CHECK(!m_currentCompactionIsMajor, Result::ERROR_MAJOR_COMPACTION_IN_PROGRESS);
 
-				for(uint32_t storeId : aCompactionJob.m_storeIds)
-				{
-					if (m_currentCompactionStoreIds.find(storeId) != m_currentCompactionStoreIds.end())
-						return result.release();
-				}
+				for (uint32_t storeId : aCompactionJob.m_storeIds)
+					JELLY_CHECK(m_currentCompactionStoreIds.find(storeId) == m_currentCompactionStoreIds.end(), Result::ERROR_COMPACTION_IN_PROGRESS, "StoreId=%u", storeId);
 
-				for (uint32_t storeId : aCompactionJob.m_storeIds)		
+				for (uint32_t storeId : aCompactionJob.m_storeIds)
 					m_currentCompactionStoreIds.insert(storeId);
 			}
 
@@ -475,7 +476,7 @@ namespace jelly
 				m_nodeId,
 				&m_statsContext.m_fileStore,
 				CreateStoreId(),
-				aCompactionJob, 
+				aCompactionJob,
 				result.get());
 
 			return result.release();
@@ -496,8 +497,7 @@ namespace jelly
 			{
 				std::lock_guard lock(m_currentCompactionStoreIdsLock);
 
-				if(m_currentCompactionIsMajor || m_currentCompactionStoreIds.size() > 0)
-					return result.release();
+				JELLY_CHECK(!m_currentCompactionIsMajor && m_currentCompactionStoreIds.size() == 0, Result::ERROR_COMPACTION_IN_PROGRESS);
 
 				m_currentCompactionIsMajor = true;
 			}
@@ -518,7 +518,7 @@ namespace jelly
 		 * When PerformCompaction() or PerformMajorCompaction() has completed (on any thread) this method should be 
 		 * called on the main thread to apply the result of the compaction.
 		 */
-		void
+		size_t
 		ApplyCompactionResult(
 			CompactionResultType*						aCompactionResult)
 		{
@@ -526,12 +526,12 @@ namespace jelly
 
 			size_t updatedItemCount = 0;
 
-			for(const typename CompactionResultType::Item& compactionResultItem : aCompactionResult->GetItems())
+			for (const typename CompactionResultType::Item& compactionResultItem : aCompactionResult->GetItems())
 			{
 				_ItemType* item = m_table.Get(compactionResultItem.m_key);
 				JELLY_ASSERT(item != NULL);
 
-				if(compactionResultItem.m_seq == item->GetSeq())
+				if (compactionResultItem.m_seq == item->GetSeq())
 				{
 					item->CompactionUpdate(compactionResultItem.m_storeId, compactionResultItem.m_storeOffset);
 					updatedItemCount++;
@@ -544,7 +544,7 @@ namespace jelly
 			{
 				std::lock_guard lock(m_currentCompactionStoreIdsLock);
 
-				if(m_currentCompactionIsMajor)
+				if (m_currentCompactionIsMajor)
 				{
 					JELLY_ASSERT(m_currentCompactionStoreIds.size() == 0);
 
@@ -556,13 +556,15 @@ namespace jelly
 						m_currentCompactionStoreIds.erase(deletedStoreId);
 				}
 			}
+
+			return updatedItemCount;
 		}
 
 		/**
 		 * Creates a new always incrementing store id. Can be called from any thread.
 		 */
 		uint32_t
-		CreateStoreId()
+		CreateStoreId() noexcept
 		{
 			uint32_t id = 0;
 
@@ -581,7 +583,7 @@ namespace jelly
 		WriteToWAL(
 			_ItemType*				aItem,
 			CompletionEvent*		aCompletionEvent,
-			Result*					aResult)
+			RequestResult*			aResult)
 		{
 			typename _ItemType::RuntimeState& runtimeState = aItem->GetRuntimeState();
 
@@ -636,17 +638,17 @@ namespace jelly
 		//--------------------------------------------------------------------------------------------
 		// Data access
 
-		uint32_t			GetNodeId() const { return m_nodeId; }											///< Returns node id.
-		bool				IsStopped() const { std::lock_guard lock(m_requestsLock); return m_stopped; }	///< Returns whether node has been requested to stop.
-		size_t				GetPendingWALCount() const { return m_pendingWALs.size(); }						///< Returns number of pending WALs.
-		IHost*				GetHost() { return m_host; }													///< Returns pointer to host object associated with this node.
-		FileStatsContext*	GetStoreFileStatsContext() { return &m_statsContext.m_fileStore; }				///< Returns context for file statistics.
+		uint32_t			GetNodeId() const noexcept { return m_nodeId; }											///< Returns node id.
+		bool				IsStopped() const noexcept { std::lock_guard lock(m_requestsLock); return m_stopped; }	///< Returns whether node has been requested to stop.
+		size_t				GetPendingWALCount() const noexcept { return m_pendingWALs.size(); }					///< Returns number of pending WALs.
+		IHost*				GetHost() noexcept { return m_host; }													///< Returns pointer to host object associated with this node.
+		FileStatsContext*	GetStoreFileStatsContext() noexcept { return &m_statsContext.m_fileStore; }				///< Returns context for file statistics.
 
 	protected:
 
 		typedef std::map<_KeyType, _ItemType*> PendingStoreType;
-		typedef std::function<void(uint32_t, IStoreWriter*, PendingStoreType*)> FlushPendingStoreCallback;
-		typedef std::function<uint32_t(Stream::Reader*)> ReplicationCallback;
+		typedef std::function<void(size_t, IStoreWriter*, PendingStoreType*)> FlushPendingStoreCallback;
+		typedef std::function<size_t(Stream::Reader*)> ReplicationCallback;
 
 		struct StatsContext
 		{
@@ -705,7 +707,7 @@ namespace jelly
 
 			if(canceled)
 			{
-				aRequest->SetResult(RESULT_CANCELED);
+				aRequest->SetResult(REQUEST_RESULT_CANCELED);
 				aRequest->SignalCompletion();
 			}
 		}
@@ -734,7 +736,7 @@ namespace jelly
 		ReplicationCallback											m_replicationCallback;
 		PendingStoreType											m_pendingStore;
 		bool														m_stopped;
-		uint32_t													m_pendingStoreWALItemCount;
+		size_t														m_pendingStoreWALItemCount;
 		StatsContext												m_statsContext;
 		ReplicationNetwork*											m_replicationNetwork;
 

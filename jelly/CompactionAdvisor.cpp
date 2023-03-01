@@ -59,7 +59,7 @@ namespace jelly
 			case STRATEGY_SIZE_TIERED:			m_compactionStrategy = std::make_unique<SizeTieredCompactionStrategy>(aConfig); break;
 			
 			default:				
-				JELLY_FATAL_ERROR("Invalid compaction strategy.");
+				JELLY_ASSERT(false);
 			}
 		}
 
@@ -134,7 +134,7 @@ namespace jelly
 	}
 	
 	CompactionJob
-	CompactionAdvisor::GetNextSuggestion()
+	CompactionAdvisor::GetNextSuggestion() noexcept
 	{
 		if(m_suggestionCount == 0)
 			return CompactionJob();

@@ -30,13 +30,13 @@ namespace jelly
 					}
 					else if (strcmp(arg, "-readtestblobcount") == 0)
 					{
-						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
+						JELLY_ALWAYS_ASSERT(i + 1 < aNumArgs, "Syntax error.");
 						m_readTestBlobCount = (uint32_t)atoi(aArgs[i + 1]);
 						i++;
 					}
 					else if (strcmp(arg, "-readtestblobcountmemorylimit") == 0)
 					{
-						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
+						JELLY_ALWAYS_ASSERT(i + 1 < aNumArgs, "Syntax error.");
 						m_readTestBlobCountMemoryLimit = (uint32_t)atoi(aArgs[i + 1]);
 						i++;
 					}					
@@ -46,25 +46,25 @@ namespace jelly
 					}
 					else if (strcmp(arg, "-writetestblobcount") == 0)
 					{
-						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
+						JELLY_ALWAYS_ASSERT(i + 1 < aNumArgs, "Syntax error.");
 						m_writeTestBlobCount = (uint32_t)atoi(aArgs[i + 1]);
 						i++;
 					}
 					else if (strcmp(arg, "-writetestblobsize") == 0)
 					{
-						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
+						JELLY_ALWAYS_ASSERT(i + 1 < aNumArgs, "Syntax error.");
 						m_writeTestBlobSize = (uint32_t)atoi(aArgs[i + 1]);
 						i++;
 					}
 					else if (strcmp(arg, "-writetestbuffercompressionlevel") == 0)
 					{
-						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
+						JELLY_ALWAYS_ASSERT(i + 1 < aNumArgs, "Syntax error.");
 						m_writeTestBufferCompressionLevel = (uint32_t)atoi(aArgs[i + 1]);
 						i++;
 					}					
 					else if(strcmp(arg, "-steptestseed") == 0)
 					{
-						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
+						JELLY_ALWAYS_ASSERT(i + 1 < aNumArgs, "Syntax error.");
 						m_stepTestSeed = (uint32_t)atoi(aArgs[i + 1]);
 						i++;
 					}
@@ -78,91 +78,91 @@ namespace jelly
 					}
 					else if (strcmp(arg, "-simnumclients") == 0)
 					{
-						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
+						JELLY_ALWAYS_ASSERT(i + 1 < aNumArgs, "Syntax error.");
 						m_simNumClients = (uint32_t)atoi(aArgs[i + 1]);
 						i++;
 					}
 					else if (strcmp(arg, "-simstartclientlimit") == 0)
 					{
-						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
+						JELLY_ALWAYS_ASSERT(i + 1 < aNumArgs, "Syntax error.");
 						m_simStartClientLimit = (uint32_t)atoi(aArgs[i + 1]);
 						i++;
 					}
 					else if (strcmp(arg, "-simclientstartintervalms") == 0)
 					{
-						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
+						JELLY_ALWAYS_ASSERT(i + 1 < aNumArgs, "Syntax error.");
 						m_simClientStartIntervalMS = (uint32_t)atoi(aArgs[i + 1]);
 						i++;
 					}					
 					else if (strcmp(arg, "-simnumgameservers") == 0)
 					{
-						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
+						JELLY_ALWAYS_ASSERT(i + 1 < aNumArgs, "Syntax error.");
 						m_simNumGameServers = (uint32_t)atoi(aArgs[i + 1]);
 						i++;
 					}
 					else if (strcmp(arg, "-simnumlockservers") == 0)
 					{
-						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
+						JELLY_ALWAYS_ASSERT(i + 1 < aNumArgs, "Syntax error.");
 						m_simNumLockServers = (uint32_t)atoi(aArgs[i + 1]);
 						i++;
 					}
 					else if (strcmp(arg, "-simnumblobservers") == 0)
 					{
-						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
+						JELLY_ALWAYS_ASSERT(i + 1 < aNumArgs, "Syntax error.");
 						m_simNumBlobServers = (uint32_t)atoi(aArgs[i + 1]);
 						i++;
 					}
 					else if (strcmp(arg, "-simnumclientthreads") == 0)
 					{
-						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
+						JELLY_ALWAYS_ASSERT(i + 1 < aNumArgs, "Syntax error.");
 						m_simNumClientThreads = (uint32_t)atoi(aArgs[i + 1]);
 						i++;
 					}
 					else if (strcmp(arg, "-simnumgameserverthreads") == 0)
 					{
-						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
+						JELLY_ALWAYS_ASSERT(i + 1 < aNumArgs, "Syntax error.");
 						m_simNumGameServerThreads = (uint32_t)atoi(aArgs[i + 1]);
 						i++;
 					}
 					else if (strcmp(arg, "-simnumlockserverthreads") == 0)
 					{
-						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
+					JELLY_ALWAYS_ASSERT(i + 1 < aNumArgs, "Syntax error.");
 						m_simNumLockServerThreads = (uint32_t)atoi(aArgs[i + 1]);
 						i++;
 					}
 					else if (strcmp(arg, "-simnumblobserverthreads") == 0)
 					{
-						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
+					JELLY_ALWAYS_ASSERT(i + 1 < aNumArgs, "Syntax error.");
 						m_simNumBlobServerThreads = (uint32_t)atoi(aArgs[i + 1]);
 						i++;
 					}
 					else if (strcmp(arg, "-simnumsharedworkerthreads") == 0)
 					{
-						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
+						JELLY_ALWAYS_ASSERT(i + 1 < aNumArgs, "Syntax error.");
 						m_simNumSharedWorkerThreads = (uint32_t)atoi(aArgs[i + 1]);
 						i++;
 					}
 					else if (strcmp(arg, "-simsetintervalms") == 0)
 					{
-						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
+						JELLY_ALWAYS_ASSERT(i + 1 < aNumArgs, "Syntax error.");
 						m_simSetIntervalMS = (uint32_t)atoi(aArgs[i + 1]);
 						i++;
 					}
 					else if (strcmp(arg, "-simbuffercompressionlevel") == 0)
 					{
-						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
+						JELLY_ALWAYS_ASSERT(i + 1 < aNumArgs, "Syntax error.");
 						m_simBufferCompressionLevel = (uint32_t)atoi(aArgs[i + 1]);
 						i++;
 					}
 					else if (strcmp(arg, "-simcsvoutput") == 0)
 					{
-						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
+						JELLY_ALWAYS_ASSERT(i + 1 < aNumArgs, "Syntax error.");
 						m_simCSVOutput = aArgs[i + 1];
 						i++;
 					}
 					else if (strcmp(arg, "-simcsvoutputcolumns") == 0)
 					{
-						JELLY_CHECK(i + 1 < aNumArgs, "Syntax error.");
+						JELLY_ALWAYS_ASSERT(i + 1 < aNumArgs, "Syntax error.");
 						std::stringstream tokenizer(aArgs[i + 1]);
 						std::string token;
 						while (std::getline(tokenizer, token, ','))
@@ -181,7 +181,7 @@ namespace jelly
 							while (std::getline(configTokenizer, configToken, ':'))
 								configTokens.push_back(configToken);
 
-							JELLY_CHECK(configTokens.size() == 2, "Syntax error.");
+							JELLY_ALWAYS_ASSERT(configTokens.size() == 2, "Syntax error.");
 
 							m_simConfigSource.SetString(configTokens[0].c_str(), configTokens[1].c_str());
 						}
@@ -194,7 +194,7 @@ namespace jelly
 					}
 					else
 					{
-						JELLY_FATAL_ERROR("Syntax error.");
+						JELLY_ALWAYS_ASSERT(false, "Syntax error.");
 					}
 				}
 			}

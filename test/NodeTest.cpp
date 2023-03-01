@@ -236,9 +236,9 @@ namespace jelly
 						aLockNode->Lock(&req);
 						while(!req.IsCompleted())
 							std::this_thread::yield();
-						if(req.GetResult() == RESULT_ALREADY_LOCKED)
+						if(req.GetResult() == REQUEST_RESULT_ALREADY_LOCKED)
 							continue;
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 						blobSeq = req.GetMeta().m_blobSeq;
 						if(req.GetMeta().m_blobNodeIdCount > 0)
 						{	
@@ -260,7 +260,7 @@ namespace jelly
 						aBlobNode->Get(&req);
 						while (!req.IsCompleted())
 							std::this_thread::yield();
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 						JELLY_ALWAYS_ASSERT(UInt32Blob::GetValue(req.GetBlob()) == aKey);
 
 						blobSeq = req.GetSeq();
@@ -282,7 +282,7 @@ namespace jelly
 						aBlobNode->Set(&req);
 						while (!req.IsCompleted())
 							std::this_thread::yield();
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 
 						(*aSetCounter)++;
 					}
@@ -296,7 +296,7 @@ namespace jelly
 						aLockNode->Unlock(&req);
 						while (!req.IsCompleted())
 							std::this_thread::yield();
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 					}
 				}
 
@@ -379,9 +379,9 @@ namespace jelly
 						aLockNode->Lock(&req);
 						while(!req.IsCompleted())
 							std::this_thread::yield();
-						if(req.GetResult() == RESULT_ALREADY_LOCKED)
+						if(req.GetResult() == REQUEST_RESULT_ALREADY_LOCKED)
 							continue;
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 						blobSeq = req.GetMeta().m_blobSeq;
 						if(req.GetMeta().m_blobNodeIdCount > 0)
 						{
@@ -403,10 +403,10 @@ namespace jelly
 						while (!req.IsCompleted())
 							std::this_thread::yield();						
 
-						if(req.GetResult() == RESULT_OUTDATED)
+						if(req.GetResult() == REQUEST_RESULT_OUTDATED)
 							blobSeq = req.GetSeq();
 						else
-							JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+							JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 
 						(*aSetCounter)++;
 					}
@@ -420,7 +420,7 @@ namespace jelly
 						aLockNode->Unlock(&req);
 						while (!req.IsCompleted())
 							std::this_thread::yield();
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 
 						aValidKeySet->Add(key);
 					}
@@ -457,7 +457,7 @@ namespace jelly
 						aBlobNode->Get(&req);
 						while (!req.IsCompleted())
 							std::this_thread::yield();
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 						JELLY_ALWAYS_ASSERT(UInt32Blob::GetValue(req.GetBlob()) == key);
 
 						(*aGetCounter)++;
@@ -736,7 +736,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 					}
 
 					// Do another set with lower sequence number, should fail
@@ -749,7 +749,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OUTDATED);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OUTDATED);
 					}
 
 					// Now do a get
@@ -760,7 +760,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 						JELLY_ALWAYS_ASSERT(UInt32Blob::GetValue(req.GetBlob()) == 123);
 						JELLY_ALWAYS_ASSERT(req.GetSeq() == 1);
 					}
@@ -787,7 +787,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OUTDATED);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OUTDATED);
 					}
 
 					// Do a proper set with updated sequence number
@@ -800,7 +800,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 					}
 
 					// Verify with a get
@@ -811,7 +811,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 						JELLY_ALWAYS_ASSERT(UInt32Blob::GetValue(req.GetBlob()) == 789);
 						JELLY_ALWAYS_ASSERT(req.GetSeq() == 2);
 					}
@@ -825,7 +825,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OUTDATED);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OUTDATED);
 					}
 
 					blobNode.FlushPendingStore();
@@ -850,7 +850,7 @@ namespace jelly
 					JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
 					blobNode.FlushPendingWAL(0);
 					JELLY_ALWAYS_ASSERT(req.IsCompleted());
-					JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+					JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 				}
 
 				// Do 2 writes, each with a flush pending store. This will cause us to have 3
@@ -869,7 +869,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 					}
 
 					blobNode.FlushPendingStore();
@@ -903,7 +903,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 						JELLY_ALWAYS_ASSERT(UInt32Blob::GetValue(req.GetBlob()) == 1234);
 						JELLY_ALWAYS_ASSERT(req.GetSeq() == 1);
 					}
@@ -931,7 +931,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 						blobNode.FlushPendingStore();
 					}
 				}
@@ -985,7 +985,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 						JELLY_ALWAYS_ASSERT(req.GetMeta().m_blobSeq == UINT32_MAX);
 						JELLY_ALWAYS_ASSERT(req.GetMeta().m_blobNodeIdCount == 0);
 					}
@@ -1007,7 +1007,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_ALREADY_LOCKED);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_ALREADY_LOCKED);
 					}
 
 					// Apply existing lock again, should work
@@ -1019,7 +1019,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 						JELLY_ALWAYS_ASSERT(req.GetMeta().m_blobSeq == UINT32_MAX);
 						JELLY_ALWAYS_ASSERT(req.GetMeta().m_blobNodeIdCount == 0);
 					}
@@ -1033,7 +1033,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_ALREADY_LOCKED);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_ALREADY_LOCKED);
 					}
 
 					// Unlock key that doesn't exist
@@ -1045,7 +1045,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_DOES_NOT_EXIST);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_DOES_NOT_EXIST);
 					}
 
 					// Unlock correctly
@@ -1058,7 +1058,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 					}
 				}
 
@@ -1079,7 +1079,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 						JELLY_ALWAYS_ASSERT(req.GetMeta().m_blobSeq == 1);
 						JELLY_ALWAYS_ASSERT(req.GetMeta().m_blobNodeIdCount == 3);
 						JELLY_ALWAYS_ASSERT(req.GetMeta().m_blobNodeIds[0] == 1);
@@ -1097,7 +1097,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 						JELLY_ALWAYS_ASSERT(req.GetMeta().m_blobSeq == UINT32_MAX);
 						JELLY_ALWAYS_ASSERT(req.GetMeta().m_blobNodeIdCount == 0);
 					}
@@ -1110,7 +1110,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 						JELLY_ALWAYS_ASSERT(req.GetMeta().m_blobSeq == UINT32_MAX);
 						JELLY_ALWAYS_ASSERT(req.GetMeta().m_blobNodeIdCount == 0);
 					}
@@ -1153,7 +1153,7 @@ namespace jelly
 					JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
 					blobNode.FlushPendingWAL(0);
 					JELLY_ALWAYS_ASSERT(req.IsCompleted());
-					JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+					JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 				}
 
 				// Do another little request, but cancel it (before processing it)
@@ -1167,7 +1167,7 @@ namespace jelly
 					blobNode.Set(&req);
 					blobNode.Stop();
 					JELLY_ALWAYS_ASSERT(req.IsCompleted());
-					JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_CANCELED);
+					JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_CANCELED);
 				}
 
 				// Cancel after processing, but before flushing WAL
@@ -1182,7 +1182,7 @@ namespace jelly
 					JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
 					blobNode.Stop();
 					JELLY_ALWAYS_ASSERT(req.IsCompleted());
-					JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_CANCELED);
+					JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_CANCELED);
 				}
 
 				// Cancel after processing and flushing WAL (request should be completed succesfully)
@@ -1198,7 +1198,7 @@ namespace jelly
 					blobNode.FlushPendingWAL(0);
 					blobNode.Stop();
 					JELLY_ALWAYS_ASSERT(req.IsCompleted());
-					JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+					JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 				}
 
 				// Do request after stopping node, should be canceled immediately
@@ -1213,7 +1213,7 @@ namespace jelly
 					req.SetBlob(new UInt32Blob(101));
 					blobNode.Set(&req);
 					JELLY_ALWAYS_ASSERT(req.IsCompleted());
-					JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_CANCELED);
+					JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_CANCELED);
 				}
 			}
 
@@ -1236,7 +1236,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 					}
 
 					// Try to delete locked key, should fail
@@ -1247,7 +1247,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_ALREADY_LOCKED);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_ALREADY_LOCKED);
 					}
 
 					// Unlock
@@ -1260,7 +1260,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 					}
 
 					// Delete
@@ -1271,7 +1271,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 					}
 				}
 
@@ -1301,7 +1301,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 						lockNode.FlushPendingStore();
 					}
 				}
@@ -1347,7 +1347,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(lockNode.ProcessRequests() == 1);
 						lockNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 						lockNode.FlushPendingStore();
 					}
 
@@ -1388,7 +1388,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 					}
 
 					_VerifyResidentKeys<BlobNodeType>(&blobNode, { 1 });
@@ -1402,7 +1402,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 					}
 
 					_VerifyResidentKeys<BlobNodeType>(&blobNode, { 1 }); // Tombstones are counted as being resident, just 0 size
@@ -1415,7 +1415,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_DOES_NOT_EXIST);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_DOES_NOT_EXIST);
 					}
 
 					// Set again, should override the delete
@@ -1428,7 +1428,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 					}
 
 					_VerifyResidentKeys<BlobNodeType>(&blobNode, { 1 });
@@ -1441,7 +1441,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 						JELLY_ALWAYS_ASSERT(UInt32Blob::GetValue(req.GetBlob()) == 1234);
 					}
 				}
@@ -1471,7 +1471,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 					}
 
 					// Verify all of them are now resident
@@ -1487,7 +1487,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 					}
 
 					_VerifyResidentKeys(&blobNode, { 1, 2, 3, 4, 5, 6 });
@@ -1505,7 +1505,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 					}
 
 					// Now oldest should be expelled down to 5 blobs
@@ -1521,7 +1521,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 					}
 
 					_VerifyResidentKeys(&blobNode, { 4, 5, 6, 7, 3 });
@@ -1534,7 +1534,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 						JELLY_ALWAYS_ASSERT(UInt32Blob::GetValue(req.GetBlob()) == 101);
 						JELLY_ALWAYS_ASSERT(req.GetSeq() == 1);
 					}
@@ -1551,7 +1551,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 					}
 
 					_VerifyResidentKeys(&blobNode, { 6, 7, 3, 1, 2 });
@@ -1576,7 +1576,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 					}
 
 					// All keys should be resident because they're still in the WAL
@@ -1619,7 +1619,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK); 
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK); 
 
 						blobNode.FlushPendingStore();
 					}
@@ -1645,7 +1645,7 @@ namespace jelly
 						blobNode.Get(&req);
 						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 						JELLY_ALWAYS_ASSERT(req.GetSeq() == 2);
 						JELLY_ALWAYS_ASSERT(UInt32Blob::GetValue(req.GetBlob()) == 102);
 					}
@@ -1677,7 +1677,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
 						blobNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 					}
 				}
 
@@ -1696,7 +1696,7 @@ namespace jelly
 						blobNode.Get(&req);
 						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
-						JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 						JELLY_ALWAYS_ASSERT(req.GetSeq() == 5);
 						JELLY_ALWAYS_ASSERT(UInt32Blob::GetValue(req.GetBlob()) == 105);
 					}

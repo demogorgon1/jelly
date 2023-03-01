@@ -57,7 +57,7 @@ namespace jelly
 					node1.Lock(&req);
 					node1.ProcessRequests();
 					JELLY_ALWAYS_ASSERT(req.IsCompleted());
-					JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_NOT_MASTER);
+					JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_NOT_MASTER);
 				}
 
 				// Submit valid lock request to master
@@ -70,7 +70,7 @@ namespace jelly
 					node0.ProcessRequests();
 					node0.FlushPendingWAL();
 					JELLY_ALWAYS_ASSERT(req.IsCompleted());
-					JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+					JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 
 					node0Replication.Update();
 				}
@@ -87,7 +87,7 @@ namespace jelly
 					node0.Unlock(&req);
 					node0.ProcessRequests();
 					JELLY_ALWAYS_ASSERT(req.IsCompleted());
-					JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_NOT_MASTER);
+					JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_NOT_MASTER);
 				}
 
 				// Unlock on previous slave, should have the lock
@@ -100,7 +100,7 @@ namespace jelly
 					node1.ProcessRequests();
 					node1.FlushPendingWAL();
 					JELLY_ALWAYS_ASSERT(req.IsCompleted());
-					JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+					JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 
 					node1Replication.Update();
 				}
@@ -119,7 +119,7 @@ namespace jelly
 					node0.ProcessRequests();
 					node0.FlushPendingWAL();
 					JELLY_ALWAYS_ASSERT(req.IsCompleted());
-					JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+					JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 				}
 			}
 
@@ -176,7 +176,7 @@ namespace jelly
 					node0->ProcessRequests();
 					node0->FlushPendingWAL();
 					JELLY_ALWAYS_ASSERT(req.IsCompleted());
-					JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+					JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 
 					node0Replication.Update();
 				}
@@ -193,7 +193,7 @@ namespace jelly
 					node1->Get(&req);
 					node1->ProcessRequests();
 					JELLY_ALWAYS_ASSERT(req.IsCompleted());
-					JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+					JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 					JELLY_ALWAYS_ASSERT(UInt32Blob::GetValue(req.GetBlob()) == 1000);
 				}
 
@@ -207,7 +207,7 @@ namespace jelly
 					node1->ProcessRequests();
 					node1->FlushPendingWAL();
 					JELLY_ALWAYS_ASSERT(req.IsCompleted());
-					JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+					JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 
 					node1Replication.Update();
 				}
@@ -228,7 +228,7 @@ namespace jelly
 					node0->Get(&req);
 					node0->ProcessRequests();
 					JELLY_ALWAYS_ASSERT(req.IsCompleted());
-					JELLY_ALWAYS_ASSERT(req.GetResult() == RESULT_OK);
+					JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 					JELLY_ALWAYS_ASSERT(UInt32Blob::GetValue(req.GetBlob()) == 1001);
 				}
 			}

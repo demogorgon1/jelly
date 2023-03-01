@@ -17,7 +17,7 @@ namespace jelly
 	{
 
 		uint32_t	
-		Get()
+		Get() noexcept
 		{
 			if(g_threadIndex == UINT32_MAX)
 				g_threadIndex = g_nextThreadIndex++;

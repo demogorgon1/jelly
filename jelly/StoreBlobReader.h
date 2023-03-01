@@ -24,7 +24,7 @@ namespace jelly
 		// IStoreBlobReader
 		void		ReadItemBlob(
 						size_t				aOffset, 
-						ItemBase*				aItem) override;
+						ItemBase*			aItem) override;
 		void		Close() override;
 
 	private:

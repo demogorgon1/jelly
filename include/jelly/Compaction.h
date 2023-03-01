@@ -15,7 +15,7 @@ namespace jelly
 
 		// Do a compaction of just 2 stores
 		template <typename _KeyType, typename _ItemType>
-		bool
+		size_t
 		PerformOnTwoStores(			
 			IHost*										aHost,
 			uint32_t									aNodeId,
@@ -31,15 +31,11 @@ namespace jelly
 			std::unique_ptr<IFileStreamReader> f2(aHost->ReadStoreStream(aNodeId, aStoreId2, aStoreFileStatsContext));
 
 			if(!f1 || !f2)
-				return false; // Could be that the stores no longer exists, just don't do anything then
+				return 0; // Could be that the stores no longer exists, just don't do anything then
 
 			{
 				std::unique_ptr<IStoreWriter> fOut(aHost->CreateStore(aNodeId, aNewStoreId, aStoreFileStatsContext));
-				if(!fOut)
-				{
-					Log::PrintF(Log::LEVEL_ERROR, "Failed to open compaction store for output: %u", aNewStoreId);
-					return false;
-				}
+				JELLY_CHECK(fOut, Result::ERROR_COMPACTION_FAILED_TO_OPEN_OUTPUT_STORE, "NewStoreId=%u", aNewStoreId);
 
 				_ItemType item1;
 				bool hasItem1 = false;
@@ -130,12 +126,12 @@ namespace jelly
 				fOut->Flush();
 			}
 
-			return true;
+			return 2;
 		}
 
 		// Do a compaction of more than 2 stores
 		template <typename _KeyType, typename _ItemType>
-		bool
+		size_t
 		PerformOnStoreList(
 			IHost*										aHost,
 			uint32_t									aNodeId,
@@ -171,19 +167,18 @@ namespace jelly
 			// Open source stores
 			for (uint32_t storeId : aStoreIds)
 			{
-				sourceStores.push_back(std::make_unique<SourceStore>(storeId, aHost->ReadStoreStream(aNodeId, storeId, aStoreFileStatsContext)));
+				std::unique_ptr<SourceStore> sourceStore = std::make_unique<SourceStore>(storeId, aHost->ReadStoreStream(aNodeId, storeId, aStoreFileStatsContext));
 
-				if(!sourceStores[sourceStores.size() - 1]->m_fileStreamReader)
-					return false; // One of the source stores doesn't exist
+				if(sourceStore->m_fileStreamReader)
+					sourceStores.push_back(std::move(sourceStore));
 			}
+
+			if(sourceStores.size() <= 2)
+				return 0;
 
 			// Open output store
 			std::unique_ptr<IStoreWriter> outputStore(aHost->CreateStore(aNodeId, aNewStoreId, aStoreFileStatsContext));
-			if(!outputStore)
-			{
-				Log::PrintF(Log::LEVEL_ERROR, "Failed to open compaction store for output: %u", aNewStoreId);
-				return false;
-			}
+			JELLY_CHECK(outputStore, Result::ERROR_COMPACTION_FAILED_TO_OPEN_OUTPUT_STORE, "NewStoreId=%u", aNewStoreId);
 
 			// Perform the compaction
 			std::vector<SourceStore*> lowestKeySourceStores;
@@ -257,12 +252,14 @@ namespace jelly
 				}
 			}
 
-			return true;
+			outputStore->Flush();
+
+			return sourceStores.size();
 		}
 
 		// Do a "minor" compaction 
 		template <typename _KeyType, typename _ItemType>
-		bool
+		size_t
 		Perform(			
 			IHost*										aHost,
 			uint32_t									aNodeId,
@@ -281,7 +278,7 @@ namespace jelly
 		
 		// Do a "major" compaction of everything.
 		template <typename _KeyType, typename _ItemType>
-		bool
+		size_t
 		PerformMajorCompaction(
 			IHost*										aHost,
 			uint32_t									aNodeId,
@@ -310,7 +307,7 @@ namespace jelly
 					return PerformOnStoreList<_KeyType, _ItemType>(aHost, aNodeId, aStoreFileStatsContext, oldestStoreId, aNewStoreId, storeIds, aOut);
 			}
 
-			return false;
+			return 0;
 		}
 
 	}

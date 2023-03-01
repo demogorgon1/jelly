@@ -41,9 +41,9 @@ namespace jelly
 		virtual size_t	GetStoredBlobSize() const { JELLY_ASSERT(false); return 0; }
 
 		// Data access
-		uint32_t		GetTombstoneStoreId() const { return m_data.m_tombstoneStoreId; }
-		uint32_t		GetSeq() const { return m_data.m_seq; }
-		uint64_t		GetTimeStamp() const { return m_data.m_timeStamp; }
+		uint32_t		GetTombstoneStoreId() const noexcept { return m_data.m_tombstoneStoreId; }
+		uint32_t		GetSeq() const noexcept { return m_data.m_seq; }
+		uint64_t		GetTimeStamp() const noexcept { return m_data.m_timeStamp; }
 
 	protected:
 

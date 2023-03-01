@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CompletionEvent.h"
-#include "Result.h"
+#include "RequestResult.h"
 
 namespace jelly
 {
@@ -14,31 +14,32 @@ namespace jelly
 	{
 	public:
 		Request()
-			: m_result(RESULT_NONE)
+			: m_result(REQUEST_RESULT_NONE)
 			, m_next(NULL)
 			, m_timeStamp(0)
 			, m_hasPendingWrite(false)
+			, m_error(0)
 		{
 
 		}
 
 		void
 		SetResult(
-			Result					aResult)
+			RequestResult			aResult) noexcept
 		{
 			m_result = aResult;
 		}
 
 		void
 		SetTimeStamp(
-			uint64_t				aTimeStamp)
+			uint64_t				aTimeStamp) noexcept
 		{
 			m_timeStamp = aTimeStamp;
 		}
 
 		void
 		SetExecutionCallback(
-			std::function<void()>	aExecutionCallback)
+			std::function<void()>	aExecutionCallback) noexcept
 		{
 			m_executionCallback = aExecutionCallback;
 		}
@@ -47,16 +48,27 @@ namespace jelly
 		Execute()
 		{
 			JELLY_ASSERT(m_executionCallback);
-			JELLY_ASSERT(m_result == RESULT_NONE);
+			JELLY_ASSERT(m_result == REQUEST_RESULT_NONE);
 			JELLY_ASSERT(!IsCompleted());
 
-			m_executionCallback();
+			try
+			{
+				m_executionCallback();
+			}
+			catch(Result::Code error)
+			{
+				m_error = error;
+
+				m_result = REQUEST_RESULT_ERROR;
+				
+				SignalCompletion();
+			}				
 		}
 
 		void
-		SignalCompletion()
+		SignalCompletion() noexcept
 		{
-			JELLY_ASSERT(m_result != RESULT_NONE);
+			JELLY_ASSERT(m_result != REQUEST_RESULT_NONE);
 			JELLY_ASSERT(!IsCompleted());
 
 			m_completed.Signal();
@@ -64,7 +76,7 @@ namespace jelly
 
 		void
 		SetNext(
-			_RequestType*			aNext)
+			_RequestType*			aNext) noexcept
 		{
 			JELLY_ASSERT(m_next == NULL);
 
@@ -85,17 +97,19 @@ namespace jelly
 		//---------------------------------------------------------------------------------------------------
 		// Data access
 
-		bool			IsCompleted() const { return m_completed.Poll(); }		//!< Poll request for completion.
-		Result			GetResult() const { return m_result; }					//!< Returns result after completion.
-		uint64_t		GetTimeStamp() const { return m_timeStamp; }			//!< Returns time stamp after completion.
+		bool			IsCompleted() const noexcept { return m_completed.Poll(); }		//!< Poll request for completion.
+		RequestResult	GetResult() const noexcept { return m_result; }					//!< Returns result after completion.
+		uint64_t		GetTimeStamp() const noexcept { return m_timeStamp; }			//!< Returns time stamp after completion.
+		Result::Code	GetError() const noexcept { return m_error; }					//!< Returns error code if GetResult() is RESULT_ERROR.
 
-		_RequestType*	GetNext() { return m_next; }
-		bool			HasPendingWrite() const { return m_hasPendingWrite; }
+		_RequestType*	GetNext() noexcept { return m_next; }
+		bool			HasPendingWrite() const noexcept { return m_hasPendingWrite; }
 
 	protected:
 		
 		uint64_t						m_timeStamp;
-		Result							m_result;			
+		RequestResult					m_result;		
+		Result::Code					m_error;
 		CompletionEvent					m_completed;		
 		bool							m_hasPendingWrite;
 		_RequestType*					m_next;

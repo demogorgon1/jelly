@@ -62,7 +62,7 @@ namespace jelly
 			}
 			else
 			{
-				JELLY_FATAL_ERROR("Invalid compression method: %s", compressionMethod);
+				JELLY_FAIL(Result::ERROR_INVALID_COMPRESSION_METHOD, "Method=%s", compressionMethod);
 			}
 		}
 
@@ -85,14 +85,19 @@ namespace jelly
 
 	}
 
-	void					
+	void				
 	DefaultHost::PollSystemStats()
 	{
 		// Determine total size on disk
 		{
 			size_t totalFileSizes[PathUtils::NUM_FILES_TYPES];
 			memset(totalFileSizes, 0, sizeof(totalFileSizes));
-			for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(m_root))
+
+			std::error_code errorCode;
+			std::filesystem::directory_iterator it(m_root, errorCode);
+			JELLY_CHECK(!errorCode, Result::ERROR_FAILED_TO_GET_TOTAL_DISK_USAGE, "Path=%s;Msg=%s", m_root.c_str(), errorCode.message().c_str());
+
+			for (const std::filesystem::directory_entry& entry : it)
 			{
 				PathUtils::FileType fileType;
 				uint32_t id;
@@ -120,7 +125,11 @@ namespace jelly
 	{			
 		m_storeManager->CloseAll();
 
-		for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(m_root))
+		std::error_code errorCode;
+		std::filesystem::directory_iterator it(m_root, errorCode);
+		JELLY_CHECK(!errorCode, Result::ERROR_FAILED_TO_DELETE_ALL_FILES, "Path=%s;NodeId=%u;Msg=%s", m_root.c_str(), aNodeId, errorCode.message().c_str());
+
+		for (const std::filesystem::directory_entry& entry : it)
 		{
 			PathUtils::FileType fileType;
 			uint32_t id;
@@ -162,20 +171,10 @@ namespace jelly
 	size_t					
 	DefaultHost::GetAvailableDiskSpace() 
 	{
-		size_t available = 0;
-
-		try
-		{
-			std::filesystem::space_info si = std::filesystem::space(m_root);
-
-			available = (size_t)si.available;
-		}
-		catch (std::exception& e)
-		{
-			JELLY_FATAL_ERROR("DefaultHost: Failed to determine available disk space for: %s (%s)", m_root.c_str(), e.what());
-		}
-
-		return available;
+		std::error_code errorCode;
+		std::filesystem::space_info si = std::filesystem::space(m_root, errorCode);
+		JELLY_CHECK(!errorCode, Result::ERROR_FAILED_TO_GET_AVAILABLE_DISK_SPACE, "Path=%s;Msg=%s", m_root.c_str(), errorCode.message().c_str());
+		return (size_t)si.available;;
 	}
 
 	void		
@@ -184,34 +183,31 @@ namespace jelly
 		std::vector<uint32_t>&		aOutWriteAheadLogIds,
 		std::vector<uint32_t>&		aOutStoreIds) 
 	{
-		try
+		std::error_code errorCode;
+		std::filesystem::directory_iterator it(m_root, errorCode);
+		JELLY_CHECK(!errorCode, Result::ERROR_FAILED_TO_ENUMERATE_FILES, "NodeId=%u;Path=%s;Msg=%s", aNodeId, m_root.c_str(), errorCode.message().c_str());
+
+		for (const std::filesystem::directory_entry& entry : it)
 		{
-			for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(m_root))
+			PathUtils::FileType fileType;
+			uint32_t id;
+			uint32_t nodeId;
+			if (entry.is_regular_file() && PathUtils::ParsePath(entry.path(), m_filePrefix.c_str(), fileType, nodeId, id))
 			{
-				PathUtils::FileType fileType;
-				uint32_t id;
-				uint32_t nodeId;
-				if (entry.is_regular_file() && PathUtils::ParsePath(entry.path(), m_filePrefix.c_str(), fileType, nodeId, id))
+				if (nodeId == aNodeId)
 				{
-					if(nodeId == aNodeId)
+					switch (fileType)
 					{
-						switch(fileType)
-						{
-						case PathUtils::FILE_TYPE_STORE:	aOutStoreIds.push_back(id); break;
-						case PathUtils::FILE_TYPE_WAL:		aOutWriteAheadLogIds.push_back(id); break;
-						default:							JELLY_ASSERT(false); 
-						}
+					case PathUtils::FILE_TYPE_STORE:	aOutStoreIds.push_back(id); break;
+					case PathUtils::FILE_TYPE_WAL:		aOutWriteAheadLogIds.push_back(id); break;
+					default:							JELLY_ASSERT(false);
 					}
 				}
 			}
+		}
 
-			std::sort(aOutStoreIds.begin(), aOutStoreIds.end());
-			std::sort(aOutWriteAheadLogIds.begin(), aOutWriteAheadLogIds.end());
-		}
-		catch (std::exception& e)
-		{
-			JELLY_FATAL_ERROR("DefaultHost: Failed to enumerate files for node id: %u (%s)", aNodeId, e.what());
-		}
+		std::sort(aOutStoreIds.begin(), aOutStoreIds.end());
+		std::sort(aOutWriteAheadLogIds.begin(), aOutWriteAheadLogIds.end());
 	}
 
 	void		
@@ -219,31 +215,28 @@ namespace jelly
 		uint32_t					aNodeId,
 		std::vector<StoreInfo>&		aOut) 
 	{
-		try
+		std::error_code errorCode;
+		std::filesystem::directory_iterator it(m_root, errorCode);
+		JELLY_CHECK(!errorCode, Result::ERROR_FAILED_TO_GET_STORE_INFO, "NodeId=%u;Path=%s;Msg=%s", aNodeId, m_root.c_str(), errorCode.message().c_str());
+
+		for (const std::filesystem::directory_entry& entry : it)
 		{
-			for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(m_root))
-			{
-				PathUtils::FileType fileType;
-				uint32_t nodeId;
-				uint32_t id;
-				if (entry.is_regular_file() && PathUtils::ParsePath(entry.path(), m_filePrefix.c_str(), fileType, nodeId, id))
-				{	
-					if(nodeId == aNodeId && fileType == PathUtils::FILE_TYPE_STORE)
-					{
-						StoreInfo t;
-						t.m_id = id;
-						t.m_size = (size_t)entry.file_size();
-						aOut.push_back(t);
-					}
+			PathUtils::FileType fileType;
+			uint32_t nodeId;
+			uint32_t id;
+			if (entry.is_regular_file() && PathUtils::ParsePath(entry.path(), m_filePrefix.c_str(), fileType, nodeId, id))
+			{	
+				if(nodeId == aNodeId && fileType == PathUtils::FILE_TYPE_STORE)
+				{
+					StoreInfo t;
+					t.m_id = id;
+					t.m_size = (size_t)entry.file_size();
+					aOut.push_back(t);
 				}
 			}
+		}
 
-			std::sort(aOut.begin(), aOut.end());
-		}
-		catch (std::exception& e)
-		{
-			JELLY_FATAL_ERROR("DefaultHost: Failed to get store info fornode id: %u (%s)", aNodeId, e.what());
-		}
+		std::sort(aOut.begin(), aOut.end());
 	}
 
 	IFileStreamReader*
@@ -305,14 +298,9 @@ namespace jelly
 		uint32_t					aNodeId,
 		uint32_t					aId) 
 	{
-		try
-		{
-			std::filesystem::remove(PathUtils::MakePath(m_root.c_str(), m_filePrefix.c_str(), PathUtils::FILE_TYPE_WAL, aNodeId, aId).c_str());
-		}
-		catch (std::exception& e)
-		{
-			JELLY_FATAL_ERROR("DefaultHost: Failed to delete WAL (%u) for node id: %u (%s)", aId, aNodeId, e.what());
-		}
+		std::error_code errorCode;
+		std::filesystem::remove(PathUtils::MakePath(m_root.c_str(), m_filePrefix.c_str(), PathUtils::FILE_TYPE_WAL, aNodeId, aId).c_str(), errorCode);
+		JELLY_CHECK(!errorCode, Result::ERROR_FAILED_TO_DELETE_WAL, "NodeId=%u;Id=%u;Msg=%s", aNodeId, aNodeId, errorCode.message().c_str());
 	}
 	
 	IFileStreamReader*
@@ -410,36 +398,33 @@ namespace jelly
 		if(!std::filesystem::exists(aBackupPath))
 			return false;
 
-		try
+		std::error_code errorCode;
+		std::filesystem::directory_iterator it(aBackupPath, errorCode);
+		JELLY_CHECK(!errorCode, Result::ERROR_FAILED_TO_GET_LATEST_BACKUP, "NodeId=%u;Path=%s;Msg=%s", aNodeId, aBackupPath, errorCode.message().c_str());
+
+		for (const std::filesystem::directory_entry& entry : it)
 		{
-			for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(aBackupPath))
+			// Each backup has its own directory in the backup path
+			if(entry.is_directory())
 			{
-				// Each backup has its own directory in the backup path
-				if(entry.is_directory())
+				for (const std::filesystem::directory_entry& file : std::filesystem::directory_iterator(entry.path()))
 				{
-					for (const std::filesystem::directory_entry& file : std::filesystem::directory_iterator(entry.path()))
+					PathUtils::FileType fileType;
+					uint32_t id;
+					uint32_t nodeId;
+					if (file.is_regular_file() && PathUtils::ParsePath(file.path(), m_filePrefix.c_str(), fileType, nodeId, id))
 					{
-						PathUtils::FileType fileType;
-						uint32_t id;
-						uint32_t nodeId;
-						if (file.is_regular_file() && PathUtils::ParsePath(file.path(), m_filePrefix.c_str(), fileType, nodeId, id))
+						if (nodeId == aNodeId && fileType == PathUtils::FILE_TYPE_STORE)
 						{
-							if (nodeId == aNodeId && fileType == PathUtils::FILE_TYPE_STORE)
+							if(aOutLatestStoreId == UINT32_MAX || id > aOutLatestStoreId)
 							{
-								if(aOutLatestStoreId == UINT32_MAX || id > aOutLatestStoreId)
-								{
-									aOutLatestStoreId = id;
-									aOutName = entry.path().filename().string();
-								}
+								aOutLatestStoreId = id;
+								aOutName = entry.path().filename().string();
 							}
 						}
 					}
 				}
 			}
-		}
-		catch (std::exception& e)
-		{
-			JELLY_FATAL_ERROR("DefaultHost: Failed to enumerate backup files for node id: %u (%s)", aNodeId, e.what());
 		}
 
 		return aOutLatestStoreId != UINT32_MAX;

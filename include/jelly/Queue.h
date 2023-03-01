@@ -26,7 +26,7 @@ namespace jelly
 
 		void
 		Add(
-			_RequestType*	aRequest)
+			_RequestType*	aRequest) noexcept
 		{
 			JELLY_ASSERT(!m_guard);
 
@@ -41,14 +41,14 @@ namespace jelly
 		}
 
 		void
-		SetGuard()
+		SetGuard() noexcept
 		{
 			JELLY_ASSERT(!m_guard);
 			m_guard = true;
 		}
 
 		void
-		Reset()
+		Reset() noexcept
 		{
 			m_guard = false;
 			m_first = NULL;
@@ -60,7 +60,7 @@ namespace jelly
 		bool				m_guard;
 		_RequestType*		m_first;
 		_RequestType*		m_last;
-		uint32_t			m_count;
+		size_t				m_count;
 	};
 
 }

@@ -152,12 +152,12 @@ namespace jelly
 		}
 
 		// Data access
-		const _KeyType&			GetKey() const { return m_key; }
-		const _LockType&		GetLock() const { return m_lock; }
-		_LockType&				GetLock() { return m_lock; }
-		const _LockMetaType&	GetMeta() const { return m_meta; }
-		const RuntimeState&		GetRuntimeState() const { return m_runtimeState; }
-		RuntimeState&			GetRuntimeState() { return m_runtimeState; }
+		const _KeyType&			GetKey() const noexcept { return m_key; }
+		const _LockType&		GetLock() const noexcept { return m_lock; }
+		_LockType&				GetLock() noexcept { return m_lock; }
+		const _LockMetaType&	GetMeta() const noexcept { return m_meta; }
+		const RuntimeState&		GetRuntimeState() const noexcept { return m_runtimeState; }
+		RuntimeState&			GetRuntimeState() noexcept { return m_runtimeState; }
 
 	private:
 

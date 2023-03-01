@@ -29,6 +29,7 @@
 #include "MetaData.h"
 #include "Node.h"
 #include "Request.h"
+#include "RequestResult.h"
 #include "Result.h"
 #include "Stat.h"
 #include "StringUtils.h"

@@ -10,16 +10,16 @@ namespace jelly
 	* will put the result in this (files to be deleted and items moved), so it can then be applied
 	* with ApplyCompactionResult() (fast) on the main thread.
 	* 
-	* @code
+	* \code
 	* // This can be done on any thread
 	* std::unique_ptr<CompactionResult<_KeyType, _STLKeyHasher>> compactionResult(node->PerformCompaction(compactionJob));
 	* ...
 	* // This must happen on the main thread
 	* node->ApplyCompactionResult(compactionResult.get());
-	* @endcode
+	* \endcode
 	* 
-	* @see BlobNode
-	* @see LockNode
+	* \see BlobNode
+	* \see LockNode
 	*/		
 	template <typename _KeyType>
 	class CompactionResult
@@ -61,29 +61,29 @@ namespace jelly
 			const _KeyType&									aKey,
 			uint32_t										aSeq,
 			uint32_t										aStoreId,
-			size_t											aStoreOffset)
+			size_t											aStoreOffset) noexcept
 		{
 			m_items.push_back(Item(aKey, aSeq, aStoreId, aStoreOffset));
 		}
 
 		void
 		SetStoreIds(
-			const std::vector<uint32_t>&					aStoreIds)
+			const std::vector<uint32_t>&					aStoreIds) noexcept
 		{
 			m_storeIds = aStoreIds;
 		}
 
 		void
 		SetMajorCompaction(
-			bool												aMajorCompaction)
+			bool											aMajorCompaction) noexcept
 		{
 			m_isMajorCompaction = aMajorCompaction;
 		}
 
 		// Data access
-		bool								IsMajorCompaction() const { return m_isMajorCompaction; }
-		const std::vector<Item>&			GetItems() const { return m_items; }
-		const std::vector<uint32_t>&		GetStoreIds() const { return m_storeIds; }
+		bool								IsMajorCompaction() const noexcept { return m_isMajorCompaction; }
+		const std::vector<Item>&			GetItems() const noexcept { return m_items; }
+		const std::vector<uint32_t>&		GetStoreIds() const noexcept { return m_storeIds; }
 		
 	private:
 		

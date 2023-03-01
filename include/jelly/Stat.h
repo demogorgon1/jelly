@@ -149,15 +149,15 @@ namespace jelly
 		//! Query information about a statistic
 		inline const Info*
 		GetInfo(
-			uint32_t		aId)
+			uint32_t		aId) noexcept
 		{
 			JELLY_ASSERT(aId < (uint32_t)NUM_IDS);
 			return &INFO[aId];
 		}
 
 		//! Get number of statistics
-		inline uint32_t 
-		GetCount()
+		inline constexpr uint32_t 
+		GetCount() noexcept
 		{
 			return (uint32_t)NUM_IDS;
 		}

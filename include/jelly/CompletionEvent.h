@@ -16,7 +16,7 @@ namespace jelly
 		
 		//! Signal the completion event
 		void
-		Signal()
+		Signal() noexcept
 		{
 			m_signal = true;
 			if(m_callback)
@@ -25,14 +25,14 @@ namespace jelly
 
 		//! Poll if the completion event has been signaled
 		bool
-		Poll() const
+		Poll() const noexcept
 		{
 			return m_signal;
 		}
 
 		//! Reset the completion event after it has been signaled
 		void
-		Reset()
+		Reset() noexcept
 		{
 			m_signal = false;
 		}
@@ -41,7 +41,7 @@ namespace jelly
 		// Public data
 
 		std::atomic_bool		m_signal;
-		std::function<void()>	m_callback; //!< Optional callback to be called when signaled. This is done on the signaling thread.
+		std::function<void()>	m_callback; //!< Optional callback to be called when signaled. This is done on the signaling thread. Must not throw exceptions.
 	};
 
 }

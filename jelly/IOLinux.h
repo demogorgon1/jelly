@@ -139,7 +139,7 @@ namespace jelly
 			size_t			Flush();
 
 			// IWriter implementation
-			size_t			Write(
+			void			Write(
 								const void*			aBuffer,
 								size_t				aBufferSize) override;
 			size_t			GetTotalBytesWritten() const override;

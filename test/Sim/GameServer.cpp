@@ -196,7 +196,7 @@ namespace jelly::Test::Sim
 			{
 				switch(aClient->m_lockRequest->GetResult())
 				{
-				case RESULT_OK:
+				case REQUEST_RESULT_OK:
 					{
 						const LockServer::LockMetaDataType& meta = aClient->m_lockRequest->GetMeta();
 
@@ -211,7 +211,7 @@ namespace jelly::Test::Sim
 					}
 					break;
 
-				case RESULT_ALREADY_LOCKED:
+				case REQUEST_RESULT_ALREADY_LOCKED:
 					_SetClientState(aClient, Client::STATE_NEED_LOCK);
 					aClient->m_timer.SetTimeout(1000);
 					break;
@@ -263,7 +263,7 @@ namespace jelly::Test::Sim
 			{
 				switch (aClient->m_getRequest->GetResult())
 				{
-				case RESULT_OK:					
+				case REQUEST_RESULT_OK:					
 					aClient->m_playerBlob.FromBlob(aClient->m_getRequest->GetBlob());
 
 					_OnClientConnected(aClient);
@@ -304,7 +304,7 @@ namespace jelly::Test::Sim
 			{
 				switch (aClient->m_setRequest->GetResult())
 				{
-				case RESULT_OK:
+				case REQUEST_RESULT_OK:
 					if(aClient->m_ungracefulDisconnect)
 						return false;
 					else if(aClient->m_disconnectRequested)
@@ -345,7 +345,7 @@ namespace jelly::Test::Sim
 			{
 				switch (aClient->m_unlockRequest->GetResult())
 				{
-				case RESULT_OK:
+				case REQUEST_RESULT_OK:
 					return false;
 
 				default:

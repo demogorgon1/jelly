@@ -31,7 +31,7 @@ namespace jelly
 
 		bool
 		operator==(
-			const FileHeader&			aOther) const
+			const FileHeader&			aOther) const noexcept
 		{
 			return m_type == aOther.m_type && m_flags == aOther.m_flags && m_compressionId == aOther.m_compressionId;
 		}

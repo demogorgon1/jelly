@@ -29,7 +29,7 @@ namespace jelly
 
 		//! Validates if job is defined correctly
 		bool
-		Validate() const
+		Validate() const noexcept
 		{
 			if(m_oldestStoreId == UINT32_MAX)
 				return false;
@@ -48,7 +48,7 @@ namespace jelly
 
 		//! Indicates if this is a valid compaction job
 		bool
-		IsSet() const
+		IsSet() const noexcept
 		{
 			return m_oldestStoreId != UINT32_MAX && m_storeIds.size() > 0;
 		}

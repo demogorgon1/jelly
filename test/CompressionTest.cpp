@@ -57,7 +57,7 @@ namespace jelly
 				{
 					for (size_t i = 0; i < aDataSize; i++)
 					{
-						JELLY_ALWAYS_ASSERT(compressor->Write((const uint8_t*)aData + i, 1) == 1);
+						compressor->Write((const uint8_t*)aData + i, 1);
 
 						if(aFlushAfterEachByte)
 							compressor->Flush();
@@ -68,7 +68,7 @@ namespace jelly
 				}
 				else
 				{
-					JELLY_ALWAYS_ASSERT(compressor->Write(aData, aDataSize) == aDataSize);
+					compressor->Write(aData, aDataSize);
 					compressor->Flush();
 				}
 

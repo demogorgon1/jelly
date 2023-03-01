@@ -77,8 +77,8 @@ main(
 		// Now the request will be completed.
 		JELLY_ASSERT(req.IsCompleted());
 
-		// RESULT_OK means everything went as expected.
-		JELLY_ASSERT(req.GetResult() == jelly::RESULT_OK);
+		// REQUEST_RESULT_OK means everything went as expected.
+		JELLY_ASSERT(req.GetResult() == jelly::REQUEST_RESULT_OK);
 
 		// Meta data is returned when the lock is successful. Since this is a new lock, we'll
 		// see that the meta data is blank.
@@ -125,8 +125,8 @@ main(
 		// ... and now it's completed.
 		JELLY_ASSERT(req.IsCompleted());
 
-		// Again RESULT_OK means everything is great.
-		JELLY_ASSERT(req.GetResult() == jelly::RESULT_OK);
+		// Again REQUEST_RESULT_OK means everything is great.
+		JELLY_ASSERT(req.GetResult() == jelly::REQUEST_RESULT_OK);
 	}
 
 	return EXIT_SUCCESS;

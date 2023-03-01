@@ -45,8 +45,8 @@ namespace jelly
 
 		//------------------------------------------------------------------------------
 		// Data access
-		const void* GetCurrentPointer() const { return m_p; }			//!< Returns pointer to current read position.
-		size_t		GetRemainingSize() const { return m_remaining; }	//!< Returns number of bytes left after current read position.
+		const void* GetCurrentPointer() const noexcept { return m_p; }			//!< Returns pointer to current read position.
+		size_t		GetRemainingSize() const noexcept { return m_remaining; }	//!< Returns number of bytes left after current read position.
 
 	private:
 

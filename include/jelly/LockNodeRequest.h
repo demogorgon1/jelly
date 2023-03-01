@@ -55,10 +55,10 @@ namespace jelly
 
 		//---------------------------------------------------------------------------------
 		// Data access
-		const _KeyType&			GetKey() const { return m_key; }		//!< Returns lock key
-		const _LockType&		GetLock() const { return m_lock; }		//!< Returns lock identifier
-		const _LockMetaType&	GetMeta() const { return m_meta; }		//!< Returns lock meta data
-		bool					IsForced() const { return m_forced;	}	//!< Returns whether request should be forced
+		const _KeyType&			GetKey() const noexcept { return m_key; }		//!< Returns lock key
+		const _LockType&		GetLock() const noexcept { return m_lock; }		//!< Returns lock identifier
+		const _LockMetaType&	GetMeta() const noexcept { return m_meta; }		//!< Returns lock meta data
+		bool					IsForced() const noexcept { return m_forced; }	//!< Returns whether request should be forced
 
 	private:
 

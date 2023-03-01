@@ -128,7 +128,7 @@ main(
 			// Calling ProcessRequests() after each request is very inefficient. 
 			// Better to call it on a steady interval, but let's keep it simple.
 			blobNode.ProcessRequests();
-			JELLY_ASSERT(req.GetResult() == jelly::RESULT_OK);
+			JELLY_ASSERT(req.GetResult() == jelly::REQUEST_RESULT_OK);
 		}
 
 		// Sleep a bit.

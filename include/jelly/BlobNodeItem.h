@@ -50,7 +50,7 @@ namespace jelly
 
 		BlobNodeItem(
 			const _KeyType&									aKey = _KeyType(),
-			uint32_t										aSeq = 0)
+			uint32_t										aSeq = 0) 
 			: m_key(aKey)
 		{
 			SetSeq(aSeq);
@@ -69,27 +69,27 @@ namespace jelly
 
 		void
 		SetKey(
-			const _KeyType&									aKey)
+			const _KeyType&									aKey) noexcept
 		{
 			m_key = aKey;
 		}
 
 		void
 		SetBlob(
-			IBuffer*										aBlob)
+			IBuffer*										aBlob) noexcept
 		{
 			m_blob.reset(aBlob);
 		}
 
 		void
 		SetMeta(
-			const _MetaType&								aMeta)
+			const _MetaType&								aMeta) noexcept
 		{
 			m_meta = aMeta;
 		}
 
 		void
-		Reset()
+		Reset() noexcept
 		{
 			JELLY_ASSERT(m_runtimeState.m_pendingWAL == NULL);
 			JELLY_ASSERT(m_runtimeState.m_next == NULL);
@@ -109,7 +109,7 @@ namespace jelly
 
 		void
 		MoveFrom(
-			BlobNodeItem*									aOther) 
+			BlobNodeItem*									aOther) noexcept
 		{
 			m_blob = std::move(aOther->m_blob);
 
@@ -126,7 +126,7 @@ namespace jelly
 
 		bool
 		CompactionRead(
-			IFileStreamReader*								aStoreReader)
+			IFileStreamReader*								aStoreReader) 
 		{
 			m_runtimeState.m_storeOffset = aStoreReader->GetTotalBytesRead();
 
@@ -149,34 +149,34 @@ namespace jelly
 		void
 		CompactionUpdate(
 			uint32_t										aNewStoreId,
-			size_t											aNewStoreOffset)
+			size_t											aNewStoreOffset) noexcept
 		{
 			m_runtimeState.m_storeId = aNewStoreId;
 			m_runtimeState.m_storeOffset = aNewStoreOffset;
 		}
 
 		BlobNodeItem<_KeyType, _MetaType>*
-		GetNext()
+		GetNext() noexcept
 		{
 			return m_runtimeState.m_next;
 		}
 
 		BlobNodeItem<_KeyType, _MetaType>*
-		GetPrev()
+		GetPrev() noexcept
 		{
 			return m_runtimeState.m_prev;
 		}
 
 		void
 		SetNext(
-			BlobNodeItem<_KeyType, _MetaType>*				aNext)
+			BlobNodeItem<_KeyType, _MetaType>*				aNext) noexcept
 		{
 			m_runtimeState.m_next = aNext;
 		}
 
 		void
 		SetPrev(
-			BlobNodeItem<_KeyType, _MetaType>*				aPrev)
+			BlobNodeItem<_KeyType, _MetaType>*				aPrev) noexcept
 		{
 			m_runtimeState.m_prev = aPrev;
 		}
@@ -198,12 +198,11 @@ namespace jelly
 			{
 				JELLY_ASSERT(m_blob);
 
-				JELLY_CHECK(aWriter->WriteUInt<size_t>(m_blob->GetSize()), "Failed to write blob item blob size.");
+				aWriter->WriteUInt<size_t>(m_blob->GetSize());
 
 				blobOffset = aWriter->GetTotalBytesWritten() - startOffset;
 
-				JELLY_CHECK(aWriter->Write(m_blob->GetPointer(), m_blob->GetSize()) == m_blob->GetSize(), "Failed to write blob item blob.");
-
+				aWriter->Write(m_blob->GetPointer(), m_blob->GetSize());
 			}
 			else
 			{
@@ -252,7 +251,7 @@ namespace jelly
 
 		void	
 		UpdateBlobBuffer(
-			std::unique_ptr<IBuffer>&					aBlobBuffer) override
+			std::unique_ptr<IBuffer>&					aBlobBuffer) noexcept override
 		{
 			JELLY_ASSERT(m_runtimeState.m_storeSize == aBlobBuffer->GetSize());
 			m_blob = std::move(aBlobBuffer);
@@ -261,19 +260,19 @@ namespace jelly
 		}
 
 		size_t	
-		GetStoredBlobSize() const
+		GetStoredBlobSize() const noexcept
 		{
 			return m_runtimeState.m_storeSize;
 		}
 
 		// Data access
-		const _KeyType&			GetKey() const { return m_key; }
-		const IBuffer*			GetBlob() const { JELLY_ASSERT(m_blob); return m_blob.get(); }
-		IBuffer*				GetBlob() { JELLY_ASSERT(m_blob); return m_blob.get(); }
-		bool					HasBlob() const { return (bool)m_blob; }
-		const _MetaType&		GetMeta() const { return m_meta; }
-		const RuntimeState&		GetRuntimeState() const { return m_runtimeState; }
-		RuntimeState&			GetRuntimeState() { return m_runtimeState; }
+		const _KeyType&			GetKey() const noexcept { return m_key; }
+		const IBuffer*			GetBlob() const noexcept { JELLY_ASSERT(m_blob); return m_blob.get(); }
+		IBuffer*				GetBlob() noexcept { JELLY_ASSERT(m_blob); return m_blob.get(); }
+		bool					HasBlob() const noexcept { return (bool)m_blob; }
+		const _MetaType&		GetMeta() const noexcept { return m_meta; }
+		const RuntimeState&		GetRuntimeState() const noexcept { return m_runtimeState; }
+		RuntimeState&			GetRuntimeState() noexcept { return m_runtimeState; }
 	
 	private:
 

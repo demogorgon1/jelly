@@ -17,7 +17,7 @@ namespace jelly
 			const char* p = aFilePrefix;
 			while(*p != '\0')
 			{
-				JELLY_CHECK(*p != '-', "Invalid file prefix: %s", aFilePrefix);
+				JELLY_CHECK(*p != '-', Result::ERROR_INVALID_CHARACTER_IN_FILE_PREFIX, "FilePrefix=%s", aFilePrefix);
 				p++;
 			}
 		}
@@ -39,7 +39,7 @@ namespace jelly
 			const char* typeString = (aFileType == FILE_TYPE_WAL) ? "wal" : "store";
 			char path[1024];
 			size_t result = (size_t)std::snprintf(path, sizeof(path), "%s/%sjelly-%s-%u-%u.bin", aRoot, aFilePrefix, typeString, aNodeId, aId);
-			JELLY_CHECK(result <= sizeof(path), "Path too long.");
+			JELLY_CHECK(result <= sizeof(path), Result::ERROR_PATH_TOO_LONG);
 			return path;
 		}
 

@@ -23,7 +23,7 @@ namespace jelly
 
 		void
 		Add(
-			_T				aValue)
+			_T				aValue) noexcept
 		{
 			if(!m_empty)
 			{
@@ -44,7 +44,7 @@ namespace jelly
 		}
 
 		_T
-		GetOldestValue() const
+		GetOldestValue() const noexcept
 		{
 			// The value following the write offset must be the oldest one
 			JELLY_ASSERT(m_buffer.size() > 0);

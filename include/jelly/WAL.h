@@ -30,20 +30,20 @@ namespace jelly
 		}
 
 		void
-		AddReference()
+		AddReference() noexcept
 		{
 			m_refCount++;
 		}
 
 		void
-		RemoveReference()
+		RemoveReference() noexcept
 		{
 			JELLY_ASSERT(m_refCount > 0);
 			m_refCount--;
 		}
 
 		void
-		Close()
+		Close() noexcept
 		{
 			JELLY_ASSERT(m_writer);
 			m_size = m_writer->GetSize();
@@ -59,18 +59,18 @@ namespace jelly
 
 		void
 		SetSize(
-			size_t				aSize)
+			size_t				aSize) noexcept
 		{
 			m_size = aSize;
 		}
 
 		// Data access
-		uint32_t			GetId() const { return m_id; }
-		uint32_t			GetRefCount() const { return m_refCount; }
-		bool				IsClosed() const { return !m_writer; }
-		IWALWriter*			GetWriter() { return m_writer.get(); }
-		const IWALWriter*	GetWriter() const { return m_writer.get(); }
-		size_t				GetSize() const { return m_writer ? m_writer->GetSize() : m_size; }
+		uint32_t			GetId() const noexcept { return m_id; }
+		uint32_t			GetRefCount() const noexcept { return m_refCount; }
+		bool				IsClosed() const noexcept { return !m_writer; }
+		IWALWriter*			GetWriter() noexcept { return m_writer.get(); }
+		const IWALWriter*	GetWriter() const noexcept { return m_writer.get(); }
+		size_t				GetSize() const noexcept { return m_writer ? m_writer->GetSize() : m_size; }
 
 	private:
 

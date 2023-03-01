@@ -18,28 +18,29 @@ namespace jelly
 
 		/**
 		 * Sets the specified configuration item identified by its string name.
+		 * Returns false if no such configuration item exists.
 		 */
-		void		SetString(
+		bool		SetString(
 						const char*						aString,
-						const char*						aValue);
+						const char*						aValue) noexcept;
 
 		/**
 		 * Sets the specified configuration item.
 		 */
 		void		Set(
 						uint32_t						aConfigId,
-						const char*						aValue);
+						const char*						aValue) noexcept;
 
 		/**
 		 * Clears all configuration items to their defaults.
 		 */
-		void		Clear();
+		void		Clear() noexcept;
 
 		//----------------------------------------------------------------------
 		// IConfigSource implementation
-		uint32_t	GetVersion() const override;
+		uint32_t	GetVersion() const noexcept override;
 		const char*	Get(
-						const char*						aId) const override;
+						const char*						aId) const noexcept override;
 
 	private:
 

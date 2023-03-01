@@ -25,7 +25,7 @@ namespace jelly
 		
 		_T
 		Update(
-			const _T&		aValue)
+			const _T&		aValue) noexcept
 		{
 			JELLY_ASSERT(m_sum >= m_buffer[m_i]);
 			JELLY_ASSERT(m_buffer.size() > 0);

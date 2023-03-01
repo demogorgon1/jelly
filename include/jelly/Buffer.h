@@ -54,7 +54,7 @@ namespace jelly
 
 		//! Returns whether or not buffer is static.
 		bool
-		IsStatic() const
+		IsStatic() const noexcept
 		{
 			return m_data == m_static;
 		}
@@ -62,7 +62,7 @@ namespace jelly
 		//! Compares contents with the specified IBuffer object. 
 		bool
 		operator==(
-			const IBuffer&	aOther) const
+			const IBuffer&	aOther) const noexcept
 		{
 			if(m_size != aOther.GetSize())
 				return false;
@@ -73,7 +73,7 @@ namespace jelly
 		//! Copies the contents of the specified \ref IBuffer object.
 		Buffer<_StaticSize>&
 		operator=(
-			const IBuffer&	aOther) 
+			const IBuffer&	aOther) noexcept
 		{
 			_Copy(aOther);
 
@@ -83,7 +83,7 @@ namespace jelly
 		//! Copies the contents of the specified \ref Buffer object.
 		Buffer<_StaticSize>&
 		operator=(
-			const Buffer<_StaticSize>&	aOther)
+			const Buffer<_StaticSize>&	aOther) noexcept
 		{
 			_Copy(aOther);
 
@@ -93,38 +93,38 @@ namespace jelly
 		//------------------------------------------------------------------------------
 		// IBuffer implentation
 		void		
-		Reset() override
+		Reset() noexcept override
 		{
 			_Reset();
 		}
 
 		void		
 		SetSize(
-			size_t		aSize) override
+			size_t		aSize) noexcept override
 		{
 			_Realloc(aSize);
 		}
 		
 		size_t		
-		GetSize() const override
+		GetSize() const noexcept override
 		{
 			return m_size;
 		}
 		
 		const void* 
-		GetPointer() const override
+		GetPointer() const noexcept override
 		{
 			return m_data;
 		}
 
 		void* 
-		GetPointer() override
+		GetPointer() noexcept override
 		{
 			return m_data;
 		}
 
 		IBuffer* 
-		Copy() const override
+		Copy() const noexcept override
 		{
 			return new Buffer<_StaticSize>(*this);
 		}

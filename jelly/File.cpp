@@ -165,7 +165,7 @@ namespace jelly
 
 	//---------------------------------------------------------------------
 
-	size_t		
+	void
 	File::Write(
 		const void*		aBuffer,
 		size_t			aBufferSize) 
@@ -174,12 +174,10 @@ namespace jelly
 		JELLY_ASSERT(m_internal->m_mode == MODE_WRITE_STREAM);
 		JELLY_ASSERT(m_internal->m_fileWriteStream);
 
-		size_t bytes = m_internal->m_fileWriteStream->Write(aBuffer, aBufferSize);
+		m_internal->m_fileWriteStream->Write(aBuffer, aBufferSize);
 
 		if(m_statsContext != NULL && m_statsContext->m_idWrite != UINT32_MAX)
-			m_statsContext->m_stats->Emit(m_statsContext->m_idWrite, bytes, Stat::TYPE_COUNTER);
-
-		return bytes;
+			m_statsContext->m_stats->Emit(m_statsContext->m_idWrite, aBufferSize, Stat::TYPE_COUNTER);
 	}
 
 	size_t		

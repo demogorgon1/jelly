@@ -38,13 +38,12 @@ namespace jelly
 		//------------------------------------------------------------------------
 
 		Compressor::Compressor()
-			: m_error(false)
-			, m_totalBytesWritten(0)
+			: m_totalBytesWritten(0)
 		{
 			m_internal = new Internal();
 
 			m_internal->m_stream = ZSTD_createCStream();
-			JELLY_CHECK(m_internal->m_stream != NULL, "ZSTD_createCStream() failed.");
+			JELLY_CHECK(m_internal->m_stream != NULL, Result::ERROR_ZSTD_STREAM_FAILED_TO_CREATE_COMPRESSOR);
 		}
 
 		Compressor::~Compressor()
@@ -67,7 +66,6 @@ namespace jelly
 		{
 			JELLY_ASSERT(m_internal->m_stream != NULL);
 			JELLY_ASSERT(m_outputCallback);
-			JELLY_ASSERT(!m_error);
 
 			ZSTD_inBuffer inBuffer;
 			inBuffer.src = NULL;
@@ -84,11 +82,7 @@ namespace jelly
 				outBuffer.pos = 0;
 
 				size_t result = ZSTD_compressStream2(m_internal->m_stream, &outBuffer, &inBuffer, ZSTD_e_end);
-				if(ZSTD_isError(result))
-				{
-					m_error = true;
-					break;
-				}
+				JELLY_CHECK(ZSTD_isError(result) == 0, Result::ERROR_ZSTD_STREAM_FAILED_TO_FLUSH, "Msg=%s", ZSTD_getErrorName(result));
 
 				if (outBuffer.pos > 0)
 					m_outputCallback(buffer, outBuffer.pos);					
@@ -100,14 +94,13 @@ namespace jelly
 
 		//------------------------------------------------------------------------
 
-		size_t	
+		void
 		Compressor::Write(
 			const void*				aBuffer,
 			size_t					aBufferSize) 
 		{
 			JELLY_ASSERT(m_internal->m_stream != NULL);
 			JELLY_ASSERT(m_outputCallback);
-			JELLY_ASSERT(!m_error);
 
 			ZSTD_inBuffer inBuffer;
 			inBuffer.src = aBuffer;
@@ -124,19 +117,13 @@ namespace jelly
 				outBuffer.pos = 0;
 
 				size_t result = ZSTD_compressStream2(m_internal->m_stream, &outBuffer, &inBuffer, ZSTD_e_continue);
-				if (ZSTD_isError(result))
-				{
-					m_error = true;
-					return 0;
-				}
+				JELLY_CHECK(ZSTD_isError(result) == 0, Result::ERROR_ZSTD_STREAM_FAILED_TO_WRITE, "Msg=%s", ZSTD_getErrorName(result));
 
 				if(outBuffer.pos > 0)
 					m_outputCallback(buffer, outBuffer.pos);
 			}
 
 			m_totalBytesWritten += aBufferSize;
-
-			return aBufferSize;
 		}
 
 		size_t	
@@ -148,12 +135,11 @@ namespace jelly
 		//------------------------------------------------------------------------
 
 		Decompressor::Decompressor()
-			: m_error(false)
 		{
 			m_internal = new Internal();
 
 			m_internal->m_stream = ZSTD_createDStream();
-			JELLY_CHECK(m_internal->m_stream != NULL, "ZSTD_createDStream() failed.");
+			JELLY_CHECK(m_internal->m_stream != NULL, Result::ERROR_ZSTD_STREAM_FAILED_TO_CREATE_DECOMPRESSOR);
 		}
 
 		Decompressor::~Decompressor()
@@ -178,15 +164,12 @@ namespace jelly
 		{
 			JELLY_ASSERT(m_internal->m_stream != NULL);
 			JELLY_ASSERT(m_outputCallback);
-			JELLY_ASSERT(!m_error);
 
 			ZSTD_inBuffer inBuffer;
 			inBuffer.src = aBuffer;
 			inBuffer.size = aBufferSize;
 			inBuffer.pos = 0;
 
-			size_t result;
-				
 			do
 			{
 				uint8_t buffer[32768];
@@ -196,12 +179,8 @@ namespace jelly
 				outBuffer.size = sizeof(buffer);
 				outBuffer.pos = 0;
 
-				result = ZSTD_decompressStream(m_internal->m_stream, &outBuffer, &inBuffer);
-				if(ZSTD_isError(result))
-				{
-					m_error = true;
-					break;
-				}
+				size_t result = ZSTD_decompressStream(m_internal->m_stream, &outBuffer, &inBuffer);
+				JELLY_CHECK(ZSTD_isError(result) == 0, Result::ERROR_ZSTD_STREAM_FAILED_TO_READ, "Msg=%s", ZSTD_getErrorName(result));
 
 				if (outBuffer.pos > 0)
 					m_outputCallback(buffer, outBuffer.pos);

@@ -115,15 +115,14 @@ namespace jelly
 			aOther.m_tail = NULL;
 		}
 
-		size_t			
+		void	
 		Writer::Write(
 			const void*									aBuffer,
 			size_t										aBufferSize) 
 		{
 			if(m_compressor)
 			{
-				size_t bytes = m_compressor->Write(aBuffer, aBufferSize);
-				JELLY_ASSERT(bytes == aBufferSize);
+				m_compressor->Write(aBuffer, aBufferSize);
 			}
 			else
 			{
@@ -131,8 +130,6 @@ namespace jelly
 			}
 
 			m_totalBytesWritten += aBufferSize;
-
-			return aBufferSize;
 		}
 	
 		size_t			

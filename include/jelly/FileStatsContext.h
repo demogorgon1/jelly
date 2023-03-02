@@ -9,10 +9,10 @@ namespace jelly
 	struct FileStatsContext
 	{
 		FileStatsContext(
-			IStats* aStats)
+			IStats* aStats) noexcept
 			: m_stats(aStats)
 			, m_idRead(UINT32_MAX)
-			, m_idWrite(UINT32_MAX)
+			, m_idWrite(UINT32_MAX) 
 		{
 
 		}

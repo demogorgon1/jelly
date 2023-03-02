@@ -30,7 +30,7 @@ namespace jelly
 				Emit_UInt64(
 					uint32_t							aId,
 					uint64_t							aValue,
-					const std::optional<Stat::Type>&	aExpectedType) override
+					const std::optional<Stat::Type>&	aExpectedType) noexcept override
 				{
 					JELLY_ALWAYS_ASSERT(aId < (uint32_t)NUM_IDS);
 					JELLY_ALWAYS_ASSERT(aExpectedType == Stat::TYPE_COUNTER);

@@ -13,7 +13,7 @@ namespace jelly
 	{
 	public:
 				SizeTieredCompactionStrategy(
-					ConfigProxy*							aConfig);
+					ConfigProxy*							aConfig) noexcept;
 		virtual	~SizeTieredCompactionStrategy();
 
 		// ICompactionStrategy implementation

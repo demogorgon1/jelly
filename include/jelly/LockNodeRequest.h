@@ -15,7 +15,7 @@ namespace jelly
 		: public Request<LockNodeRequest<_KeyType, _LockType, _LockMetaType>>
 	{	
 	public:
-		LockNodeRequest()
+		LockNodeRequest() noexcept
 			: m_forced(false)
 		{
 
@@ -24,7 +24,7 @@ namespace jelly
 		//! Set lock key for request.
 		void
 		SetKey(
-			const _KeyType&			aKey)
+			const _KeyType&			aKey) noexcept
 		{
 			m_key = aKey;
 		}
@@ -32,7 +32,7 @@ namespace jelly
 		//! Set lock identifier for request.
 		void
 		SetLock(
-			const _LockType&		aLock)
+			const _LockType&		aLock) noexcept
 		{
 			m_lock = aLock;
 		}
@@ -40,7 +40,7 @@ namespace jelly
 		//! Set lock meta data.
 		void
 		SetMeta(
-			const _LockMetaType&	aMeta)
+			const _LockMetaType&	aMeta) noexcept
 		{
 			m_meta = aMeta;
 		}
@@ -48,7 +48,7 @@ namespace jelly
 		//! Try to force the request, regardles of existing lock.
 		void
 		SetForced(
-			bool					aForced)
+			bool					aForced) noexcept
 		{
 			m_forced = aForced;
 		}

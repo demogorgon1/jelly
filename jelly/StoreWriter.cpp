@@ -28,7 +28,7 @@ namespace jelly
 	}
 
 	bool
-	StoreWriter::IsValid() const
+	StoreWriter::IsValid() const noexcept
 	{
 		return m_file.IsValid();
 	}

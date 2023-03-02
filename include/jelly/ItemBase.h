@@ -13,20 +13,20 @@ namespace jelly
 	class ItemBase
 	{
 	public:
-						ItemBase();
+						ItemBase() noexcept;
 		virtual			~ItemBase();
 
-		bool			HasTombstone() const;
+		bool			HasTombstone() const noexcept;
 		void			SetTombstoneStoreId(
-							uint32_t						aTombstoneStoreId);
-		void			RemoveTombstone();
+							uint32_t						aTombstoneStoreId) noexcept;
+		void			RemoveTombstone() noexcept;
 		bool			ShouldBePruned(
-							uint32_t						aCurrentOldestStoreId) const;
+							uint32_t						aCurrentOldestStoreId) const noexcept;
 		void			SetTimeStamp(
-							uint64_t						aTimeStamp);
+							uint64_t						aTimeStamp) noexcept;
 		void			SetSeq(
-							uint32_t						aSeq);
-		void			IncrementSeq();
+							uint32_t						aSeq) noexcept;
+		void			IncrementSeq() noexcept;
 
 		// Virtual interface
 		virtual size_t	Write(

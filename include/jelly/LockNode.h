@@ -130,7 +130,7 @@ namespace jelly
 		*/
 		void
 		Lock(
-			Request*											aRequest)
+			Request*											aRequest) noexcept
 		{
 			JELLY_ASSERT(aRequest->GetResult() == REQUEST_RESULT_NONE);
 
@@ -157,7 +157,7 @@ namespace jelly
 		*/
 		void
 		Unlock(
-			Request*											aRequest)
+			Request*											aRequest) noexcept
 		{
 			JELLY_ASSERT(aRequest->GetResult() == REQUEST_RESULT_NONE);
 
@@ -182,7 +182,7 @@ namespace jelly
 		*/
 		void
 		Delete(
-			Request*											aRequest)
+			Request*											aRequest) noexcept
 		{
 			JELLY_ASSERT(aRequest->GetResult() == REQUEST_RESULT_NONE);
 

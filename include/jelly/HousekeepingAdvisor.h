@@ -72,9 +72,9 @@ namespace jelly
 				TYPE_PERFORM_COMPACTION
 			};
 
-			Event()
+			Event() noexcept
 				: m_type(Type(0))
-				, m_concurrentWALIndex(0)
+				, m_concurrentWALIndex(0) 
 			{
 
 			}

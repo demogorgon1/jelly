@@ -9,7 +9,7 @@ namespace jelly
 	{
 	public:
 		RingBuffer(
-			size_t			aSize)
+			size_t			aSize) noexcept
 			: m_empty(true)
 			, m_writeOffset(0)
 		{

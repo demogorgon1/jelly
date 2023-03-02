@@ -51,7 +51,7 @@ namespace jelly
 		}
 
 		bool
-		Handle::IsSet() const
+		Handle::IsSet() const noexcept
 		{
 			return m_fd != -1;
 		}
@@ -110,7 +110,7 @@ namespace jelly
 		}
 
 		bool		
-		FileReadRandom::IsValid()
+		FileReadRandom::IsValid() noexcept
 		{
 			return m_handle.IsSet();
 		}
@@ -171,7 +171,7 @@ namespace jelly
 		}
 
 		bool		
-		FileReadStream::IsValid()
+		FileReadStream::IsValid() noexcept
 		{
 			return m_handle.IsSet();
 		}
@@ -185,7 +185,7 @@ namespace jelly
 		}
 
 		bool			
-		FileReadStream::IsEnd() const
+		FileReadStream::IsEnd() const noexcept
 		{
 			return m_totalBytesRead == m_size;
 		}

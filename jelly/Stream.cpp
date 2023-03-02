@@ -17,7 +17,7 @@ namespace jelly
 				Buffer*&								aHead,
 				Buffer*&								aTail,
 				const void*								aBuffer,
-				size_t									aBufferSize)
+				size_t									aBufferSize) noexcept
 			{
 				size_t remaining = aBufferSize;
 				const uint8_t* p = (const uint8_t*)aBuffer;
@@ -58,7 +58,7 @@ namespace jelly
 		//---------------------------------------------------------------------------------
 
 		Writer::Writer(
-			const Compression::IProvider*				aCompression)
+			const Compression::IProvider*				aCompression) 
 			: m_head(NULL)
 			, m_tail(NULL)
 			, m_totalBytesWritten(0)

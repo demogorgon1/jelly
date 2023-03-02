@@ -48,7 +48,7 @@ namespace jelly
 		size_t												m_suggestionCount;
 
 		void				_AddSuggestion(
-								const CompactionJob&					aSuggestion);
+								const CompactionJob&					aSuggestion) noexcept;
 	};
 
 }

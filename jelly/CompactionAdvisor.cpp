@@ -50,7 +50,7 @@ namespace jelly
 	{
 		Internal(
 			ConfigProxy*						aConfig,
-			Strategy							aStrategy)
+			Strategy							aStrategy) 
 			: m_totalSizeBuffer(aConfig->GetSize(Config::ID_COMPACTION_SIZE_MEMORY))
 			, m_totalSizeTrendBuffer(aConfig->GetSize(Config::ID_COMPACTION_SIZE_TREND_MEMORY))
 		{
@@ -150,7 +150,7 @@ namespace jelly
 
 	void				
 	CompactionAdvisor::_AddSuggestion(
-		const CompactionJob&					aSuggestion)
+		const CompactionJob&					aSuggestion) noexcept
 	{
 		if(m_suggestionCount < MAX_SUGGESTIONS)
 		{

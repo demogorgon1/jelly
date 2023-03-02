@@ -25,7 +25,7 @@ namespace jelly
 						const FileHeader&					aFileHeader);
 		virtual		~FileStreamReader();
 
-		bool		IsValid() const;
+		bool		IsValid() const noexcept;
 
 		// IFileStreamReader implementation
 		bool		IsEnd() const override;

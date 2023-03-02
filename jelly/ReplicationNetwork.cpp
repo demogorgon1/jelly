@@ -7,7 +7,7 @@ namespace jelly
 {
 
 	ReplicationNetwork::ReplicationNetwork(
-		uint32_t						aLocalNodeId)
+		uint32_t						aLocalNodeId) noexcept
 		: m_localNodeId(aLocalNodeId)
 		, m_localModeIsMaster(false)
 		, m_sendQueue(NULL)
@@ -22,14 +22,14 @@ namespace jelly
 
 	void			
 	ReplicationNetwork::SetSendCallback(
-		SendCallback					aSendCallback)
+		SendCallback					aSendCallback) noexcept
 	{
 		m_sendCallback = aSendCallback;
 	}
 
 	void
 	ReplicationNetwork::SetNodeIds(
-		const std::vector<uint32_t>&	aNodeIds)
+		const std::vector<uint32_t>&	aNodeIds) noexcept
 	{
 		JELLY_ASSERT(aNodeIds.size() > 0);
 		m_nodeIds = aNodeIds;
@@ -38,7 +38,7 @@ namespace jelly
 
 	void
 	ReplicationNetwork::Send(
-		Stream::Writer&					aStream)
+		Stream::Writer&					aStream) noexcept
 	{
 		JELLY_ASSERT(m_localModeIsMaster);
 

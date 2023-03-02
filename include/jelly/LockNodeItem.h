@@ -17,7 +17,7 @@ namespace jelly
 	public:
 		struct RuntimeState
 		{
-			RuntimeState()
+			RuntimeState() noexcept
 				: m_pendingWAL(NULL)
 				, m_walInstanceCount(0)
 			{
@@ -30,7 +30,7 @@ namespace jelly
 
 		LockNodeItem(
 			const _KeyType&									aKey = _KeyType(),
-			const _LockType&								aLock = _LockType())
+			const _LockType&								aLock = _LockType()) noexcept
 			: m_key(aKey)
 			, m_lock(aLock)
 		{
@@ -42,7 +42,7 @@ namespace jelly
 			uint32_t										aSeq,
 			const _LockType&								aLock,			
 			const _LockMetaType&							aMeta,
-			uint32_t										aTombstoneStoreId = UINT32_MAX)
+			uint32_t										aTombstoneStoreId = UINT32_MAX) noexcept
 			: m_key(aKey)
 			, m_lock(aLock)
 			, m_meta(aMeta)
@@ -52,7 +52,7 @@ namespace jelly
 		}
 
 		void
-		Reset()
+		Reset() noexcept
 		{
 			JELLY_ASSERT(m_runtimeState.m_pendingWAL == NULL);
 			JELLY_ASSERT(m_runtimeState.m_walInstanceCount == 0);
@@ -66,7 +66,7 @@ namespace jelly
 
 		void
 		MoveFrom(
-			LockNodeItem*									aOther)
+			LockNodeItem*									aOther) noexcept
 		{
 			m_key = aOther->m_key;
 			m_lock = aOther->m_lock;
@@ -77,7 +77,7 @@ namespace jelly
 
 		bool
 		CompactionRead(
-			IFileStreamReader*								aStoreReader)
+			IFileStreamReader*								aStoreReader) 
 		{
 			return Read(aStoreReader, NULL);
 		}
@@ -102,21 +102,21 @@ namespace jelly
 
 		void
 		SetKey(
-			const _KeyType&									aKey)
+			const _KeyType&									aKey) noexcept
 		{
 			m_key = aKey;
 		}
 
 		void
 		SetLock(
-			const _LockType&								aLock)
+			const _LockType&								aLock) noexcept
 		{
 			m_lock = aLock;
 		}
 
 		void
 		SetMeta(
-			const _LockMetaType&							aMeta)
+			const _LockMetaType&							aMeta) noexcept
 		{
 			m_meta = aMeta;
 		}

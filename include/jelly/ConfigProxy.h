@@ -13,7 +13,7 @@ namespace jelly
 	{
 	public:
 								ConfigProxy(
-									const IConfigSource*	aSource);
+									const IConfigSource*	aSource) noexcept;
 								~ConfigProxy();
 				
 		const char*				GetString(

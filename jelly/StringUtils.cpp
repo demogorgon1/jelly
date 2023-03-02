@@ -12,7 +12,7 @@ namespace jelly
 		std::string	
 		Format(
 			const char* aFormat,
-			...)
+			...) noexcept
 		{
 			char buffer[1024];
 			JELLY_STRING_FORMAT_VARARGS(buffer, sizeof(buffer), aFormat);

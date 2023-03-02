@@ -11,30 +11,30 @@ namespace jelly
 	template <typename _T, size_t _Size>
 	struct UIntVectorKey
 	{
-		UIntVectorKey()
+		UIntVectorKey() noexcept
 		{
 			memset(m_values, 0, sizeof(m_values));
 		}
 
 		UIntVectorKey(
-			const std::vector<_T>&		aValues) 
+			const std::vector<_T>&		aValues) noexcept
 		{
 			JELLY_ASSERT(aValues.size() == _Size);
 			memcpy(m_values, &aValues[0], sizeof(m_values));
 		}
 
 		UIntVectorKey(
-			std::initializer_list<_T>	aValues) 
+			std::initializer_list<_T>	aValues) noexcept
 		{
 			JELLY_ASSERT(aValues.size() == _Size);
 			memcpy(m_values, aValues.begin(), sizeof(m_values));
 		}
 
-		bool		operator==(const UIntVectorKey<_T, _Size>& aOther) const { return memcmp(m_values, aOther.m_values, sizeof(m_values)) == 0; }
-		bool		operator!=(const UIntVectorKey<_T, _Size>& aOther) const { return memcmp(m_values, aOther.m_values, sizeof(m_values)) != 0; }
-		bool		operator<(const UIntVectorKey<_T, _Size>& aOther) const { return memcmp(m_values, aOther.m_values, sizeof(m_values)) < 0; }
-		bool		operator==(const std::vector<_T>& aOther) const { JELLY_ASSERT(aOther.size() == _Size); return memcmp(m_values, &aOther[0], sizeof(m_values)) == 0; }
-		bool		operator==(std::initializer_list<_T> aOther) const { JELLY_ASSERT(aOther.size() == _Size); return memcmp(m_values, aOther.begin(), sizeof(m_values)) == 0; }
+		bool		operator==(const UIntVectorKey<_T, _Size>& aOther) const noexcept { return memcmp(m_values, aOther.m_values, sizeof(m_values)) == 0; }
+		bool		operator!=(const UIntVectorKey<_T, _Size>& aOther) const noexcept { return memcmp(m_values, aOther.m_values, sizeof(m_values)) != 0; }
+		bool		operator<(const UIntVectorKey<_T, _Size>& aOther) const noexcept { return memcmp(m_values, aOther.m_values, sizeof(m_values)) < 0; }
+		bool		operator==(const std::vector<_T>& aOther) const noexcept { JELLY_ASSERT(aOther.size() == _Size); return memcmp(m_values, &aOther[0], sizeof(m_values)) == 0; }
+		bool		operator==(std::initializer_list<_T> aOther) const noexcept { JELLY_ASSERT(aOther.size() == _Size); return memcmp(m_values, aOther.begin(), sizeof(m_values)) == 0; }
 
 		void		
 		Write(
@@ -57,7 +57,7 @@ namespace jelly
 		}
 
 		uint64_t
-		GetHash() const
+		GetHash() const noexcept
 		{
 			// xor splitmix64'd elements together
 			uint64_t hash = 0;

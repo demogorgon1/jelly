@@ -146,7 +146,7 @@ namespace jelly
 		struct ScopedContext
 		{
 			ScopedContext(
-				uint32_t																aContext)
+				uint32_t																aContext) noexcept
 			{
 				JELLY_ASSERT(aContext != Exception::CONTEXT_NONE);
 
@@ -168,7 +168,7 @@ namespace jelly
 		struct ScopedRequestType
 		{
 			ScopedRequestType(
-				uint32_t																aRequestType)
+				uint32_t																aRequestType) noexcept
 				: m_requestType(aRequestType)
 			{
 				EnterRequestType(m_requestType);

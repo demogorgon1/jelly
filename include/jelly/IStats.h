@@ -23,7 +23,7 @@ namespace jelly
 	class IStats
 	{
 	public:
-		IStats()
+		IStats() noexcept
 		{
 
 		}
@@ -38,7 +38,7 @@ namespace jelly
 		 */
 		struct Counter
 		{
-			Counter()
+			Counter() noexcept
 				: m_value(0)
 				, m_rate(0)
 				, m_rateMA(0)
@@ -56,7 +56,7 @@ namespace jelly
 		 */
 		struct Sampler
 		{
-			Sampler()
+			Sampler() noexcept
 				: m_avg(0)
 				, m_min(0)
 				, m_max(0)
@@ -94,7 +94,7 @@ namespace jelly
 		 */
 		struct Gauge
 		{
-			Gauge()
+			Gauge() noexcept
 				: m_value(0)
 			{
 
@@ -109,7 +109,7 @@ namespace jelly
 		Emit(
 			uint32_t							aId,
 			const _T&							aValue,
-			const std::optional<Stat::Type>&	aExpectedType = std::optional<Stat::Type>())
+			const std::optional<Stat::Type>&	aExpectedType = std::optional<Stat::Type>()) noexcept
 		{
 			static_assert(std::is_unsigned<_T>::value);
 
@@ -122,7 +122,7 @@ namespace jelly
 		virtual void					Emit_UInt64(
 											uint32_t							/*aId*/,
 											uint64_t							/*aValue*/,
-											const std::optional<Stat::Type>&	/*aExpectedType*/) { }	
+											const std::optional<Stat::Type>&	/*aExpectedType*/) noexcept { }
 
 		//! Update statistics. Counters and gauges will be reset.
 		virtual void					Update() { }

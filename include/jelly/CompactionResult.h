@@ -31,7 +31,7 @@ namespace jelly
 				const _KeyType&									aKey = _KeyType(),
 				uint32_t										aSeq = 0,
 				uint32_t										aStoreId = 0,
-				size_t											aStoreOffset = 0)
+				size_t											aStoreOffset = 0) noexcept
 				: m_key(aKey)
 				, m_seq(aSeq)
 				, m_storeId(aStoreId)
@@ -46,13 +46,13 @@ namespace jelly
 			size_t															m_storeOffset;
 		};
 
-		CompactionResult()
-			: m_isMajorCompaction(false)
+		CompactionResult() noexcept
+			: m_isMajorCompaction(false) 
 		{
 
 		}
 
-		~CompactionResult()
+		~CompactionResult() 
 		{
 		}
 

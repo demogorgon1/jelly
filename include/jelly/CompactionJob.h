@@ -17,8 +17,8 @@ namespace jelly
 		CompactionJob(
 			uint32_t	aOldestStoreId = UINT32_MAX,
 			uint32_t	aStoreId1 = UINT32_MAX,
-			uint32_t	aStoreId2 = UINT32_MAX)
-			: m_oldestStoreId(aOldestStoreId)
+			uint32_t	aStoreId2 = UINT32_MAX) noexcept
+			: m_oldestStoreId(aOldestStoreId) 
 		{
 			if(aStoreId1 != UINT32_MAX)
 				m_storeIds.push_back(aStoreId1);

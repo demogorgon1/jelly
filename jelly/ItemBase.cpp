@@ -7,7 +7,7 @@
 namespace jelly
 {
 
-	ItemBase::ItemBase()
+	ItemBase::ItemBase() noexcept
 	{
 
 	}
@@ -18,47 +18,47 @@ namespace jelly
 	}
 
 	bool			
-	ItemBase::HasTombstone() const
+	ItemBase::HasTombstone() const noexcept
 	{
 		return m_data.m_tombstoneStoreId != UINT32_MAX;
 	}
 	
 	void			
 	ItemBase::SetTombstoneStoreId(
-		uint32_t						aTombstoneStoreId)
+		uint32_t						aTombstoneStoreId) noexcept
 	{
 		m_data.m_tombstoneStoreId = aTombstoneStoreId;
 	}
 	
 	void			
-	ItemBase::RemoveTombstone()
+	ItemBase::RemoveTombstone() noexcept
 	{
 		m_data.m_tombstoneStoreId = UINT32_MAX;
 	}
 
 	bool			
 	ItemBase::ShouldBePruned(
-		uint32_t						aCurrentOldestStoreId) const
+		uint32_t						aCurrentOldestStoreId) const noexcept
 	{
 		return m_data.m_tombstoneStoreId != UINT32_MAX && aCurrentOldestStoreId > m_data.m_tombstoneStoreId;
 	}
 
 	void			
 	ItemBase::SetTimeStamp(
-		uint64_t						aTimeStamp)
+		uint64_t						aTimeStamp) noexcept
 	{
 		m_data.m_timeStamp = aTimeStamp;
 	}
 	
 	void			
 	ItemBase::SetSeq(
-		uint32_t						aSeq)
+		uint32_t						aSeq) noexcept
 	{
 		m_data.m_seq = aSeq;
 	}
 
 	void			
-	ItemBase::IncrementSeq()
+	ItemBase::IncrementSeq() noexcept
 	{
 		m_data.m_seq++;
 	}

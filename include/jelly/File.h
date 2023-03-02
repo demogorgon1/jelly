@@ -34,7 +34,7 @@ namespace jelly
 					~File();
 
 		void		Close();
-		bool		IsValid() const;
+		bool		IsValid() const noexcept;
 		size_t		GetSize() const;
 		size_t		Flush();
 		void		ReadAtOffset(
@@ -42,7 +42,7 @@ namespace jelly
 						void*				aBuffer,
 						size_t				aBufferSize);
 		size_t		GetReadOffset() const;
-		bool		IsEnd() const;
+		bool		IsEnd() const noexcept;
 
 		// IWriter implementation
 		void		Write(

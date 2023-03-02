@@ -10,7 +10,7 @@ namespace jelly
 	{
 	public:
 		Timer(
-			uint32_t		aMilliseconds = 0)
+			uint32_t		aMilliseconds = 0) noexcept
 			: m_config(NULL)
 			, m_configId(0)
 		{
@@ -19,7 +19,7 @@ namespace jelly
 
 		Timer(
 			ConfigProxy*	aConfig,
-			uint32_t		aConfigId)
+			uint32_t		aConfigId) noexcept
 			: m_config(aConfig)
 			, m_configId(aConfigId)
 		{

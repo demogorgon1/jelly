@@ -88,7 +88,7 @@ namespace jelly
 	}
 
 	bool	
-	File::IsValid() const
+	File::IsValid() const noexcept
 	{
 		if(m_internal == NULL)
 			return false;
@@ -105,7 +105,7 @@ namespace jelly
 	}
 
 	size_t	
-	File::GetSize() const
+	File::GetSize() const 
 	{
 		JELLY_ASSERT(m_internal != NULL);
 		if(m_internal->m_fileWriteStream)
@@ -154,7 +154,7 @@ namespace jelly
 	}
 
 	bool		
-	File::IsEnd() const
+	File::IsEnd() const noexcept
 	{
 		JELLY_ASSERT(m_internal != NULL);
 		JELLY_ASSERT(m_internal->m_mode == MODE_READ_STREAM);

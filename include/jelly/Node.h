@@ -669,7 +669,7 @@ namespace jelly
 		struct StatsContext
 		{
 			StatsContext(
-				IStats*						aStats)
+				IStats*						aStats) noexcept
 				: m_fileStore(aStats)
 				, m_fileWAL(aStats)
 			{
@@ -692,21 +692,21 @@ namespace jelly
 		WAL*
 		AddWAL(
 			uint32_t						aId,
-			IWALWriter*						aWALWriter)
+			IWALWriter*						aWALWriter) noexcept
 		{
 			m_wals.push_back(new WAL(aId, aWALWriter));
 			return m_wals[m_wals.size() - 1];
 		}
 
 		size_t
-		GetItemCount() const
+		GetItemCount() const noexcept
 		{
 			return m_table.Count();
 		}
 
 		void
 		AddRequestToQueue(
-			_RequestType*			aRequest)
+			_RequestType*			aRequest) noexcept
 		{
 			aRequest->SetTimeStamp(m_host->GetTimeStamp());
 
@@ -730,14 +730,14 @@ namespace jelly
 
 		void
 		SetNextStoreId(
-			uint32_t		aNextStoreId)
+			uint32_t		aNextStoreId) noexcept
 		{
 			std::lock_guard lock(m_nextStoreIdLock);
 			m_nextStoreId = aNextStoreId;
 		}
 
 		uint32_t
-		GetNextStoreId()
+		GetNextStoreId() noexcept
 		{
 			std::lock_guard lock(m_nextStoreIdLock);
 			return m_nextStoreId;

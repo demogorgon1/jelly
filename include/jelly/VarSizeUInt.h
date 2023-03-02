@@ -16,14 +16,14 @@ namespace jelly
 			static_assert(sizeof(_T) <= sizeof(uint64_t));
 			static_assert(std::is_unsigned<_T>::value);
 
-			Encoder()
+			Encoder() noexcept
 				: m_size(0)
 			{
 
 			}
 
 			Encoder(
-				_T							aValue)
+				_T							aValue) noexcept
 				: m_size(0)
 			{
 				Encode(aValue);
@@ -66,7 +66,7 @@ namespace jelly
 		template <typename _T>
 		_T
 		Decode(
-			std::function<uint8_t()>		aSource)
+			std::function<uint8_t()>		aSource) noexcept
 		{
 			static_assert(sizeof(_T) <= sizeof(uint64_t));
 			static_assert(std::is_unsigned<_T>::value);

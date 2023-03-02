@@ -26,7 +26,7 @@ namespace jelly
 			Handle&			operator=(
 								int					aFd);
 			void			Release();
-			bool			IsSet() const;
+			bool			IsSet() const noexcept;
 			
 			operator int() const
 			{
@@ -64,7 +64,7 @@ namespace jelly
 								const FileHeader&	aHeader);
 							~FileReadRandom();
 
-			bool			IsValid();
+			bool			IsValid() noexcept;
 			void			ReadAtOffset(
 								size_t				aOffset,
 								void*				aBuffer,
@@ -86,9 +86,9 @@ namespace jelly
 								const FileHeader&	aHeader);
 							~FileReadStream();
 
-			bool			IsValid();
+			bool			IsValid() noexcept;
 			size_t			GetSize() const;
-			bool			IsEnd() const;
+			bool			IsEnd() const noexcept;
 
 			// IReader implementation
 			size_t			Read(

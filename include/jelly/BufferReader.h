@@ -33,7 +33,7 @@ namespace jelly
 		//! Initializes reader for the specified buffer.
 					BufferReader(
 						const void*		aBuffer,
-						size_t			aBufferSize);
+						size_t			aBufferSize) noexcept;
 					~BufferReader();
 		
 		//------------------------------------------------------------------------------

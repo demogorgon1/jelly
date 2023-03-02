@@ -12,7 +12,7 @@ namespace jelly
 	StoreBlobReader::StoreBlobReader(
 		const char*			aPath,
 		FileStatsContext*	aFileStatsContext,
-		const FileHeader&	aFileHeader)
+		const FileHeader&	aFileHeader) noexcept
 		: m_path(aPath)
 		, m_fileStatsContext(aFileStatsContext)
 		, m_fileHeader(aFileHeader)
@@ -25,7 +25,7 @@ namespace jelly
 	}
 
 	bool	
-	StoreBlobReader::IsValid() const
+	StoreBlobReader::IsValid() const noexcept
 	{
 		return m_file && m_file->IsValid();
 	}

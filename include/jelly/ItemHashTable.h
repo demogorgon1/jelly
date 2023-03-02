@@ -191,7 +191,7 @@ namespace jelly
 			TableEntry*		aTable,
 			size_t			aSize,
 			TableEntry&		aInsert,
-			uint64_t&		aInsertHash)
+			uint64_t&		aInsertHash) noexcept
 		{	
 			// Does it fit in one of the two nests?
 			size_t i = aInsertHash % aSize;
@@ -238,7 +238,7 @@ namespace jelly
 		_ItemType*
 		_TryGet(
 			uint64_t		aHash,
-			const _KeyType&	aKey)
+			const _KeyType&	aKey) noexcept
 		{
 			TableEntry* entry1 = &m_table[aHash % m_size];
 			if(entry1->m_key == aKey)
@@ -254,7 +254,7 @@ namespace jelly
 		const _ItemType*
 		_TryGet(
 			uint64_t		aHash,
-			const _KeyType&	aKey) const
+			const _KeyType&	aKey) const noexcept
 		{
 			const TableEntry* entry1 = &m_table[aHash % m_size];
 			if(entry1->m_key == aKey)
@@ -269,7 +269,7 @@ namespace jelly
 
 		bool
 		_Rehash(
-			size_t			aNewSize)
+			size_t			aNewSize) noexcept
 		{
 			JELLY_ASSERT(aNewSize >= 1);
 			JELLY_ASSERT(aNewSize > m_size);

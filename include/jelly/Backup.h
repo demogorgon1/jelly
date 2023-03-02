@@ -30,7 +30,7 @@ namespace jelly
 			const char*						aBackupPath,
 			const char*						aName,
 			const char*						aPrevName,
-			FileStatsContext*				aFileStatsContext)
+			FileStatsContext*				aFileStatsContext) noexcept
 			: m_nodeId(aNodeId)
 			, m_name(aName)
 			, m_prevName(aPrevName)
@@ -104,7 +104,7 @@ namespace jelly
 		SetCompactionJob(
 			uint32_t						aCompactionStoreId,
 			uint32_t						aOldestStoreId,
-			const std::vector<uint32_t>&	aStoreIds)
+			const std::vector<uint32_t>&	aStoreIds) noexcept
 		{
 			m_compactionStoreId = aCompactionStoreId;
 			m_compactionJob.m_oldestStoreId = aOldestStoreId;
@@ -113,37 +113,37 @@ namespace jelly
 
 		void
 		SetIncludeStoreIds(
-			const std::vector<uint32_t>&	aIncludeStoreIds)
+			const std::vector<uint32_t>&	aIncludeStoreIds) noexcept
 		{
 			m_includeStoreIds = aIncludeStoreIds;
 		}
 
 		CompactionResultType*
-		GetCompactionResult()
+		GetCompactionResult() noexcept
 		{
 			return m_compactionResult.get();
 		}
 
 		size_t
-		GetIncludedStoreIdCount() const
+		GetIncludedStoreIdCount() const noexcept
 		{
 			return m_includeStoreIds.size();
 		}
 
 		bool
-		IsIncremental() const
+		IsIncremental() const noexcept
 		{
 			return m_prevName.length() > 0;
 		}
 
 		const std::string&
-		GetIncrementalDependency() const
+		GetIncrementalDependency() const noexcept
 		{
 			return m_prevName;
 		}
 
 		bool
-		HasCompletedOk() const
+		HasCompletedOk() const noexcept
 		{
 			return m_performed;
 		}

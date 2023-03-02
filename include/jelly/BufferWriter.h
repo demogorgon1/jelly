@@ -32,8 +32,8 @@ namespace jelly
 	{
 	public:
 		BufferWriter(
-			IBuffer&	aBuffer)
-			: m_buffer(aBuffer)
+			IBuffer&	aBuffer) noexcept
+			: m_buffer(aBuffer) 
 		{
 
 		}
@@ -47,7 +47,7 @@ namespace jelly
 		void		
 		Write(
 			const void*		aBuffer,
-			size_t			aBufferSize) noexcept override
+			size_t			aBufferSize) override
 		{
 			size_t writeOffset = m_buffer.GetSize();
 

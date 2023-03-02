@@ -40,7 +40,7 @@ namespace jelly
 	}
 
 	bool
-	WALWriter::IsValid() const
+	WALWriter::IsValid() const noexcept
 	{
 		return m_file.IsValid();
 	}

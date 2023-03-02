@@ -16,7 +16,7 @@ namespace jelly
 		: public Request<BlobNodeRequest<_KeyType, _MetaType>>
 	{
 	public:
-		BlobNodeRequest()
+		BlobNodeRequest() noexcept
 			: m_seq(0)
 		{
 

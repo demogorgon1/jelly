@@ -20,7 +20,7 @@ namespace jelly
 						const FileHeader&				aFileHeader);
 		virtual		~StoreWriter();
 
-		bool		IsValid() const;
+		bool		IsValid() const noexcept;
 			
 		// IStoreWriter implementation
 		size_t		WriteItem(

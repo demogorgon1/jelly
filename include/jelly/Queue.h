@@ -7,11 +7,11 @@ namespace jelly
 	template <typename _RequestType>
 	struct Queue
 	{
-		Queue()
-			: m_first(NULL)
+		Queue() noexcept
+			: m_first(NULL) 
 			, m_last(NULL)
 			, m_guard(false)
-			, m_count(0)
+			, m_count(0) 
 		{
 
 		}

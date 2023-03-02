@@ -87,7 +87,7 @@ namespace jelly
 	}
 
 	bool
-	FileStreamReader::IsValid() const
+	FileStreamReader::IsValid() const noexcept
 	{
 		return m_file.IsValid();
 	}

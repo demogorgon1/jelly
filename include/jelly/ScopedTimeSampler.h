@@ -12,7 +12,7 @@ namespace jelly
 	public:
 		ScopedTimeSampler(
 			IStats*		aStats,
-			uint32_t	aId)
+			uint32_t	aId) noexcept
 			: m_stats(aStats)
 			, m_id(aId)
 		{

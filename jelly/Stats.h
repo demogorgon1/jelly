@@ -37,7 +37,7 @@ namespace jelly
 		void					Emit_UInt64(
 									uint32_t							aId,
 									uint64_t							aValue,
-									const std::optional<Stat::Type>&	aExpectedType) override;
+									const std::optional<Stat::Type>&	aExpectedType) noexcept override;
 		void					Update() override;
 		Counter					GetCounter(
 									uint32_t							aId) const override;
@@ -141,7 +141,7 @@ namespace jelly
 
 		struct Data
 		{
-			Data()
+			Data() noexcept
 			{
 
 			}
@@ -151,7 +151,7 @@ namespace jelly
 				size_t							aNumCounters,
 				size_t							aNumSamplers,
 				size_t							aNumGauges,
-				size_t							aNumSamplerHistogramBuckets)
+				size_t							aNumSamplerHistogramBuckets) noexcept
 			{
 				JELLY_ASSERT(m_counterData.size() == 0);
 				JELLY_ASSERT(m_samplerData.size() == 0);
@@ -165,7 +165,7 @@ namespace jelly
 			}
 
 			void
-			ResetThread()
+			ResetThread() noexcept
 			{
 				// Note that we don't reset gauges, they retain their values
 				std::fill(m_counterData.begin(), m_counterData.end(), CounterData());
@@ -174,7 +174,7 @@ namespace jelly
 			}
 
 			void
-			ResetCollected()
+			ResetCollected() noexcept
 			{
 				std::fill(m_counterData.begin(), m_counterData.end(), CounterData());
 				std::fill(m_samplerData.begin(), m_samplerData.end(), SamplerData());
@@ -184,7 +184,7 @@ namespace jelly
 
 			void
 			Add(
-				const Data&						aOther)
+				const Data&						aOther) noexcept
 			{
 				JELLY_ASSERT(m_counterData.size() == aOther.m_counterData.size());
 				JELLY_ASSERT(m_samplerData.size() == aOther.m_samplerData.size());
@@ -216,7 +216,7 @@ namespace jelly
 		{
 			CounterMovingAverage(
 				size_t							aSize,
-				size_t							aIndex)
+				size_t							aIndex) noexcept
 				: m_movingAverage(aSize)
 				, m_index(aIndex)				
 			{
@@ -232,7 +232,7 @@ namespace jelly
 		{
 			SamplerHistogram(
 				const std::vector<uint64_t>*	aBuckets,
-				size_t							aOffset)
+				size_t							aOffset) noexcept
 				: m_buckets(aBuckets)
 				, m_offset(aOffset)
 			{
@@ -241,7 +241,7 @@ namespace jelly
 
 			size_t
 			GetBucketIndex(
-				uint64_t						aValue) const
+				uint64_t						aValue) const noexcept
 			{
 				size_t bucketIndex = m_offset;
 				for(size_t i = 0; i < m_buckets->size() - 1 && aValue > m_buckets->at(i); i++)
@@ -251,7 +251,7 @@ namespace jelly
 			}
 
 			bool
-			IsSet() const
+			IsSet() const noexcept
 			{
 				return m_buckets != NULL;
 			}
@@ -263,14 +263,14 @@ namespace jelly
 
 		struct Thread
 		{
-						Thread();
+						Thread() noexcept;
 						~Thread();
 
 			void		Emit(
 							uint64_t			aValue,
 							const Stat::Info*	aInfo,
-							size_t				aTypeIndex);
-			Data*		SwapAndGetReadData();
+							size_t				aTypeIndex) noexcept;
+			Data*		SwapAndGetReadData() noexcept;
 
 			// Public data
 			bool													m_initialized;
@@ -307,8 +307,8 @@ namespace jelly
 		Data														m_collectedData;
 
 		void				_InitData(
-								Data&												aData);
-		Thread*				_GetCurrentThread();
+								Data&												aData) noexcept;
+		Thread*				_GetCurrentThread() noexcept;
 		void				_CollectDataFromThreads();
 		void				_UpdateCounters(
 								std::chrono::time_point<std::chrono::steady_clock>	aCurrentTime);
@@ -317,7 +317,7 @@ namespace jelly
 		void				_UpdateGauges(
 								std::chrono::time_point<std::chrono::steady_clock>	aCurrentTime);
 		const Stat::Info*	_GetStatInfo(
-								uint32_t											aId) const;
+								uint32_t											aId) const noexcept;
 	};
 
 }

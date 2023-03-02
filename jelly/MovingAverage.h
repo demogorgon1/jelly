@@ -11,7 +11,7 @@ namespace jelly
 	{
 	public:
 		MovingAverage(
-			size_t			aSize)
+			size_t			aSize) noexcept
 			: m_i(0)
 			, m_sum(0)
 		{

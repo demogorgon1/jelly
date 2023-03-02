@@ -16,7 +16,7 @@ namespace jelly
 							StoreManager(
 								const char*			aRoot,
 								const char*			aFilePrefix,
-								const FileHeader&	aFileHeader);
+								const FileHeader&	aFileHeader) noexcept;
 							~StoreManager();
 
 		IStoreBlobReader*	GetStoreBlobReader(

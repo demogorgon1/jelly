@@ -13,7 +13,7 @@ namespace jelly
 		: public IConfigSource
 	{
 	public:
-					DefaultConfigSource();
+					DefaultConfigSource() noexcept;
 		virtual		~DefaultConfigSource();
 
 		/**

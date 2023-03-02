@@ -8,7 +8,7 @@ namespace jelly
 {
 
 	ConfigProxy::ConfigProxy(
-		const IConfigSource*	aSource)
+		const IConfigSource*	aSource) noexcept
 		: m_source(aSource)
 	{
 

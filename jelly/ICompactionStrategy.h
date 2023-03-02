@@ -27,7 +27,7 @@ namespace jelly
 
 		typedef std::function<void(const CompactionJob&)> SuggestionCallback;
 
-		ICompactionStrategy()
+		ICompactionStrategy() noexcept
 		{
 
 		}

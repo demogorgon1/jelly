@@ -16,7 +16,7 @@ namespace jelly
 			uint32_t			aNodeId,
 			uint32_t			aStoreId,
 			FileStatsContext*	aFileStatsContext,
-			const FileHeader&	aFileHeader)
+			const FileHeader&	aFileHeader) noexcept
 			: m_nodeId(aNodeId)
 			, m_storeId(aStoreId)
 		{
@@ -35,7 +35,7 @@ namespace jelly
 	StoreManager::StoreManager(
 		const char*			aRoot,
 		const char*			aFilePrefix,
-		const FileHeader&	aFileHeader)
+		const FileHeader&	aFileHeader) noexcept
 		: m_root(aRoot)
 		, m_filePrefix(aFilePrefix)
 		, m_fileHeader(aFileHeader)

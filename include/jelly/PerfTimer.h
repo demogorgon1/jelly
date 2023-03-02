@@ -7,7 +7,7 @@ namespace jelly
 	class PerfTimer
 	{
 	public:
-		PerfTimer()
+		PerfTimer() noexcept
 		{
 			m_startTime = std::chrono::high_resolution_clock::now();
 		}

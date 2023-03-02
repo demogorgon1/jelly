@@ -16,7 +16,7 @@ namespace jelly
 	 * \brief A node for storing blobs.
 	 * 
 	 * \tparam _KeyType			Key type. For example \ref UIntKey.
-	 * \tparam _BlobMetaType    Meta data type.
+	 * \tparam _MetaType		Meta data type.
 	 */
 	template 
 	<
@@ -146,7 +146,7 @@ namespace jelly
 		 */
 		void
 		Set(
-			Request*										aRequest)
+			Request*										aRequest) noexcept
 		{
 			JELLY_ASSERT(aRequest->GetResult() == REQUEST_RESULT_NONE);
 
@@ -178,7 +178,7 @@ namespace jelly
 		 */
 		void
 		Get(
-			Request*										aRequest)
+			Request*										aRequest) noexcept
 		{
 			JELLY_ASSERT(aRequest->GetResult() == REQUEST_RESULT_NONE);
 
@@ -209,7 +209,7 @@ namespace jelly
 		*/
 		void
 		Delete(
-			Request*										aRequest)
+			Request*										aRequest) noexcept
 		{
 			JELLY_ASSERT(aRequest->GetResult() == REQUEST_RESULT_NONE);
 
@@ -228,7 +228,7 @@ namespace jelly
 		// Testing: get keys of blobs stored in memory
 		void
 		GetResidentKeys(
-			std::vector<_KeyType>&							aOut)
+			std::vector<_KeyType>&							aOut) noexcept
 		{
 			for (Item* item = m_residentItems.m_head; item != NULL; item = item->GetNext())
 				aOut.push_back(item->GetKey());
@@ -236,7 +236,7 @@ namespace jelly
 
 		// Testing: get size of all blobs stored in memory
 		size_t
-		GetTotalResidentBlobSize()
+		GetTotalResidentBlobSize() noexcept
 		{
 			return m_totalResidentBlobSize;
 		}
@@ -471,7 +471,7 @@ namespace jelly
 
 		void
 		_InitStatsContext(
-			NodeBase::StatsContext*		aStatsContext)
+			NodeBase::StatsContext*		aStatsContext) noexcept
 		{
 			aStatsContext->m_fileWAL.m_idRead = Stat::ID_DISK_READ_BLOB_WAL_BYTES;
 			aStatsContext->m_fileWAL.m_idWrite = Stat::ID_DISK_WRITE_BLOB_WAL_BYTES;

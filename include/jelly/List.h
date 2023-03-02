@@ -10,7 +10,7 @@ namespace jelly
 	class List
 	{
 	public:
-		List()
+		List() noexcept
 			: m_head(NULL)
 			, m_tail(NULL)
 			, m_count(0)

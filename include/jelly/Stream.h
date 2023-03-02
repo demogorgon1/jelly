@@ -12,7 +12,7 @@ namespace jelly
 
 		struct Buffer
 		{
-			Buffer()
+			Buffer() noexcept
 			{
 
 			}

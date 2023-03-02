@@ -20,7 +20,7 @@ namespace jelly
 		: public IBuffer
 	{
 	public:
-		Buffer()
+		Buffer() noexcept
 			: m_size(0)
 			, m_data(m_static)
 			, m_bufferSize(_StaticSize)
@@ -29,7 +29,7 @@ namespace jelly
 		}
 
 		Buffer(
-			const IBuffer&	aOther)
+			const IBuffer&	aOther) noexcept
 			: m_size(0)
 			, m_data(m_static)
 			, m_bufferSize(_StaticSize)
@@ -38,7 +38,7 @@ namespace jelly
 		}
 
 		Buffer(
-			const Buffer<_StaticSize>&	aOther)
+			const Buffer<_StaticSize>&	aOther) noexcept
 			: m_size(0)
 			, m_data(m_static)
 			, m_bufferSize(_StaticSize)
@@ -47,7 +47,7 @@ namespace jelly
 		}
 
 		virtual
-		~Buffer()
+		~Buffer() 
 		{
 			_Reset();
 		}
@@ -138,7 +138,7 @@ namespace jelly
 
 		void
 		_Copy(
-			const IBuffer&	aOther)
+			const IBuffer&	aOther) noexcept
 		{
 			_Realloc(aOther.GetSize());
 
@@ -146,7 +146,7 @@ namespace jelly
 		}
 
 		void
-		_Reset()
+		_Reset() noexcept
 		{
 			if (!IsStatic())
 				delete[] m_data;
@@ -158,7 +158,7 @@ namespace jelly
 
 		void	
 		_Realloc(
-			size_t			aSize)
+			size_t			aSize) noexcept
 		{
 			if(aSize == m_size)
 				return;

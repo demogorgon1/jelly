@@ -19,8 +19,6 @@ namespace jelly
 		Signal() noexcept
 		{
 			m_signal = true;
-			if(m_callback)
-				m_callback();
 		}
 
 		//! Poll if the completion event has been signaled
@@ -41,7 +39,6 @@ namespace jelly
 		// Public data
 
 		std::atomic_bool		m_signal;
-		std::function<void()>	m_callback; //!< Optional callback to be called when signaled. This is done on the signaling thread. Must not throw exceptions.
 	};
 
 }

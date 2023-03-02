@@ -79,7 +79,7 @@ namespace jelly
 	Stats::Emit_UInt64(
 		uint32_t							aId,
 		uint64_t							aValue,
-		const std::optional<Stat::Type>&	aExpectedType) 
+		const std::optional<Stat::Type>&	aExpectedType) noexcept
 	{
 		if(aId != UINT32_MAX)
 		{
@@ -187,9 +187,9 @@ namespace jelly
 
 	//----------------------------------------------------------------------------------
 
-	Stats::Thread::Thread()
+	Stats::Thread::Thread() noexcept
 		: m_initialized(false)
-		, m_samplerHistograms(NULL)
+		, m_samplerHistograms(NULL) 
 	{
 
 	}
@@ -203,7 +203,7 @@ namespace jelly
 	Stats::Thread::Emit(
 		uint64_t			aValue,
 		const Stat::Info*	aInfo,
-		size_t				aTypeIndex)
+		size_t				aTypeIndex) noexcept
 	{
 		switch(aInfo->m_type)
 		{
@@ -275,7 +275,7 @@ namespace jelly
 	}
 
 	Stats::Data*
-	Stats::Thread::SwapAndGetReadData()
+	Stats::Thread::SwapAndGetReadData() noexcept
 	{
 		if(m_readData)
 			m_readData->ResetThread();
@@ -293,7 +293,7 @@ namespace jelly
 
 	void		
 	Stats::_InitData(
-		Data&				aData)
+		Data&				aData) noexcept
 	{
 		aData.Init(
 			m_typeCount[Stat::TYPE_COUNTER],
@@ -303,7 +303,7 @@ namespace jelly
 	}
 
 	Stats::Thread* 
-	Stats::_GetCurrentThread()
+	Stats::_GetCurrentThread() noexcept
 	{
 		uint32_t currentThreadIndex = ThreadIndex::Get();
 		JELLY_ASSERT(currentThreadIndex < ThreadIndex::MAX_THREADS);
@@ -430,7 +430,7 @@ namespace jelly
 
 	const Stat::Info* 
 	Stats::_GetStatInfo(
-		uint32_t											aId) const
+		uint32_t											aId) const noexcept
 	{
 		if(aId < (uint32_t)Stat::NUM_IDS)
 			return Stat::GetInfo(aId);

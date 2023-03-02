@@ -14,7 +14,7 @@ namespace jelly
 {
 
 	ZstdCompression::ZstdCompression(
-		uint32_t					aBufferCompressionLevel)
+		uint32_t					aBufferCompressionLevel) noexcept
 		: m_bufferCompressionLevel(aBufferCompressionLevel != 0 ? aBufferCompressionLevel : (uint32_t)ZSTD_CLEVEL_DEFAULT)
 	{
 

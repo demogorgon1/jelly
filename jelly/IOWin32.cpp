@@ -48,7 +48,7 @@ namespace jelly
 		}
 
 		bool
-		Handle::IsSet() const
+		Handle::IsSet() const noexcept
 		{
 			return m_handle != INVALID_HANDLE_VALUE;
 		}
@@ -116,7 +116,7 @@ namespace jelly
 		}
 
 		bool		
-		FileReadRandom::IsValid()
+		FileReadRandom::IsValid() const noexcept
 		{
 			return m_handle.IsSet();
 		}
@@ -187,7 +187,7 @@ namespace jelly
 		}
 
 		bool		
-		FileReadStream::IsValid()
+		FileReadStream::IsValid() const noexcept
 		{
 			return m_handle.IsSet();
 		}
@@ -201,7 +201,7 @@ namespace jelly
 		}
 
 		bool		
-		FileReadStream::IsEnd() const
+		FileReadStream::IsEnd() const noexcept
 		{
 			JELLY_ASSERT(m_handle.IsSet());
 

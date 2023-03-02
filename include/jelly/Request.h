@@ -13,8 +13,8 @@ namespace jelly
 	class Request
 	{
 	public:
-		Request()
-			: m_result(REQUEST_RESULT_NONE)
+		Request() noexcept
+			: m_result(REQUEST_RESULT_NONE) 
 			, m_next(NULL)
 			, m_timeStamp(0)
 			, m_hasPendingWrite(false)
@@ -45,7 +45,7 @@ namespace jelly
 		}
 
 		void
-		Execute()
+		Execute() noexcept
 		{
 			JELLY_ASSERT(m_executionCallback);
 			JELLY_ASSERT(m_result == REQUEST_RESULT_NONE);

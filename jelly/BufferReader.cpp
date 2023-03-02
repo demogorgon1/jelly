@@ -7,7 +7,7 @@ namespace jelly
 
 	BufferReader::BufferReader(
 		const void*		aBuffer,
-		size_t			aBufferSize)
+		size_t			aBufferSize) noexcept
 		: m_p((const uint8_t*)aBuffer)
 		, m_remaining(aBufferSize)
 		, m_totalBytesRead(0)

@@ -14,7 +14,7 @@ namespace jelly
 		struct Store
 		{
 			Store(
-				const IHost::StoreInfo&						aStoreInfo)
+				const IHost::StoreInfo&						aStoreInfo) noexcept
 				: m_storeId(aStoreInfo.m_id)
 				, m_size(aStoreInfo.m_size)
 			{
@@ -27,7 +27,7 @@ namespace jelly
 
 		struct Bucket
 		{
-			Bucket()
+			Bucket() noexcept
 				: m_size(0)
 			{
 
@@ -39,7 +39,7 @@ namespace jelly
 
 		struct BucketList
 		{
-			BucketList()
+			BucketList() noexcept
 			{
 
 			}
@@ -53,7 +53,7 @@ namespace jelly
 			Bucket*
 			FindSuitableBucketBySize(
 				size_t										aSize,
-				size_t										aAvailableDiskSpace)
+				size_t										aAvailableDiskSpace) noexcept
 			{
 				for(Bucket* t : m_buckets)
 				{
@@ -73,7 +73,7 @@ namespace jelly
 			void
 			AddStoreToSuitableBucket(
 				const Store&								aStore,
-				size_t										aAvailableDiskSpace)
+				size_t										aAvailableDiskSpace) noexcept
 			{
 				if(aStore.m_size > aAvailableDiskSpace)
 					return;
@@ -94,7 +94,7 @@ namespace jelly
 	}
 
 	SizeTieredCompactionStrategy::SizeTieredCompactionStrategy(
-		ConfigProxy*										aConfig)
+		ConfigProxy*										aConfig) noexcept
 		: m_config(aConfig)
 	{
 

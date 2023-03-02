@@ -15,7 +15,7 @@ namespace jelly
 	public:
 		WAL(
 			uint32_t			aId,
-			IWALWriter*			aWriter)
+			IWALWriter*			aWriter) noexcept
 			: m_id(aId)
 			, m_writer(aWriter)
 			, m_refCount(0)

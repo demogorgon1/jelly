@@ -34,7 +34,7 @@ namespace jelly
 
 		std::string	Format(
 						const char*		aFormat,
-						...);
+						...) noexcept;
 		uint32_t	ParseUInt32(
 						const char*		aString);
 		size_t		ParseSize(

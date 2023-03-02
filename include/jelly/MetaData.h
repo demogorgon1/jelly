@@ -16,7 +16,7 @@ namespace jelly
 		template <size_t _MaxBlobNodeIds = 1>
 		struct LockStaticSingleBlob
 		{
-			LockStaticSingleBlob()
+			LockStaticSingleBlob() noexcept
 				: m_blobSeq(UINT32_MAX)
 				, m_blobNodeIdCount(0)
 			{
@@ -24,7 +24,7 @@ namespace jelly
 
 			LockStaticSingleBlob(
 				uint32_t						aBlobSeq,
-				const std::vector<uint32_t>&	aBlobNodeIds)
+				const std::vector<uint32_t>&	aBlobNodeIds) noexcept
 				: m_blobSeq(aBlobSeq)
 			{
 				JELLY_ASSERT(aBlobNodeIds.size() <= _MaxBlobNodeIds);
@@ -95,7 +95,7 @@ namespace jelly
 		struct UInt
 		{
 			UInt(
-				_T								aValue = 0)
+				_T								aValue = 0) noexcept
 				: m_value(aValue)
 			{
 
@@ -117,7 +117,7 @@ namespace jelly
 
 			bool
 			operator ==(
-				_T								aOther) const
+				_T								aOther) const noexcept
 			{
 				return m_value == aOther;
 			}

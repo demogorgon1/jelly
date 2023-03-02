@@ -21,7 +21,7 @@ namespace jelly
 		FileHeader(
 			Type						aType = Type(0),
 			uint8_t						aFlags = 0,
-			uint8_t						aCompressionId = 0)
+			uint8_t						aCompressionId = 0) noexcept
 			: m_type(aType)
 			, m_flags(aFlags)
 			, m_compressionId(aCompressionId)

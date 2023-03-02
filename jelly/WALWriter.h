@@ -23,7 +23,7 @@ namespace jelly
 						const FileHeader&				aFileHeader);
 		virtual		~WALWriter();
 
-		bool		IsValid() const;
+		bool		IsValid() const noexcept;
 
 		// IWALWriter implementation
 		size_t		GetSize() const override;

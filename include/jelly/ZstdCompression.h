@@ -15,7 +15,7 @@ namespace jelly
 	{
 	public:
 											ZstdCompression(
-												uint32_t					aBufferCompressionLevel = 0);
+												uint32_t					aBufferCompressionLevel = 0) noexcept;
 		virtual								~ZstdCompression();
 
 		// Compression::IProvider implementation

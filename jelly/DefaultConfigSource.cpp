@@ -5,7 +5,7 @@
 namespace jelly
 {
 
-	DefaultConfigSource::DefaultConfigSource()
+	DefaultConfigSource::DefaultConfigSource() noexcept
 		: m_version(0)
 	{
 		for (uint32_t i = 0; i < (uint32_t)Config::NUM_IDS; i++)

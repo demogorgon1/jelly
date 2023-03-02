@@ -25,11 +25,11 @@ namespace jelly
 
 		//! Converts a logging level to a string identifier.
 		const char*	LevelToString(
-						Level			aLevel);
+						Level			aLevel) noexcept;
 
 		//! Set global callback for logging events. Not thread safe.
 		void		SetCallback(
-						Callback		aCallback);
+						Callback		aCallback) noexcept;
 
 		//! Submits a log message.
 		void		Print(

@@ -23,7 +23,7 @@ namespace jelly
 	public:
 		struct RuntimeState
 		{
-			RuntimeState()
+			RuntimeState() noexcept
 				: m_pendingWAL(NULL)
 				, m_next(NULL)
 				, m_prev(NULL)
@@ -31,7 +31,7 @@ namespace jelly
 				, m_storeOffset(0)
 				, m_storeSize(0)
 				, m_walInstanceCount(0)
-				, m_isResident(false)
+				, m_isResident(false) 
 			{
 			
 			}
@@ -50,7 +50,7 @@ namespace jelly
 
 		BlobNodeItem(
 			const _KeyType&									aKey = _KeyType(),
-			uint32_t										aSeq = 0) 
+			uint32_t										aSeq = 0) noexcept
 			: m_key(aKey)
 		{
 			SetSeq(aSeq);
@@ -59,7 +59,7 @@ namespace jelly
 		BlobNodeItem(
 			const _KeyType&									aKey,
 			uint32_t										aSeq,
-			IBuffer*										aBlob)
+			IBuffer*										aBlob) noexcept
 			: m_key(aKey)
 		{
 			SetSeq(aSeq);

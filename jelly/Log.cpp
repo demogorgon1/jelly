@@ -14,7 +14,7 @@ namespace jelly
 
 		const char* 
 		LevelToString(
-			Level			aLevel)
+			Level			aLevel) noexcept
 		{
 			switch(aLevel)
 			{
@@ -28,7 +28,7 @@ namespace jelly
 
 		void	
 		SetCallback(
-			Callback		aCallback)
+			Callback		aCallback) noexcept
 		{
 			g_callback = aCallback;
 		}

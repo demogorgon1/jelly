@@ -263,7 +263,6 @@ namespace jelly
 		
 		FileWriteStream::~FileWriteStream()
 		{
-			Flush();
 		}
 
 		size_t		

@@ -274,7 +274,7 @@ namespace jelly
 					// We need to store 'next' before signaling completion as the waiting thread might delete the request immediately
 					_RequestType* next = request->GetNext();
 
-					if (!request->HasPendingWrite())
+					if (!request->HasPendingWrite() || request->GetResult() == REQUEST_RESULT_EXCEPTION)
 						request->SignalCompletion();
 
 					request = next;
@@ -368,11 +368,15 @@ namespace jelly
 				uint32_t storeId = CreateStoreId();
 
 				std::unique_ptr<IStoreWriter> writer(m_host->CreateStore(m_nodeId, storeId, &m_statsContext.m_fileStore));
+				std::vector<size_t> newOffsets;
 
-				JELLY_ASSERT(m_flushPendingStoreCallback);
-				m_flushPendingStoreCallback(storeId, writer.get(), &m_pendingStore);
+				JELLY_ASSERT(m_writePendingStoreCallback);
+				m_writePendingStoreCallback(writer.get(), newOffsets);
 
 				writer->Flush();
+
+				JELLY_ASSERT(m_finishPendingStoreCallback);
+				m_finishPendingStoreCallback(storeId, newOffsets);
 			}
 
 			size_t count = m_pendingStore.size();
@@ -658,7 +662,8 @@ namespace jelly
 	protected:
 
 		typedef std::map<_KeyType, _ItemType*> PendingStoreType;
-		typedef std::function<void(uint32_t, IStoreWriter*, PendingStoreType*)> FlushPendingStoreCallback;
+		typedef std::function<void(IStoreWriter*, std::vector<size_t>&)> WritePendingStoreCallback;
+		typedef std::function<void(uint32_t, const std::vector<size_t>&)> FinishPendingStoreCallback;
 		typedef std::function<size_t(Stream::Reader*)> ReplicationCallback;
 
 		struct StatsContext
@@ -743,7 +748,8 @@ namespace jelly
 		ConfigProxy													m_config;
 		ItemHashTable<_KeyType, _ItemType>							m_table;
 		uint32_t													m_nextWALId;		
-		FlushPendingStoreCallback									m_flushPendingStoreCallback;
+		WritePendingStoreCallback									m_writePendingStoreCallback;
+		FinishPendingStoreCallback									m_finishPendingStoreCallback;
 		ReplicationCallback											m_replicationCallback;
 		PendingStoreType											m_pendingStore;
 		bool														m_stopped;
@@ -781,7 +787,7 @@ namespace jelly
 
 			if (pendingWAL != NULL)
 			{
-				if (pendingWAL->GetWriter()->GetSize() > m_config.GetSize(Config::ID_WAL_SIZE_LIMIT))
+				if (pendingWAL->GetWriter()->HadFailure() || pendingWAL->GetWriter()->GetSize() > m_config.GetSize(Config::ID_WAL_SIZE_LIMIT))
 				{
 					pendingWAL->Close();
 					pendingWAL = NULL;

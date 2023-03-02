@@ -47,17 +47,26 @@ namespace jelly
 
 			_Restore();
 
-			this->m_flushPendingStoreCallback = [&](
-				uint32_t										/*aStoreId*/,
+			this->m_writePendingStoreCallback = [&](
 				IStoreWriter*									aWriter,
-				NodeBase::PendingStoreType*						/*aPendingStoreType*/)
+				std::vector<size_t>&							/*aOutNewOffsets*/)
+			{
+				for (std::pair<const _KeyType, Item*>& i : this->m_pendingStore)
+				{
+					Item* item = i.second;
+
+					aWriter->WriteItem(item);
+				}
+			};
+
+			this->m_finishPendingStoreCallback = [&](
+				uint32_t										/*aStoreId*/,
+				const std::vector<size_t>&						/*aNewOffsets*/)
 			{
 				for (std::pair<const _KeyType, Item*>& i : this->m_pendingStore)
 				{
 					Item* item = i.second;
 					typename Item::RuntimeState& runtimeState = item->GetRuntimeState();
-
-					aWriter->WriteItem(item);
 
 					if (runtimeState.m_pendingWAL != NULL)
 					{

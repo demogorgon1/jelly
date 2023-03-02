@@ -8,7 +8,7 @@ namespace jelly::Test::ErrorTest
 	namespace 
 	{
 		void
-		_SimulateWALFailure(
+		_SimulateSetFailure(
 			Exception::Error		aError,
 			Exception::Context		aExpectedContext,
 			Exception::RequestType	aExpectedRequestType)
@@ -65,15 +65,66 @@ namespace jelly::Test::ErrorTest
 					JELLY_ALWAYS_ASSERT(UInt32Blob::GetValue(req.GetBlob()) == 1001);
 				}
 			}
+		}
 
+		void
+		_SimulateStoreFlushFailure(
+			Exception::Error		aError,
+			Exception::Context		aExpectedContext)
+		{
+			DefaultHost host(".", "errortest");
+			host.DeleteAllFiles(UINT32_MAX);
+			typedef BlobNode<UIntKey<uint32_t>> BlobNodeType;
+			BlobNodeType blobNode(&host, 0);
+
+			{
+				ErrorUtils::ResetErrorSimulation();
+
+				BlobNodeType::Request req;
+				req.SetKey(123);
+				req.SetSeq(1); 
+				req.SetBlob(new UInt32Blob(1001));
+				blobNode.Set(&req);
+				JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
+				JELLY_ALWAYS_ASSERT(blobNode.FlushPendingWAL() == 1);
+				JELLY_ALWAYS_ASSERT(req.IsCompleted());
+				JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
+
+				// Make error happen once
+				ErrorUtils::SimulateError(aError, 100, 1);
+
+				try
+				{
+					blobNode.FlushPendingStore();
+					JELLY_ALWAYS_ASSERT(false);
+				}
+				catch(Exception::Code e)
+				{
+					JELLY_ALWAYS_ASSERT(Exception::GetExceptionCodeError(e) == aError);
+					JELLY_ALWAYS_ASSERT(Exception::GetExceptionCodeContext(e) == aExpectedContext);
+				}				
+
+				// Try to flush again, now it should work
+				JELLY_ALWAYS_ASSERT(blobNode.FlushPendingStore() == 1);
+			}
 		}
 	}
 
 	void		
 	Run()
 	{
-		_SimulateWALFailure(Exception::ERROR_FILE_WRITE_STREAM_FAILED_TO_OPEN, Exception::CONTEXT_NODE_PROCESS_REQUESTS, Exception::REQUEST_TYPE_BLOB_NODE_SET);
-		_SimulateWALFailure(Exception::ERROR_FILE_WRITE_STREAM_FAILED_TO_WRITE, Exception::CONTEXT_NODE_FLUSH_PENDING_WAL, Exception::REQUEST_TYPE_NONE);
+		_SimulateSetFailure(Exception::ERROR_FILE_WRITE_STREAM_FAILED_TO_OPEN, Exception::CONTEXT_NODE_PROCESS_REQUESTS, Exception::REQUEST_TYPE_BLOB_NODE_SET);
+		_SimulateSetFailure(Exception::ERROR_FILE_WRITE_STREAM_FAILED_TO_WRITE, Exception::CONTEXT_NODE_FLUSH_PENDING_WAL, Exception::REQUEST_TYPE_NONE);
+		_SimulateSetFailure(Exception::ERROR_FILE_WRITE_STREAM_FAILED_TO_FLUSH, Exception::CONTEXT_NODE_FLUSH_PENDING_WAL, Exception::REQUEST_TYPE_NONE);
+
+		#if defined(JELLY_ZSTD)
+			_SimulateSetFailure(Exception::ERROR_ZSTD_BUFFER_TOO_LARGE_TO_COMPRESS, Exception::CONTEXT_NODE_PROCESS_REQUESTS, Exception::REQUEST_TYPE_BLOB_NODE_SET);
+			_SimulateSetFailure(Exception::ERROR_ZSTD_BUFFER_COMPRESSION_FAILED, Exception::CONTEXT_NODE_PROCESS_REQUESTS, Exception::REQUEST_TYPE_BLOB_NODE_SET);
+		#endif
+	
+		_SimulateStoreFlushFailure(Exception::ERROR_FILE_WRITE_STREAM_FAILED_TO_OPEN, Exception::CONTEXT_NODE_FLUSH_PENDING_STORE);
+		_SimulateStoreFlushFailure(Exception::ERROR_FILE_WRITE_STREAM_FAILED_TO_WRITE, Exception::CONTEXT_NODE_FLUSH_PENDING_STORE);
+		_SimulateStoreFlushFailure(Exception::ERROR_FILE_WRITE_STREAM_FAILED_TO_FLUSH, Exception::CONTEXT_NODE_FLUSH_PENDING_STORE);
 	}
 
 }

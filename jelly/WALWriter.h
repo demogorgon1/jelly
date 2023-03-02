@@ -36,6 +36,7 @@ namespace jelly
 						ReplicationNetwork*				aReplicationNetwork) override;
 		void		Cancel() override;
 		size_t		GetPendingWriteCount() const override;
+		bool		HadFailure() const override;
 
 	private:
 
@@ -51,6 +52,7 @@ namespace jelly
 		File													m_file;
 		std::unique_ptr<Compression::IStreamCompressor>			m_compressor;
 		const Compression::IProvider*							m_compression;
+		bool													m_hadFailure;
 	};		
 
 }

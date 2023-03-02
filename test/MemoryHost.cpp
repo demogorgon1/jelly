@@ -506,6 +506,12 @@ namespace jelly
 					return m_pending.size();
 				}
 
+				bool
+				HadFailure() const override
+				{
+					return false;
+				}
+
 				// Public data
 				BufferList*													m_bufferList;
 				std::vector<std::pair<CompletionEvent*, RequestResult*>>	m_pending;

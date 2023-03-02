@@ -26,6 +26,7 @@ namespace jelly
 							ReplicationNetwork*	aReplicationNetwork) = 0;
 		virtual void	Cancel() = 0;
 		virtual size_t	GetPendingWriteCount() const = 0;
+		virtual bool	HadFailure() const = 0;
 	
 	};
 

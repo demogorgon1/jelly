@@ -60,8 +60,6 @@ namespace jelly
 				m_exception = e;
 
 				m_result = REQUEST_RESULT_EXCEPTION;
-				
-				SignalCompletion();
 			}				
 		}
 

@@ -168,7 +168,7 @@ namespace jelly
 				else
 					m_handle.Release();
 
-				if(m_handle.IsSet())
+				if(m_handle.IsSet() && m_size > 0)
 				{
 					FileHeader header;					
 					DWORD bytes;
@@ -289,7 +289,6 @@ namespace jelly
 		
 		FileWriteStream::~FileWriteStream()
 		{
-			Flush();
 		}
 
 		size_t		

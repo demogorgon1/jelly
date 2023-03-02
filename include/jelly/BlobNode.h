@@ -48,12 +48,29 @@ namespace jelly
 
 			_Restore();
 
-			this->m_flushPendingStoreCallback = [&](
-				uint32_t										aStoreId,
+			this->m_writePendingStoreCallback = [&](
 				IStoreWriter*									aWriter,
-				NodeBase::PendingStoreType*						/*aPendingStoreType*/)
+				std::vector<size_t>&							aOutNewOffsets)
 			{ 				
-				size_t itemsProcessed = 0;
+				aOutNewOffsets.resize(this->m_pendingStore.size());
+
+				size_t index = 0;
+
+				for(std::pair<const _KeyType, Item*>& i : this->m_pendingStore)
+				{
+					Item* item = i.second;
+
+					aOutNewOffsets[index++] = aWriter->WriteItem(item);
+				}
+ 			};
+
+			this->m_finishPendingStoreCallback = [&](
+				uint32_t										aStoreId,
+				const std::vector<size_t>&						aNewOffsets)
+			{ 				
+				JELLY_ASSERT(aNewOffsets.size() == this->m_pendingStore.size());
+
+				size_t index = 0;
 
 				for(std::pair<const _KeyType, Item*>& i : this->m_pendingStore)
 				{
@@ -62,7 +79,7 @@ namespace jelly
 					typename Item::RuntimeState& runtimeState = item->GetRuntimeState();
 
 					runtimeState.m_storeId = aStoreId;
-					runtimeState.m_storeOffset = aWriter->WriteItem(item);
+					runtimeState.m_storeOffset = aNewOffsets[index++];
 					runtimeState.m_storeSize = item->GetBlob()->GetSize();
 
 					if (runtimeState.m_pendingWAL != NULL)
@@ -77,8 +94,6 @@ namespace jelly
 						this->m_pendingStoreWALItemCount -= runtimeState.m_walInstanceCount;
 						runtimeState.m_walInstanceCount = 0;
 					}
-
-					itemsProcessed++;
 				}
 
 				JELLY_ASSERT(this->m_pendingStoreWALItemCount == 0);

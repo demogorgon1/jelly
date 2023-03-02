@@ -53,7 +53,7 @@ namespace jelly
 
 			bool 
 			ShouldTrigger(
-				Exception::Error						aError) 
+				Exception::Error											aError) 
 			{
 				std::unordered_map<uint32_t, Entry>::iterator it = m_errorProbabilities.find((uint32_t)aError);
 				if(it == m_errorProbabilities.end())
@@ -72,7 +72,9 @@ namespace jelly
 				if(distribution(m_random) >= it->second.m_probability)
 					return false;
 
-				it->second.m_occurances--;
+				if(it->second.m_occurances != UINT32_MAX)
+					it->second.m_occurances--;
+
 				return true;
 			}
 

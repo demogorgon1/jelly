@@ -20,6 +20,7 @@ namespace jelly
 		const FileHeader&				aFileHeader)
 		: m_file(aFileStatsContext, aPath, File::MODE_WRITE_STREAM, aFileHeader)
 		, m_compression(aCompression)
+		, m_hadFailure(false)
 	{
 		if(aCompression != NULL)
 		{
@@ -59,6 +60,8 @@ namespace jelly
 		RequestResult*					aResult,
 		Exception::Code*				aException) 
 	{
+		JELLY_ASSERT(!m_hadFailure);
+
 		m_pendingItemWrites.push_back({aItem, aCompletionEvent, aResult, aException});
 	}
 
@@ -66,6 +69,8 @@ namespace jelly
 	WALWriter::Flush(
 		ReplicationNetwork*				aReplicationNetwork) 
 	{
+		JELLY_ASSERT(!m_hadFailure);
+
 		IWriter* writer;
 			
 		if(m_compressor)
@@ -99,6 +104,8 @@ namespace jelly
 			}
 
 			m_pendingItemWrites.clear();
+
+			m_hadFailure = true;
 			return 0;
 		}
 
@@ -143,6 +150,12 @@ namespace jelly
 	WALWriter::GetPendingWriteCount() const
 	{
 		return m_pendingItemWrites.size();
+	}
+
+	bool		
+	WALWriter::HadFailure() const 
+	{
+		return m_hadFailure;
 	}
 
 }

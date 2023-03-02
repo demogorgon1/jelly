@@ -153,7 +153,7 @@ namespace jelly
 				else
 					m_size = (size_t)s.st_size;
 
-				if(m_handle.IsSet())
+				if(m_handle.IsSet() && m_size > 0)
 				{
 					FileHeader header;
 					ssize_t bytes = read(m_handle, &header, sizeof(header));

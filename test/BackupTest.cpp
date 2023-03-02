@@ -15,11 +15,12 @@ namespace jelly
 			_Backup(
 				bool		aCompaction)
 			{
-				std::filesystem::remove_all("backups");
+				std::filesystem::remove_all("jelly-test-backups");
 
 				DefaultConfigSource config;
 				config.Set(Config::ID_BACKUP_COMPACTION, aCompaction ? "true" : "false");
 				config.Set(Config::ID_BACKUP_INCREMENTAL, "true");
+				config.Set(Config::ID_BACKUP_PATH, "jelly-test-backups"); // Bit scary to just recursively delete a directory called "backups"
 
 				DefaultHost host(".", "backuptest", &config);
 				host.DeleteAllFiles(UINT32_MAX);

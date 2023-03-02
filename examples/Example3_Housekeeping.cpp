@@ -41,7 +41,7 @@ main(
 
 	// Right, let's start off by saving this blob a bunch of times under the same key. 
 	// Imagine that this is a blob that contains the savegame of a player, saved at 
-	// a regular interval or when something needs to be saved.
+	// a regular interval or when something has changed.
 	static constexpr uint32_t NUM_SAVES = 2000;
 	BlobNodeType::Request reqs[NUM_SAVES];
 
@@ -52,7 +52,6 @@ main(
 		reqs[i].SetSeq(1 + i);					// Incrementing sequence numbers.
 		reqs[i].SetBlob(blob.Copy());			// Copy blob and give ownership to 
 												// request.
-
 		// Submit a set request
 		blobNode.Set(&reqs[i]);
 	}

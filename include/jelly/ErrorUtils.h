@@ -4,9 +4,17 @@
 #include "Log.h"
 #include "StringUtils.h"
 
+#define JELLY_SIMULATE_ERROR(_Error)										\
+	if(jelly::ErrorUtils::ShouldSimulateError(_Error))						\
+	{																		\
+		jelly::ErrorUtils::CheckFailed(_Error, NULL);						\
+		break;																\
+	}
+
 #define JELLY_CHECK(_Condition, _Error, ...)								\
 	do																		\
 	{																		\
+		JELLY_SIMULATE_ERROR(_Error);										\
 		if(!(_Condition))													\
 			jelly::ErrorUtils::CheckFailed(_Error, "" __VA_ARGS__);			\
 	} while(false)
@@ -40,45 +48,46 @@ namespace jelly
 	namespace ErrorUtils
 	{
 
-		struct ProcessFingerprint
-		{
-			ProcessFingerprint();
-
-			uint32_t						m_fingerprint;
-		};
-
-		extern ProcessFingerprint			g_processFingerprint;
-
-		//----------------------------------------------------------------------------------------
-
 		extern JELLY_THREAD_LOCAL(uint32_t)	g_threadCurrentContext;
 		extern JELLY_THREAD_LOCAL(uint32_t)	g_threadCurrentRequestType;
 
 		//----------------------------------------------------------------------------------------
 
 		void			Terminate(
-							const char*			aFormat,
+							const char*													aFormat,
 							...);
 		void			AssertFailed(
-							const char*			aFile,
-							int					aLineNum,
-							const char*			aAssertString,
-							const char*			aMessageFormat,
+							const char*													aFile,
+							int															aLineNum,
+							const char*													aAssertString,
+							const char*													aMessageFormat,
 							...);
 		void			CheckFailed(
-							Exception::Error	aError,
-							const char*			aMessageFormat,
+							Exception::Error											aError,
+							const char*													aMessageFormat,
 							...);
 		void			DebugBreak();
+		void			ResetErrorSimulation();
+		void			SimulateError(
+							Exception::Error											aError,
+							uint32_t													aProbability,
+							uint32_t													aOccurances);						
+		bool			ShouldSimulateError(	
+							Exception::Error											aError);
 
 		//----------------------------------------------------------------------------------------
 
-		inline void			
+		inline bool			
 		EnterContext(
-			uint32_t			aContext) noexcept
+			uint32_t																	aContext) noexcept
 		{
-			JELLY_ASSERT(g_threadCurrentContext == Exception::CONTEXT_NONE);
-			g_threadCurrentContext = aContext;
+			if(g_threadCurrentContext == Exception::CONTEXT_NONE)
+			{
+				g_threadCurrentContext = aContext;
+				return true;
+			}
+			
+			return false;
 		}
 		
 		inline uint32_t
@@ -89,7 +98,7 @@ namespace jelly
 
 		inline void
 		LeaveContext(
-			uint32_t			aContext) noexcept
+			uint32_t																	aContext) noexcept
 		{
 			JELLY_ASSERT(g_threadCurrentContext == aContext);
 			g_threadCurrentContext = Exception::CONTEXT_NONE;
@@ -97,7 +106,7 @@ namespace jelly
 		
 		inline void
 		EnterRequestType(
-			uint32_t			aRequestType) noexcept
+			uint32_t																	aRequestType) noexcept
 		{
 			JELLY_ASSERT(g_threadCurrentRequestType == Exception::REQUEST_TYPE_NONE);
 			g_threadCurrentRequestType = aRequestType;
@@ -111,7 +120,7 @@ namespace jelly
 		
 		inline void
 		LeaveRequestType(
-			uint32_t			aRequestType) noexcept
+			uint32_t																	aRequestType) noexcept
 		{
 			JELLY_ASSERT(g_threadCurrentRequestType == aRequestType);
 			g_threadCurrentRequestType = Exception::REQUEST_TYPE_NONE;
@@ -122,15 +131,20 @@ namespace jelly
 		struct ScopedContext
 		{
 			ScopedContext(
-				uint32_t		aContext)
-				: m_context(aContext)
+				uint32_t																aContext)
 			{
-				EnterContext(m_context);
+				JELLY_ASSERT(aContext != Exception::CONTEXT_NONE);
+
+				if(EnterContext(aContext))
+					m_context = aContext;
+				else
+					m_context = Exception::CONTEXT_NONE;
 			}
 
 			~ScopedContext()
 			{
-				LeaveContext(m_context);
+				if(m_context != Exception::CONTEXT_NONE)
+					LeaveContext(m_context);
 			}
 
 			uint32_t		m_context;
@@ -139,7 +153,7 @@ namespace jelly
 		struct ScopedRequestType
 		{
 			ScopedRequestType(
-				uint32_t		aRequestType)
+				uint32_t																aRequestType)
 				: m_requestType(aRequestType)
 			{
 				EnterRequestType(m_requestType);

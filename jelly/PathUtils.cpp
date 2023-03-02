@@ -14,12 +14,17 @@ namespace jelly
 		_ValidateFilePrefix(
 			const char*						aFilePrefix)
 		{
+			bool hasInvalidCharacters = false;
+
 			const char* p = aFilePrefix;
-			while(*p != '\0')
+			while(*p != '\0' && !hasInvalidCharacters)
 			{
-				JELLY_CHECK(*p != '-', Exception::ERROR_INVALID_CHARACTER_IN_FILE_PREFIX, "FilePrefix=%s", aFilePrefix);
+				if(*p == '-')
+					hasInvalidCharacters = true;
 				p++;
 			}
+
+			JELLY_CHECK(!hasInvalidCharacters, Exception::ERROR_INVALID_CHARACTER_IN_FILE_PREFIX, "FilePrefix=%s", aFilePrefix);
 		}
 
 	}

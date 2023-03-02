@@ -30,7 +30,8 @@ namespace jelly
 		void		WriteItem(
 						const ItemBase*					aItem,
 						CompletionEvent*				aCompletionEvent,
-						RequestResult*					aResult) override;
+						RequestResult*					aResult,
+						Exception::Code*				aException) override;
 		size_t		Flush(
 						ReplicationNetwork*				aReplicationNetwork) override;
 		void		Cancel() override;
@@ -43,6 +44,7 @@ namespace jelly
 			const ItemBase*										m_item;
 			CompletionEvent*									m_completionEvent;
 			RequestResult*										m_result;
+			Exception::Code*									m_exception;
 		};
 
 		std::vector<PendingItemWrite>							m_pendingItemWrites;

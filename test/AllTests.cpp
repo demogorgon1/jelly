@@ -6,6 +6,7 @@
 #include "BackupTest.h"
 #include "CompressionTest.h"
 #include "Config.h"
+#include "ErrorTest.h"
 #include "FileTest.h"
 #include "GenerateDocs.h"
 #include "HousekeepingAdvisorTest.h"
@@ -47,6 +48,7 @@ namespace jelly
 				HousekeepingAdvisorTest::Run();
 				ReplicationTest::Run();
 				BackupTest::Run();
+				ErrorTest::Run();
 
 				if(aConfig->m_simTest)
 					Sim::SimTest(aWorkingDirectory, aConfig);

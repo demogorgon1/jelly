@@ -448,7 +448,7 @@ namespace jelly
 				existing->MoveFrom(&aItem);
 				existing->GetRuntimeState().m_isResident = true;
 
-				this->WriteToWAL(result.first, NULL, NULL);
+				this->WriteToWAL(result.first, NULL, NULL, NULL);
 
 				_ObeyResidentBlobLimits();
 			}

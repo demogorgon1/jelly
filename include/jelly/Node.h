@@ -593,7 +593,8 @@ namespace jelly
 		WriteToWAL(
 			_ItemType*				aItem,
 			CompletionEvent*		aCompletionEvent,
-			RequestResult*			aResult)
+			RequestResult*			aResult,
+			Exception::Code*		aException)
 		{
 			typename _ItemType::RuntimeState& runtimeState = aItem->GetRuntimeState();
 
@@ -619,7 +620,7 @@ namespace jelly
 				WAL* wal = _GetPendingWAL(walConcurrencyIndex);
 
 				// Append to WAL
-				wal->GetWriter()->WriteItem(aItem, aCompletionEvent, aResult);
+				wal->GetWriter()->WriteItem(aItem, aCompletionEvent, aResult, aException);
 								
 				runtimeState.m_pendingWAL = wal;
 				runtimeState.m_pendingWAL->AddReference();

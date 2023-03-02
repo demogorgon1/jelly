@@ -20,7 +20,8 @@ namespace jelly
 		virtual void	WriteItem(
 							const ItemBase*		aItem,
 							CompletionEvent*	aCompletionEvent,
-							RequestResult*		aResult) = 0;
+							RequestResult*		aResult,
+							Exception::Code*	aException) = 0;
 		virtual size_t	Flush(
 							ReplicationNetwork*	aReplicationNetwork) = 0;
 		virtual void	Cancel() = 0;

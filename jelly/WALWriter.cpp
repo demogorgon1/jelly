@@ -56,9 +56,10 @@ namespace jelly
 	WALWriter::WriteItem(
 		const ItemBase*					aItem,
 		CompletionEvent*				aCompletionEvent,
-		RequestResult*					aResult) 
+		RequestResult*					aResult,
+		Exception::Code*				aException) 
 	{
-		m_pendingItemWrites.push_back({aItem, aCompletionEvent, aResult});
+		m_pendingItemWrites.push_back({aItem, aCompletionEvent, aResult, aException});
 	}
 
 	size_t
@@ -72,14 +73,36 @@ namespace jelly
 		else
 			writer = &m_file;
 
-		for(PendingItemWrite& t : m_pendingItemWrites)					
-			t.m_item->Write(writer);
+		try
+		{
+			for(PendingItemWrite& t : m_pendingItemWrites)					
+				t.m_item->Write(writer);
 
-		if(m_compressor)
-			m_compressor->Flush();
+			if(m_compressor)
+				m_compressor->Flush();
 
-		m_file.Flush();
+			m_file.Flush();
+		}
+		catch(Exception::Code e)
+		{
+			// Something went wrong while writing or flushing, fail all requests
+			for (PendingItemWrite& t : m_pendingItemWrites)
+			{
+				if(t.m_result != NULL)
+					*t.m_result = REQUEST_RESULT_EXCEPTION;
 
+				if(t.m_exception != NULL)
+					*t.m_exception = e;
+
+				if (t.m_completionEvent != NULL)
+					t.m_completionEvent->Signal();
+			}
+
+			m_pendingItemWrites.clear();
+			return 0;
+		}
+
+		// Writing completed successfully
 		for (PendingItemWrite& t : m_pendingItemWrites)
 		{
 			if(t.m_completionEvent != NULL)

@@ -467,7 +467,8 @@ namespace jelly
 				WriteItem(
 					const ItemBase*		aItem,
 					CompletionEvent*	aCompletionEvent,
-					RequestResult*		aResult) override
+					RequestResult*		aResult,
+					Exception::Code*	/*aException*/) override
 				{
 					BufferListWriter writer(m_bufferList);
 					aItem->Write(&writer);

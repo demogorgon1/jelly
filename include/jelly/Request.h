@@ -91,7 +91,7 @@ namespace jelly
 		{
 			m_hasPendingWrite = true;
 
-			aNode->WriteToWAL(aItem, &m_completed, &m_result);
+			aNode->WriteToWAL(aItem, &m_completed, &m_result, &m_exception);
 		}
 
 		//---------------------------------------------------------------------------------------------------

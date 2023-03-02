@@ -116,6 +116,7 @@ namespace jelly
 			uint32_t																	aContext) noexcept
 		{
 			JELLY_ASSERT(g_threadCurrentContext == aContext);
+			JELLY_UNUSED(aContext);
 			g_threadCurrentContext = Exception::CONTEXT_NONE;
 		}
 		
@@ -138,6 +139,7 @@ namespace jelly
 			uint32_t																	aRequestType) noexcept
 		{
 			JELLY_ASSERT(g_threadCurrentRequestType == aRequestType);
+			JELLY_UNUSED(aRequestType);
 			g_threadCurrentRequestType = Exception::REQUEST_TYPE_NONE;
 		}
 

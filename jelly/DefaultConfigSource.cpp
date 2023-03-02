@@ -28,6 +28,8 @@ namespace jelly
 		const char*						aString,
 		const char*						aValue) noexcept
 	{
+		JELLY_ASSERT(aValue != NULL);
+
 		std::unordered_map<std::string, uint32_t>::const_iterator i = m_stringIdTable.find(aString);
 		if(i == m_stringIdTable.end())
 		{
@@ -48,6 +50,8 @@ namespace jelly
 		const char*						aValue) noexcept
 	{
 		JELLY_ASSERT(aConfigId < Config::NUM_IDS);
+		JELLY_ASSERT(aValue != NULL);
+
 		m_config[aConfigId] = aValue;
 
 		m_version++;

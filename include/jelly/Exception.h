@@ -10,10 +10,7 @@ namespace jelly
 	namespace Exception
 	{
 
-		/**
-		 * Most API calls will return a exception code, which will contain details
-		 * about any error that might have occurred. A value of 0 indicates no error.
-		 */
+		//! An exception code is thrown when an error occurs.
 		typedef uint32_t Code;
 
 		static const uint32_t ERROR_BIT_MASK				= 0xFFF;
@@ -25,10 +22,8 @@ namespace jelly
 		static const uint32_t LOG_FINGERPRINT_BIT_MASK		= 0xFFF;
 		static const uint32_t LOG_FINGERPRINT_BIT_OFFSET	= 20;
 
-		/**
-		 * Error contexts are encoded into result codes and tell during which user API call
-		 * the error occured.
-		 */
+		//! Error contexts are encoded into result codes and tell during which user API call
+		//! the error occured.
 		enum Context : uint32_t
 		{
 			CONTEXT_NONE,							//!< No context (or unknown)
@@ -49,10 +44,9 @@ namespace jelly
 			NUM_CONTEXTS
 		};
 
-		/**
-		 * Request types are encoded into result codes as well. This tells the application
-		 * during which type of request the error occurred.
-		 */
+		
+		//! Request types are encoded into result codes as well. This tells the application
+		//! during which type of request the error occurred.		
 		enum RequestType : uint32_t
 		{
 			REQUEST_TYPE_NONE,						//!< Error didn't happen during a request
@@ -66,10 +60,8 @@ namespace jelly
 			NUM_REQUEST_TYPES
 		};
 
-		/**
-		 * Error categories. During testing this can be used to simulate errors in different 
-		 * categories.
-		 */
+		//! Error categories. During testing this can be used to simulate errors in different 
+		//! categories.
 		enum Category : uint32_t
 		{
 			CATEGORY_NONE,							//!< No category
@@ -88,11 +80,9 @@ namespace jelly
 			NUM_CATEGORIES
 		};
 
-		/**
-		 * All individual error conditions have their own unique error code. This helps
-		 * figuring out exactly what went wrong when you see a result code. It also helps testing
-		 * exercise as many error control paths as possible by simulating specific errors.
-		 */
+		//! All individual error conditions have their own unique error code. This helps
+		//! figuring out exactly what went wrong when you see a result code. It also helps testing
+		//! exercise as many error control paths as possible by simulating specific errors.
 		enum Error : uint32_t
 		{
 			ERROR_NONE,
@@ -204,9 +194,7 @@ namespace jelly
 			"CONFIGURATION"
 		};
 
-		/**
-		 * Information by an entry in the Error enum. Retrieve with GetErrorInfo().
-		 */
+		//! Information by an entry in the Error enum. Retrieve with GetErrorInfo().
 		struct ErrorInfo
 		{
 			const char*					m_string;		//!< String id
@@ -277,10 +265,8 @@ namespace jelly
 		static_assert(sizeof(CONTEXT_STRINGS) / sizeof(const char*) == NUM_CONTEXTS);
 		static_assert(sizeof(ERROR_INFO) / sizeof(ErrorInfo) == NUM_ERRORS);
 
-		/**
-		 * Make a exception code from: error, context, request type, and log fingerprint. The log fingerprint
-		 * is a (somewhat) unique number that can be used to associate a log line with a specific result code.
-		 */
+		//! Make a exception code from: error, context, request type, and log fingerprint. The log fingerprint
+		//! is a (somewhat) unique number that can be used to associate a log line with a specific result code.
 		inline constexpr uint32_t
 		MakeExceptionCode(
 			uint32_t		aError,
@@ -294,9 +280,7 @@ namespace jelly
 				| ((aLogFingerprint & LOG_FINGERPRINT_BIT_MASK) << LOG_FINGERPRINT_BIT_OFFSET);
 		}
 
-		/**
-		 * Extract error from exception code.
-		 */
+		//! Extract error from exception code.
 		inline constexpr Error
 		GetExceptionCodeError(
 			uint32_t		aResultCode) noexcept
@@ -304,9 +288,7 @@ namespace jelly
 			return (Error)((aResultCode >> ERROR_BIT_OFFSET) & ERROR_BIT_MASK);
 		}
 
-		/**
-		 * Extract context from exception code.
-		 */
+		//! Extract context from exception code.
 		inline constexpr Context
 		GetExceptionCodeContext(
 			uint32_t		aResultCode) noexcept
@@ -314,9 +296,7 @@ namespace jelly
 			return (Context)((aResultCode >> CONTEXT_BIT_OFFSET) & CONTEXT_BIT_MASK);
 		}
 
-		/**
-		 * Extract request type from exception code.
-		 */
+		//! Extract request type from exception code.
 		inline constexpr RequestType
 		GetExceptionCodeRequestType(
 			uint32_t		aResultCode) noexcept
@@ -324,9 +304,7 @@ namespace jelly
 			return (RequestType)((aResultCode >> REQUEST_TYPE_BIT_OFFSET) & REQUEST_TYPE_BIT_MASK);
 		}
 
-		/**
-		 * Extract log fingerprint from exception code.
-		 */
+		//! Extract log fingerprint from exception code.
 		inline constexpr uint32_t
 		GetExceptionCodeLogFingerprint(
 			uint32_t		aResultCode) noexcept
@@ -334,9 +312,7 @@ namespace jelly
 			return (aResultCode >> LOG_FINGERPRINT_BIT_OFFSET) & LOG_FINGERPRINT_BIT_MASK;
 		}
 
-		/** 
-		* Get information (description, category) about an error.
-		*/
+		//! Get information (description, category) about an error.
 		inline constexpr const ErrorInfo*
 		GetErrorInfo(
 			uint32_t		aError) noexcept
@@ -344,9 +320,7 @@ namespace jelly
 			return &ERROR_INFO[aError];
 		}
 
-		/**
-		 * Get category as a string.
-		 */
+		//! Get category as a string.
 		inline constexpr const char*
 		GetCategoryString(
 			uint32_t		aId) noexcept
@@ -354,9 +328,7 @@ namespace jelly
 			return CATEGORY_STRINGS[aId];
 		}
 
-		/**
-		 * Get request type as a string.
-		 */
+		//! Get request type as a string.
 		inline constexpr const char*
 		GetRequestTypeString(
 			uint32_t		aId) noexcept
@@ -364,9 +336,7 @@ namespace jelly
 			return REQUEST_TYPE_STRINGS[aId];
 		}
 
-		/** 
-		 * Get context as a string.
-		 */
+		//! Get context as a string.
 		inline constexpr const char*
 		GetContextString(
 			uint32_t		aId) noexcept

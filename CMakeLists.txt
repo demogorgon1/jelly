@@ -14,9 +14,11 @@ macro(jelly_option OPTION_NAME OPTION_TEXT OPTION_DEFAULT)
     message(STATUS "${OPTION_NAME}: ${${OPTION_NAME}}")
 endmacro()
 
-jelly_option(JELLY_ZSTD "Use ZSTD." OFF)
+jelly_option(JELLY_ZSTD "Support ZSTD compression." OFF)
 jelly_option(JELLY_PRECOMPILED_HEADERS "Enable precompiled headers." ON)
 jelly_option(JELLY_EXTRA_CONSISTENCY_CHECKS "Enable extra consistency checks." OFF)
+jelly_option(JELLY_EXTRA_ERROR_INFO "Enable extra error information." ON)
+jelly_option(JELLY_SIMULATE_ERRORS "Enable support for simulating errors in debug builds." OFF)
 jelly_option(JELLY_EXAMPLES "Build examples." ON)
 jelly_option(JELLY_TEST "Build tests." ON)
 

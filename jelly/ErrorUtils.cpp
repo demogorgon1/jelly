@@ -16,6 +16,7 @@ namespace jelly
 	namespace ErrorUtils
 	{
 
+#if defined(JELLY_EXTRA_ERROR_INFO)
 		struct ProcessFingerprint
 		{
 			ProcessFingerprint()
@@ -31,9 +32,11 @@ namespace jelly
 		};
 
 		ProcessFingerprint	g_processFingerprint;
+#endif
 
 		//----------------------------------------------------------------------------------------
 
+#if defined(JELLY_SIMULATE_ERRORS)
 		struct ErrorSimulation
 		{
 			struct Entry
@@ -92,11 +95,14 @@ namespace jelly
 		};
 
 		ErrorSimulation		g_errorSimulation;
+#endif // JELLY_SIMULATE_ERRORS
 
 		//----------------------------------------------------------------------------------------
 
+#if defined(JELLY_EXTRA_ERROR_INFO)
 		JELLY_THREAD_LOCAL(uint32_t) g_threadCurrentContext		= Exception::CONTEXT_NONE;
 		JELLY_THREAD_LOCAL(uint32_t) g_threadCurrentRequestType = Exception::REQUEST_TYPE_NONE;
+#endif
 
 		//----------------------------------------------------------------------------------------
 
@@ -150,43 +156,63 @@ namespace jelly
 			const char*			aMessageFormat,
 			...)
 		{
-			uint32_t requestType = g_threadCurrentRequestType;
-			uint32_t contextType = g_threadCurrentContext;
+			#if defined(JELLY_EXTRA_ERROR_INFO)
+				uint32_t requestType = g_threadCurrentRequestType;
+				uint32_t contextType = g_threadCurrentContext;
 
-			// Make (somewhat) unique log finger print that can be baked into the result code. This makes it possible
-			// to find logs associated with an result code returned to the application.
-			static std::atomic_uint32_t counter = 0;			
-			counter++;
-			uint32_t logFingerprint = (uint32_t)std::hash<uint32_t>{}(counter ^ g_processFingerprint.m_fingerprint);
-			logFingerprint &= Exception::LOG_FINGERPRINT_BIT_MASK;
+				// Make (somewhat) unique log finger print that can be baked into the result code. This makes it possible
+				// to find logs associated with an result code returned to the application.
+				static std::atomic_uint32_t counter = 0;			
+				counter++;
+				uint32_t logFingerprint = (uint32_t)std::hash<uint32_t>{}(counter ^ g_processFingerprint.m_fingerprint);
+				logFingerprint &= Exception::LOG_FINGERPRINT_BIT_MASK;
 
-			if (aMessageFormat != NULL)
-			{
-				// Log message
-				JELLY_ASSERT(aError < Exception::NUM_ERRORS);
-				const Exception::ErrorInfo* info = Exception::GetErrorInfo(aError);
-				const char* categoryString = Exception::GetCategoryString(info->m_category);
+				if (aMessageFormat != NULL)
+				{
+					// Log message
+					JELLY_ASSERT(aError < Exception::NUM_ERRORS);
+					const Exception::ErrorInfo* info = Exception::GetErrorInfo(aError);
+					const char* categoryString = Exception::GetCategoryString(info->m_category);
 
-				JELLY_ASSERT(requestType < Exception::NUM_REQUEST_TYPES);
-				const char* requestTypeString = Exception::GetRequestTypeString(requestType);
+					JELLY_ASSERT(requestType < Exception::NUM_REQUEST_TYPES);
+					const char* requestTypeString = Exception::GetRequestTypeString(requestType);
 
-				JELLY_ASSERT(contextType < Exception::NUM_CONTEXTS);
-				const char* contextString = Exception::GetContextString(contextType);
+					JELLY_ASSERT(contextType < Exception::NUM_CONTEXTS);
+					const char* contextString = Exception::GetContextString(contextType);
 
-				char messageBuffer[2048];
-				JELLY_STRING_FORMAT_VARARGS(messageBuffer, sizeof(messageBuffer), aMessageFormat);
+					char messageBuffer[2048];
+					JELLY_STRING_FORMAT_VARARGS(messageBuffer, sizeof(messageBuffer), aMessageFormat);
 
-				Log::PrintF(Log::LEVEL_ERROR, "%s;CO=%s;CA=%s;R=%s;F=%08x;%s",
-					info->m_string,
-					contextString,
-					categoryString,
-					requestTypeString,
-					logFingerprint,
-					messageBuffer);
-			}
+					Log::PrintF(Log::LEVEL_ERROR, "%s;CO=%s;CA=%s;R=%s;F=%08x;%s",
+						info->m_string,
+						contextString,
+						categoryString,
+						requestTypeString,
+						logFingerprint,
+						messageBuffer);
+				}
 
-			// Assemble exception code and throw it
-			throw Exception::MakeExceptionCode(aError, contextType, requestType, logFingerprint);
+				// Assemble exception code and throw it
+				throw Exception::MakeExceptionCode(aError, contextType, requestType, logFingerprint);
+			#else
+				if(aMessageFormat != NULL)
+				{
+					JELLY_ASSERT(aError < Exception::NUM_ERRORS);
+					const Exception::ErrorInfo* info = Exception::GetErrorInfo(aError);
+					const char* categoryString = Exception::GetCategoryString(info->m_category);
+
+					char messageBuffer[2048];
+					JELLY_STRING_FORMAT_VARARGS(messageBuffer, sizeof(messageBuffer), aMessageFormat);
+
+					Log::PrintF(Log::LEVEL_ERROR, "%s;CA=%s;%s",
+						info->m_string,
+						categoryString,
+						messageBuffer);
+				}
+
+				// Assemble exception code and throw it
+				throw Exception::MakeExceptionCode(aError, Exception::CONTEXT_NONE, Exception::REQUEST_TYPE_NONE, 0);
+			#endif
 		}
 
 		void
@@ -199,6 +225,7 @@ namespace jelly
 			#endif
 		}
 
+#if defined(JELLY_SIMULATE_ERRORS)
 		void			
 		ResetErrorSimulation()
 		{
@@ -220,6 +247,7 @@ namespace jelly
 		{
 			return g_errorSimulation.ShouldTrigger(aError);
 		}
+#endif
 
 	}
 

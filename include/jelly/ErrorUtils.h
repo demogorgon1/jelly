@@ -4,12 +4,16 @@
 #include "Log.h"
 #include "StringUtils.h"
 
-#define JELLY_SIMULATE_ERROR(_Error)										\
-	if(jelly::ErrorUtils::ShouldSimulateError(_Error))						\
-	{																		\
-		jelly::ErrorUtils::CheckFailed(_Error, NULL);						\
-		break;																\
-	}
+#if defined(JELLY_SIMULATE_ERRORS)
+	#define JELLY_SIMULATE_ERROR(_Error)									\
+		if(jelly::ErrorUtils::ShouldSimulateError(_Error))					\
+		{																	\
+			jelly::ErrorUtils::CheckFailed(_Error, NULL);					\
+			break;															\
+		}
+#else
+	#define JELLY_SIMULATE_ERROR(_Error)
+#endif
 
 #define JELLY_CHECK(_Condition, _Error, ...)								\
 	do																		\
@@ -39,8 +43,13 @@
 	#define JELLY_ASSERT(...) do { } while(false)
 #endif
 
-#define JELLY_CONTEXT(_Context) ErrorUtils::ScopedContext scopedContext(_Context)
-#define JELLY_REQUEST_TYPE(_RequestType) ErrorUtils::ScopedRequestType scopedRequestType(_RequestType)
+#if defined(JELLY_EXTRA_ERROR_INFO)
+	#define JELLY_CONTEXT(_Context) ErrorUtils::ScopedContext scopedContext(_Context)
+	#define JELLY_REQUEST_TYPE(_RequestType) ErrorUtils::ScopedRequestType scopedRequestType(_RequestType)
+#else
+	#define JELLY_CONTEXT(_Context)
+	#define JELLY_REQUEST_TYPE(_RequestType)
+#endif
 
 namespace jelly
 {
@@ -48,8 +57,10 @@ namespace jelly
 	namespace ErrorUtils
 	{
 
+#if defined(JELLY_EXTRA_ERROR_INFO)
 		extern JELLY_THREAD_LOCAL(uint32_t)	g_threadCurrentContext;
 		extern JELLY_THREAD_LOCAL(uint32_t)	g_threadCurrentRequestType;
+#endif
 
 		//----------------------------------------------------------------------------------------
 
@@ -67,6 +78,8 @@ namespace jelly
 							const char*													aMessageFormat,
 							...);
 		void			DebugBreak();
+
+#if defined(JELLY_SIMULATE_ERRORS)
 		void			ResetErrorSimulation();
 		void			SimulateError(
 							Exception::Error											aError,
@@ -74,9 +87,11 @@ namespace jelly
 							uint32_t													aOccurances);						
 		bool			ShouldSimulateError(	
 							Exception::Error											aError);
+#endif
 
 		//----------------------------------------------------------------------------------------
 
+#if defined(JELLY_EXTRA_ERROR_INFO)
 		inline bool			
 		EnterContext(
 			uint32_t																	aContext) noexcept
@@ -166,6 +181,8 @@ namespace jelly
 
 			uint32_t		m_requestType;
 		};
+
+#endif /* JELLY_EXTRA_ERROR_INFO */
 
 	}
 

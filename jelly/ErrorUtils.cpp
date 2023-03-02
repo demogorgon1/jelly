@@ -2,6 +2,8 @@
 	#include <windows.h>
 
 	#define getpid _getpid
+#else
+	#include <unistd.h>
 #endif
 
 #include <jelly/Base.h>

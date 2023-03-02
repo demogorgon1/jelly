@@ -9,9 +9,9 @@ in a game server or as the inner-most moving parts of a larger distributed datab
 
 ## In a nutshell
 
+* Optimized for online games where high throughput and write performance are favored over low latency and read performance.
 * Efficient and cheap to host for small-scale online games, but scales reasonably well into larger systems.
 * Multiple options regarding how to design a network topography that match the requirements of your particular project.
-* Optimized for online games where high throughput and write performance are favored over low latency and read performance.
 * Persistent blob-locking mechanism to prevent game servers fighting over data. 
 * Implemented as a Log Structured database engine.
 

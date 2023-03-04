@@ -171,6 +171,82 @@ namespace jelly::Test::ErrorTest
 				}
 			}
 		}
+
+		void 
+		_SimulateCompactionFailure(
+			Exception::Error		aError)
+		{
+			DefaultHost host(".", "errortest");
+			host.DeleteAllFiles(UINT32_MAX);
+			typedef BlobNode<UIntKey<uint32_t>> BlobNodeType;
+
+			ErrorUtils::ResetErrorSimulation();
+
+			{
+				BlobNodeType blobNode(&host, 0);
+
+				// Create a bunch of stores so we have something to compact
+				for(uint32_t i = 0; i < 5; i++)
+				{
+					BlobNodeType::Request req;
+					req.SetKey(100 + i);
+					req.SetSeq(1);
+					req.SetBlob(new UInt32Blob(1000 + i));
+					blobNode.Set(&req);
+					JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
+					JELLY_ALWAYS_ASSERT(blobNode.FlushPendingWAL() == 1);
+					JELLY_ALWAYS_ASSERT(req.IsCompleted());
+					JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
+					JELLY_ALWAYS_ASSERT(blobNode.FlushPendingStore() == 1);
+				}
+
+				// Fail compaction
+				ErrorUtils::SimulateError(aError, 100, 1);
+
+				try
+				{
+					std::unique_ptr<BlobNodeType::CompactionResultType> compactionResult(blobNode.PerformMajorCompaction());
+					blobNode.ApplyCompactionResult(compactionResult.get());
+					JELLY_ALWAYS_ASSERT(false);
+				}
+				catch(Exception::Code e)
+				{
+					JELLY_ALWAYS_ASSERT(Exception::GetExceptionCodeError(e) == aError);
+					JELLY_ALWAYS_ASSERT(Exception::GetExceptionCodeContext(e) == Exception::CONTEXT_NODE_PERFORM_MAJOR_COMPECTION);
+				}
+
+				// Read back our blobs
+				for (uint32_t i = 0; i < 5; i++)
+				{
+					BlobNodeType::Request req;
+					req.SetKey(100 + i);
+					req.SetSeq(1);
+					blobNode.Get(&req);
+					JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
+					JELLY_ALWAYS_ASSERT(req.IsCompleted());
+					JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
+					JELLY_ALWAYS_ASSERT(UInt32Blob::GetValue(req.GetBlob()) == 1000 + i);
+				}
+			}
+
+			// Restart and read back again
+
+			{
+				BlobNodeType blobNode(&host, 0);
+
+				for (uint32_t i = 0; i < 5; i++)
+				{
+					BlobNodeType::Request req;
+					req.SetKey(100 + i);
+					req.SetSeq(1);
+					blobNode.Get(&req);
+					JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
+					JELLY_ALWAYS_ASSERT(req.IsCompleted());
+					JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
+					JELLY_ALWAYS_ASSERT(UInt32Blob::GetValue(req.GetBlob()) == 1000 + i);
+				}
+			}
+		}
 	}
 
 #endif /* JELLY_SIMULATE_ERRORS */
@@ -201,6 +277,18 @@ namespace jelly::Test::ErrorTest
 				_SimulateGetFailure(Exception::ERROR_ZSTD_BUFFER_TOO_LARGE_TO_UNCOMPRESS, Exception::CONTEXT_NODE_PROCESS_REQUESTS, Exception::REQUEST_TYPE_BLOB_NODE_GET);
 				_SimulateGetFailure(Exception::ERROR_ZSTD_BUFFER_DECOMPRESSION_FAILED, Exception::CONTEXT_NODE_PROCESS_REQUESTS, Exception::REQUEST_TYPE_BLOB_NODE_GET);
 			#endif
+
+			_SimulateCompactionFailure(Exception::ERROR_COMPACTION_IN_PROGRESS);
+			_SimulateCompactionFailure(Exception::ERROR_FAILED_TO_GET_STORE_INFO);
+			_SimulateCompactionFailure(Exception::ERROR_FILE_READ_STREAM_FAILED_TO_READ_HEADER);
+			_SimulateCompactionFailure(Exception::ERROR_FILE_READ_STREAM_HEADER_MISMATCH);
+			_SimulateCompactionFailure(Exception::ERROR_FILE_WRITE_STREAM_FAILED_TO_OPEN);
+			_SimulateCompactionFailure(Exception::ERROR_COMPACTION_FAILED_TO_OPEN_OUTPUT_STORE);
+			_SimulateCompactionFailure(Exception::ERROR_FILE_READ_STREAM_FAILED_TO_READ);
+			_SimulateCompactionFailure(Exception::ERROR_FILE_WRITE_STREAM_FAILED_TO_WRITE);
+			_SimulateCompactionFailure(Exception::ERROR_FILE_WRITE_STREAM_FAILED_TO_FLUSH);
+			_SimulateCompactionFailure(Exception::ERROR_STORE_WRITER_RENAME_FAILED);
+
 		#endif
 	}
 

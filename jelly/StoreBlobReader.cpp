@@ -12,7 +12,7 @@ namespace jelly
 	StoreBlobReader::StoreBlobReader(
 		const char*			aPath,
 		FileStatsContext*	aFileStatsContext,
-		const FileHeader&	aFileHeader) noexcept
+		const FileHeader&	aFileHeader)
 		: m_path(aPath)
 		, m_fileStatsContext(aFileStatsContext)
 		, m_fileHeader(aFileHeader)

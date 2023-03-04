@@ -16,7 +16,7 @@ namespace jelly
 					StoreBlobReader(
 						const char*			aPath,
 						FileStatsContext*	aFileStatsContext,
-						const FileHeader&	aFileHeader) noexcept;
+						const FileHeader&	aFileHeader);
 		virtual		~StoreBlobReader();
 
 		bool		IsValid() const noexcept;

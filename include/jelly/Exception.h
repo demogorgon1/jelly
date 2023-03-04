@@ -267,7 +267,7 @@ namespace jelly
 
 		//! Make a exception code from: error, context, request type, and log fingerprint. The log fingerprint
 		//! is a (somewhat) unique number that can be used to associate a log line with a specific result code.
-		inline constexpr uint32_t
+		inline constexpr Exception::Code
 		MakeExceptionCode(
 			uint32_t		aError,
 			uint32_t		aContext,
@@ -283,33 +283,33 @@ namespace jelly
 		//! Extract error from exception code.
 		inline constexpr Error
 		GetExceptionCodeError(
-			uint32_t		aResultCode) noexcept
+			uint32_t		aExceptionCode) noexcept
 		{
-			return (Error)((aResultCode >> ERROR_BIT_OFFSET) & ERROR_BIT_MASK);
+			return (Error)((aExceptionCode >> ERROR_BIT_OFFSET) & ERROR_BIT_MASK);
 		}
 
 		//! Extract context from exception code.
 		inline constexpr Context
 		GetExceptionCodeContext(
-			uint32_t		aResultCode) noexcept
+			uint32_t		aExceptionCode) noexcept
 		{
-			return (Context)((aResultCode >> CONTEXT_BIT_OFFSET) & CONTEXT_BIT_MASK);
+			return (Context)((aExceptionCode >> CONTEXT_BIT_OFFSET) & CONTEXT_BIT_MASK);
 		}
 
 		//! Extract request type from exception code.
 		inline constexpr RequestType
 		GetExceptionCodeRequestType(
-			uint32_t		aResultCode) noexcept
+			uint32_t		aExceptionCode) noexcept
 		{
-			return (RequestType)((aResultCode >> REQUEST_TYPE_BIT_OFFSET) & REQUEST_TYPE_BIT_MASK);
+			return (RequestType)((aExceptionCode >> REQUEST_TYPE_BIT_OFFSET) & REQUEST_TYPE_BIT_MASK);
 		}
 
 		//! Extract log fingerprint from exception code.
 		inline constexpr uint32_t
 		GetExceptionCodeLogFingerprint(
-			uint32_t		aResultCode) noexcept
+			uint32_t		aExceptionCode) noexcept
 		{
-			return (aResultCode >> LOG_FINGERPRINT_BIT_OFFSET) & LOG_FINGERPRINT_BIT_MASK;
+			return (aExceptionCode >> LOG_FINGERPRINT_BIT_OFFSET) & LOG_FINGERPRINT_BIT_MASK;
 		}
 
 		//! Get information (description, category) about an error.

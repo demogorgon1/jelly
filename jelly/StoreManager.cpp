@@ -16,7 +16,7 @@ namespace jelly
 			uint32_t			aNodeId,
 			uint32_t			aStoreId,
 			FileStatsContext*	aFileStatsContext,
-			const FileHeader&	aFileHeader) noexcept
+			const FileHeader&	aFileHeader)
 			: m_nodeId(aNodeId)
 			, m_storeId(aStoreId)
 		{

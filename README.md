@@ -15,6 +15,34 @@ in a game server or as the inner-most moving parts of a larger distributed datab
 * Persistent blob-locking mechanism to prevent game servers fighting over data. 
 * Implemented as a Log Structured database engine.
 
+## Usage
+
+First of all you'll need git and cmake to acquire and build the project. Then you can run:
+
+```
+git clone https://github.com/demogorgon1/jelly.git
+cd jelly
+mkdir build
+cd build
+cmake ..
+cmake --build .
+```
+
+If succesfull, this will build a static library, tests, and the examples. Run ```ctest``` immediately to verify that everything works as intended.
+
+Optionally you can include _jelly_ directly in your cmake build system using FetchContent:
+
+```
+FetchContent_Declare(jelly
+  GIT_REPOSITORY https://github.com/demogorgon1/jelly.git
+)
+FetchContent_MakeAvailable(jelly)
+```
+
+Use ```jelly::jelly``` to link your target with _jelly_.
+
+See [here](https://demogorgon1.github.io/jelly/index.html) for more documentation and examples.
+
 ## Limitations and things you should know
 
 * Your blobs should be small (preferably less than 10 KB). Don't put GUIDs or strings in your blobs and you'll be fine.

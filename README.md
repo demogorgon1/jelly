@@ -41,7 +41,9 @@ FetchContent_MakeAvailable(jelly)
 
 Use ```jelly::jelly``` to link your target with _jelly_.
 
-See [here](https://demogorgon1.github.io/jelly/index.html) for more documentation and examples.
+If you're not using CMake, you can just add the ```jelly``` and ```include``` subdirectories to your project. 
+
+See [here](https://demogorgon1.github.io/jelly/index.html) for documentation and examples.
 
 ## Limitations and things you should know
 

@@ -954,6 +954,38 @@ namespace jelly
 					}
 				}
 
+				{
+					BlobNodeType blobNode(aHost, 0);
+
+					// Do a no-write set
+					{
+						BlobNodeType::Request req;
+						req.SetKey(900001);
+						req.SetSeq(1);
+						req.SetBlob(new UInt32Blob(100));
+						req.SetNoWrite(true);
+						blobNode.Set(&req);
+						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
+						JELLY_ALWAYS_ASSERT(blobNode.FlushPendingWAL() == 0);
+						JELLY_ALWAYS_ASSERT(req.IsCompleted());
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
+					}
+
+					// Read it back
+					{
+						BlobNodeType::Request req;
+						req.SetKey(900001);
+						req.SetSeq(1);
+						blobNode.Get(&req);
+						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
+						JELLY_ALWAYS_ASSERT(req.IsCompleted());
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
+						JELLY_ALWAYS_ASSERT(UInt32Blob::GetValue(req.GetBlob()) == 100);
+					}
+
+					// Note that this isn't hitting disk
+				}
+
 				_VerifyBlobNodeStore(aHost, 0, 8, { { 1004, 0, 10004 } });
 				_VerifyBlobNodeStore(aHost, 0, 9, 
 				{ 

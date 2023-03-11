@@ -18,6 +18,7 @@ namespace jelly
 	public:
 		BlobNodeRequest() noexcept
 			: m_seq(0)
+			, m_noWrite(false)
 		{
 
 		}
@@ -62,6 +63,14 @@ namespace jelly
 			m_lockSeq = aLockSeq;
 		}
 
+		//! Set no write flag
+		void
+		SetNoWrite(
+			bool				aNoWrite) noexcept
+		{
+			m_noWrite = aNoWrite;
+		}
+
 		//-------------------------------------------------------------------------------
 		// Data access
 
@@ -72,6 +81,7 @@ namespace jelly
 		IBuffer*						GetBlob() noexcept { return m_blob.get(); }			//!< Get pointer to blob object
 		const IBuffer*					GetBlob() const noexcept { return m_blob.get(); }	//!< Get const pointer to blob object
 		IBuffer*						DetachBlob() noexcept { return m_blob.release(); }	//!< Detach blob object from request
+		bool							IsNoWrite() const noexcept { return m_noWrite; }	//!< Get no write flag
 
 	private:
 
@@ -80,6 +90,7 @@ namespace jelly
 		std::optional<uint32_t>				m_lockSeq;
 		std::optional<_MetaType>			m_meta;
 		std::unique_ptr<IBuffer>			m_blob;	
+		bool								m_noWrite;
 	};
 
 }

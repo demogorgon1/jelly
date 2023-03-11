@@ -368,10 +368,13 @@ namespace jelly
 			else
 				item->RemoveTombstone();
 			
-			aRequest->WriteToWAL(this, item);
+			if(!aRequest->IsNoWrite())
+			{
+				aRequest->WriteToWAL(this, item);
 
-			if(obeyResidentBlobSizeLimit)
-				_ObeyResidentBlobLimits();
+				if (obeyResidentBlobSizeLimit)
+					_ObeyResidentBlobLimits();
+			}
 
 			return REQUEST_RESULT_OK;
 		}

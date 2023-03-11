@@ -246,7 +246,10 @@ namespace jelly
 				}
 			}
 
- 			aRequest->SetMeta(item->GetMeta());
+			if(aRequest->GetMeta().has_value())
+				std::swap(aRequest->GetMeta().value(), item->GetMeta());
+			else
+				aRequest->SetMeta(item->GetMeta());
 
 			item->SetTimeStamp(aRequest->GetTimeStamp());
 			aRequest->SetSeq(item->IncrementSeq());
@@ -282,7 +285,9 @@ namespace jelly
 			
 			item->GetLock().Clear();
 
-			item->SetMeta(aRequest->GetMeta());
+			if(aRequest->GetMeta().has_value())
+				item->SetMeta(aRequest->GetMeta().value());
+
 			item->SetTimeStamp(aRequest->GetTimeStamp());
 			item->IncrementSeq();
 	

@@ -82,7 +82,8 @@ main(
 
 		// Meta data is returned when the lock is successful. Since this is a new lock, we'll
 		// see that the meta data is blank.
-		const LockMetaType& meta = req.GetMeta();
+		JELLY_ASSERT(req.GetMeta().has_value());
+		const LockMetaType& meta = req.GetMeta().value();
 
 		JELLY_ASSERT(meta.m_blobNodeIdCount == 0);	// Associated blob isn't anywhere.
 		JELLY_ASSERT(meta.m_blobSeq == UINT32_MAX); // No blob sequence number.

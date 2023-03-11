@@ -238,11 +238,12 @@ namespace jelly
 						if(req.GetResult() == REQUEST_RESULT_ALREADY_LOCKED)
 							continue;
 						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
-						blobSeq = req.GetMeta().m_blobSeq;
-						if(req.GetMeta().m_blobNodeIdCount > 0)
+						JELLY_ALWAYS_ASSERT(req.GetMeta().has_value());
+						blobSeq = req.GetMeta().value().m_blobSeq;
+						if(req.GetMeta().value().m_blobNodeIdCount > 0)
 						{	
-							JELLY_ALWAYS_ASSERT(req.GetMeta().m_blobNodeIdCount == 1);
-							blobNodeId = req.GetMeta().m_blobNodeIds[0];
+							JELLY_ALWAYS_ASSERT(req.GetMeta().value().m_blobNodeIdCount == 1);
+							blobNodeId = req.GetMeta().value().m_blobNodeIds[0];
 						}
 
 						(*aLockCounter)++;
@@ -381,11 +382,11 @@ namespace jelly
 						if(req.GetResult() == REQUEST_RESULT_ALREADY_LOCKED)
 							continue;
 						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
-						blobSeq = req.GetMeta().m_blobSeq;
-						if(req.GetMeta().m_blobNodeIdCount > 0)
+						blobSeq = req.GetMeta().value().m_blobSeq;
+						if(req.GetMeta().value().m_blobNodeIdCount > 0)
 						{
-							JELLY_ALWAYS_ASSERT(req.GetMeta().m_blobNodeIdCount == 1);
-							blobNodeId = req.GetMeta().m_blobNodeIds[0];
+							JELLY_ALWAYS_ASSERT(req.GetMeta().value().m_blobNodeIdCount == 1);
+							blobNodeId = req.GetMeta().value().m_blobNodeIds[0];
 							JELLY_ALWAYS_ASSERT(blobNodeId == 1);
 						}
 
@@ -985,8 +986,8 @@ namespace jelly
 						lockNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
 						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
-						JELLY_ALWAYS_ASSERT(req.GetMeta().m_blobSeq == UINT32_MAX);
-						JELLY_ALWAYS_ASSERT(req.GetMeta().m_blobNodeIdCount == 0);
+						JELLY_ALWAYS_ASSERT(req.GetMeta().value().m_blobSeq == UINT32_MAX);
+						JELLY_ALWAYS_ASSERT(req.GetMeta().value().m_blobNodeIdCount == 0);
 						JELLY_ALWAYS_ASSERT(req.GetSeq() == 1);
 					}
 				}	
@@ -1020,8 +1021,8 @@ namespace jelly
 						lockNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
 						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
-						JELLY_ALWAYS_ASSERT(req.GetMeta().m_blobSeq == UINT32_MAX);
-						JELLY_ALWAYS_ASSERT(req.GetMeta().m_blobNodeIdCount == 0);
+						JELLY_ALWAYS_ASSERT(req.GetMeta().value().m_blobSeq == UINT32_MAX);
+						JELLY_ALWAYS_ASSERT(req.GetMeta().value().m_blobNodeIdCount == 0);
 						JELLY_ALWAYS_ASSERT(req.GetSeq() == 1);
 					}
 
@@ -1081,11 +1082,11 @@ namespace jelly
 						lockNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
 						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
-						JELLY_ALWAYS_ASSERT(req.GetMeta().m_blobSeq == 1);
-						JELLY_ALWAYS_ASSERT(req.GetMeta().m_blobNodeIdCount == 3);
-						JELLY_ALWAYS_ASSERT(req.GetMeta().m_blobNodeIds[0] == 1);
-						JELLY_ALWAYS_ASSERT(req.GetMeta().m_blobNodeIds[1] == 2);
-						JELLY_ALWAYS_ASSERT(req.GetMeta().m_blobNodeIds[2] == 3);
+						JELLY_ALWAYS_ASSERT(req.GetMeta().value().m_blobSeq == 1);
+						JELLY_ALWAYS_ASSERT(req.GetMeta().value().m_blobNodeIdCount == 3);
+						JELLY_ALWAYS_ASSERT(req.GetMeta().value().m_blobNodeIds[0] == 1);
+						JELLY_ALWAYS_ASSERT(req.GetMeta().value().m_blobNodeIds[1] == 2);
+						JELLY_ALWAYS_ASSERT(req.GetMeta().value().m_blobNodeIds[2] == 3);
 						JELLY_ALWAYS_ASSERT(req.GetSeq() == 3);
 					}
 
@@ -1100,8 +1101,8 @@ namespace jelly
 						lockNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
 						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
-						JELLY_ALWAYS_ASSERT(req.GetMeta().m_blobSeq == UINT32_MAX);
-						JELLY_ALWAYS_ASSERT(req.GetMeta().m_blobNodeIdCount == 0);
+						JELLY_ALWAYS_ASSERT(req.GetMeta().value().m_blobSeq == UINT32_MAX);
+						JELLY_ALWAYS_ASSERT(req.GetMeta().value().m_blobNodeIdCount == 0);
 						JELLY_ALWAYS_ASSERT(req.GetSeq() == 1);
 					}
 
@@ -1114,8 +1115,8 @@ namespace jelly
 						lockNode.FlushPendingWAL(0);
 						JELLY_ALWAYS_ASSERT(req.IsCompleted());
 						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
-						JELLY_ALWAYS_ASSERT(req.GetMeta().m_blobSeq == UINT32_MAX);
-						JELLY_ALWAYS_ASSERT(req.GetMeta().m_blobNodeIdCount == 0);
+						JELLY_ALWAYS_ASSERT(req.GetMeta().value().m_blobSeq == UINT32_MAX);
+						JELLY_ALWAYS_ASSERT(req.GetMeta().value().m_blobNodeIdCount == 0);
 						JELLY_ALWAYS_ASSERT(req.GetSeq() == 1);
 					}
 

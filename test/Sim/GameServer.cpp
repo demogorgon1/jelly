@@ -198,7 +198,7 @@ namespace jelly::Test::Sim
 				{
 				case REQUEST_RESULT_OK:
 					{
-						const LockServer::LockMetaDataType& meta = aClient->m_lockRequest->GetMeta();
+						const LockServer::LockMetaDataType& meta = aClient->m_lockRequest->GetMeta().value();
 
 						for (uint32_t i = 0; i < meta.m_blobNodeIdCount; i++)
 							aClient->m_blobNodeIds.push_back(meta.m_blobNodeIds[i]);

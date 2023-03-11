@@ -425,7 +425,7 @@ namespace jelly
 
 						default:
 							JELLY_ALWAYS_ASSERT(m_lockRequest->GetResult() == REQUEST_RESULT_OK);
-							m_blobSeq = m_lockRequest->GetMeta().m_blobSeq;
+							m_blobSeq = m_lockRequest->GetMeta().value().m_blobSeq;
 							m_lockRequest.reset();
 							break;
 						}

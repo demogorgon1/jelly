@@ -156,6 +156,7 @@ namespace jelly
 		const _LockType&		GetLock() const noexcept { return m_lock; }
 		_LockType&				GetLock() noexcept { return m_lock; }
 		const _LockMetaType&	GetMeta() const noexcept { return m_meta; }
+		_LockMetaType&			GetMeta() noexcept { return m_meta; }
 		const RuntimeState&		GetRuntimeState() const noexcept { return m_runtimeState; }
 		RuntimeState&			GetRuntimeState() noexcept { return m_runtimeState; }
 

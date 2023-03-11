@@ -26,7 +26,7 @@ namespace jelly
 							uint64_t						aTimeStamp) noexcept;
 		void			SetSeq(
 							uint32_t						aSeq) noexcept;
-		void			IncrementSeq() noexcept;
+		uint32_t		IncrementSeq() noexcept;
 
 		// Virtual interface
 		virtual size_t	Write(

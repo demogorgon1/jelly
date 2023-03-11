@@ -127,6 +127,7 @@ namespace jelly
 		* -------|-----------------------------------------------------------------------------------
 		* m_meta | Latest meta data.
 		* m_lock | Previous lock id.
+		* m_seq  | Lock sequence number.
 		*/
 		void
 		Lock(
@@ -240,6 +241,7 @@ namespace jelly
 					// Same lock, no need to write anything - return meta data and timestamp					
 					aRequest->SetMeta(item->GetMeta());
 					aRequest->SetTimeStamp(item->GetTimeStamp());
+					aRequest->SetSeq(item->GetSeq());
 					return REQUEST_RESULT_OK;
 				}
 			}
@@ -247,7 +249,7 @@ namespace jelly
  			aRequest->SetMeta(item->GetMeta());
 
 			item->SetTimeStamp(aRequest->GetTimeStamp());
-			item->IncrementSeq();
+			aRequest->SetSeq(item->IncrementSeq());
 
 			item->RemoveTombstone();
 

@@ -57,10 +57,12 @@ namespace jelly
 		m_data.m_seq = aSeq;
 	}
 
-	void			
+	uint32_t			
 	ItemBase::IncrementSeq() noexcept
 	{
 		m_data.m_seq++;
+
+		return m_data.m_seq;
 	}
 
 	//------------------------------------------------------------------------------------------

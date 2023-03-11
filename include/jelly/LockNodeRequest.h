@@ -17,6 +17,7 @@ namespace jelly
 	public:
 		LockNodeRequest() noexcept
 			: m_forced(false)
+			, m_seq(0)
 		{
 
 		}
@@ -53,12 +54,21 @@ namespace jelly
 			m_forced = aForced;
 		}
 
+		//! Set the lock sequence number
+		void
+		SetSeq(
+			uint32_t				aSeq) noexcept
+		{
+			m_seq = aSeq;
+		}
+
 		//---------------------------------------------------------------------------------
 		// Data access
 		const _KeyType&			GetKey() const noexcept { return m_key; }		//!< Returns lock key
 		const _LockType&		GetLock() const noexcept { return m_lock; }		//!< Returns lock identifier
 		const _LockMetaType&	GetMeta() const noexcept { return m_meta; }		//!< Returns lock meta data
 		bool					IsForced() const noexcept { return m_forced; }	//!< Returns whether request should be forced
+		uint32_t				GetSeq() const noexcept { return m_seq; }		//!< Returns lock sequence number
 
 	private:
 
@@ -66,6 +76,7 @@ namespace jelly
 		_LockType							m_lock;
 		_LockMetaType						m_meta;
 		bool								m_forced;
+		uint32_t							m_seq;
 	};
 
 }

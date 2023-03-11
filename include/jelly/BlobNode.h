@@ -141,9 +141,9 @@ namespace jelly
 		 * m_blob    | The blob.
 		 * m_lockSeq | Lock sequence number.
 		 * 
-		 * Output | <!-- -->
-		 * -------|------------------------------------------------------------------------------------------
-		 * m_seq  | If REQUEST_RESULT_OUTDATED this returns the sequence number of the currently stored blob.
+		 * Output    | <!-- -->
+		 * ----------|---------------------------------------------------------------------------------------
+		 * m_seq     | If REQUEST_RESULT_OUTDATED this returns the sequence number of the currently stored blob.
 		 */
 		void
 		Set(
@@ -166,16 +166,17 @@ namespace jelly
   		 /**
 		 * Submits a get request to the queue.
 		 * 
-		 * Input  | <!-- -->
-		 * -------|-----------------------------------------------------------------------------------------------
-		 * m_key  | Request key.
-		 * m_seq  | Minimum sequence number of the blob (REQUEST_RESULT_OUTDATED if sequence number isn't at least this).
-		 * m_blob | The blob.
-		 * 
-		 * Output | <!-- -->
-		 * -------|-----------------------------------------------------------------------------------------------
-		 * m_blob | The blob.
-		 * m_seq  | Returns the stored sequence number.
+		 * Input     | <!-- -->
+		 * ----------|-----------------------------------------------------------------------------------------------
+		 * m_key     | Request key.
+		 * m_seq     | Minimum sequence number of the blob (REQUEST_RESULT_OUTDATED if sequence number isn't at least this).
+		 * m_blob    | The blob.
+		 * m_lockSeq | Lock sequence number.
+		 *
+		 * Output    | <!-- -->
+		 * ----------|-----------------------------------------------------------------------------------------------
+		 * m_blob    | The blob.
+		 * m_seq     | Returns the stored sequence number.
 		 */
 		void
 		Get(
@@ -310,7 +311,7 @@ namespace jelly
 					return REQUEST_RESULT_OUTDATED;
 				}
 
-				if(item->GetLockSeq() > aRequest->GetLockSeq())
+				if(aRequest->GetLockSeq().has_value() && item->GetLockSeq() != aRequest->GetLockSeq().value())
 				{
 					// We don't have the lock
 					return REQUEST_RESULT_NOT_LOCKED;
@@ -357,7 +358,6 @@ namespace jelly
 			item->GetRuntimeState().m_isResident = true; 
 
 			item->SetSeq(aRequest->GetSeq());
-			item->SetLockSeq(aRequest->GetLockSeq());
 			item->SetTimeStamp(aRequest->GetTimeStamp());
 
 			if(aRequest->GetMeta().has_value())
@@ -433,6 +433,9 @@ namespace jelly
 			aRequest->SetSeq(item->GetSeq());
 			aRequest->SetTimeStamp(item->GetTimeStamp());
 			aRequest->SetMeta(item->GetMeta());
+			
+			if(aRequest->GetLockSeq().has_value())
+				item->SetLockSeq(aRequest->GetLockSeq().value());
 
 			return REQUEST_RESULT_OK;
 		}

@@ -987,6 +987,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 						JELLY_ALWAYS_ASSERT(req.GetMeta().m_blobSeq == UINT32_MAX);
 						JELLY_ALWAYS_ASSERT(req.GetMeta().m_blobNodeIdCount == 0);
+						JELLY_ALWAYS_ASSERT(req.GetSeq() == 1);
 					}
 				}	
 
@@ -1021,6 +1022,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 						JELLY_ALWAYS_ASSERT(req.GetMeta().m_blobSeq == UINT32_MAX);
 						JELLY_ALWAYS_ASSERT(req.GetMeta().m_blobNodeIdCount == 0);
+						JELLY_ALWAYS_ASSERT(req.GetSeq() == 1);
 					}
 
 					// Unlock with wrong lock, should fail
@@ -1084,6 +1086,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(req.GetMeta().m_blobNodeIds[0] == 1);
 						JELLY_ALWAYS_ASSERT(req.GetMeta().m_blobNodeIds[1] == 2);
 						JELLY_ALWAYS_ASSERT(req.GetMeta().m_blobNodeIds[2] == 3);
+						JELLY_ALWAYS_ASSERT(req.GetSeq() == 3);
 					}
 
 					// Also apply locks on another two keys in descending order, 
@@ -1099,6 +1102,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 						JELLY_ALWAYS_ASSERT(req.GetMeta().m_blobSeq == UINT32_MAX);
 						JELLY_ALWAYS_ASSERT(req.GetMeta().m_blobNodeIdCount == 0);
+						JELLY_ALWAYS_ASSERT(req.GetSeq() == 1);
 					}
 
 					{
@@ -1112,6 +1116,7 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 						JELLY_ALWAYS_ASSERT(req.GetMeta().m_blobSeq == UINT32_MAX);
 						JELLY_ALWAYS_ASSERT(req.GetMeta().m_blobNodeIdCount == 0);
+						JELLY_ALWAYS_ASSERT(req.GetSeq() == 1);
 					}
 
 					lockNode.FlushPendingStore();
@@ -1712,12 +1717,23 @@ namespace jelly
 				{
 					BlobNodeType blobNode(aHost, 0);
 
-					// Do a set
+					// Do a get on non existing blob
+					{
+						BlobNodeType::Request req;
+						req.SetKey(123);
+						req.SetLockSeq(8999); // This doesn't matter because it doesn't exist
+						blobNode.Get(&req);
+						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
+						JELLY_ALWAYS_ASSERT(req.IsCompleted());
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_DOES_NOT_EXIST);
+					}
+
+					// Do a set on not existing blob, should work
 					{					
 						BlobNodeType::Request req;
 						req.SetKey(123);
 						req.SetSeq(1);
-						req.SetLockSeq(1);
+						req.SetLockSeq(8999); // This is applied no matter what it is, because it's new
 						req.SetBlob(new UInt32Blob(100));
 						blobNode.Set(&req);
 						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
@@ -1726,12 +1742,12 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 					}
 
-					// Do a set with lower lock sequence number - it should fail
+					// Do a set on the same blob, but with wrong lock sequence number
 					{
 						BlobNodeType::Request req;
 						req.SetKey(123);
 						req.SetSeq(2);
-						req.SetLockSeq(0); // Lower than 1
+						req.SetLockSeq(9000); // This won't match
 						req.SetBlob(new UInt32Blob(101));
 						blobNode.Set(&req);
 						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
@@ -1740,12 +1756,24 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_NOT_LOCKED);
 					}
 
-					// Do a set with higher lock sequence number - it should work
+					// Do a get to apply a new lock sequence number
+					{
+						BlobNodeType::Request req;
+						req.SetKey(123);
+						req.SetLockSeq(9001); // The get will update the lock sequence number
+						blobNode.Get(&req);
+						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
+						JELLY_ALWAYS_ASSERT(req.IsCompleted());
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
+						JELLY_ALWAYS_ASSERT(UInt32Blob::GetValue(req.GetBlob()) == 100);
+					}
+
+					// Do a set with new lock sequence number
 					{
 						BlobNodeType::Request req;
 						req.SetKey(123);
 						req.SetSeq(3);
-						req.SetLockSeq(2); // Higher than 1
+						req.SetLockSeq(9001);
 						req.SetBlob(new UInt32Blob(102));
 						blobNode.Set(&req);
 						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);

@@ -15,6 +15,7 @@ macro(jelly_option OPTION_NAME OPTION_TEXT OPTION_DEFAULT)
 endmacro()
 
 jelly_option(JELLY_ZSTD "Support ZSTD compression." OFF)
+jelly_option(JELLY_VAR_SIZE_UINTS "Use var size unsigned integer encoding." ON)
 jelly_option(JELLY_PRECOMPILED_HEADERS "Enable precompiled headers." ON)
 jelly_option(JELLY_EXTRA_CONSISTENCY_CHECKS "Enable extra consistency checks." OFF)
 jelly_option(JELLY_EXTRA_ERROR_INFO "Enable extra error information." ON)

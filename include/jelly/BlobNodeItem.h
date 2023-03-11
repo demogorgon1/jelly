@@ -52,6 +52,7 @@ namespace jelly
 			const _KeyType&									aKey = _KeyType(),
 			uint32_t										aSeq = 0) noexcept
 			: m_key(aKey)
+			, m_lockSeq(0)
 		{
 			SetSeq(aSeq);
 		}
@@ -61,6 +62,7 @@ namespace jelly
 			uint32_t										aSeq,
 			IBuffer*										aBlob) noexcept
 			: m_key(aKey)
+			, m_lockSeq(0)
 		{
 			SetSeq(aSeq);
 
@@ -89,6 +91,13 @@ namespace jelly
 		}
 
 		void
+		SetLockSeq(
+			uint32_t										aLockSeq) noexcept
+		{
+			m_lockSeq = aLockSeq;
+		}
+
+		void
 		Reset() noexcept
 		{
 			JELLY_ASSERT(m_runtimeState.m_pendingWAL == NULL);
@@ -99,6 +108,7 @@ namespace jelly
 
 			m_key = _KeyType();
 			m_meta = _MetaType();
+			m_lockSeq = 0;
 
 			m_runtimeState.m_storeId = 0;
 			m_runtimeState.m_storeOffset = 0;
@@ -115,6 +125,7 @@ namespace jelly
 
 			m_key = aOther->m_key;
 			m_meta = aOther->m_meta;
+			m_lockSeq = aOther->m_lockSeq;
 
 			m_runtimeState.m_storeId = aOther->m_runtimeState.m_storeId;
 			m_runtimeState.m_storeOffset = aOther->m_runtimeState.m_storeOffset;
@@ -191,6 +202,7 @@ namespace jelly
 			WriteBase(aWriter);
 			m_key.Write(aWriter);
 			m_meta.Write(aWriter);
+			aWriter->WriteUInt(m_lockSeq);
 
 			size_t blobOffset = 0; 
 
@@ -224,6 +236,8 @@ namespace jelly
 			if(!m_key.Read(aReader))
 				return false;
 			if(!m_meta.Read(aReader))
+				return false;
+			if(!aReader->ReadUInt(m_lockSeq))
 				return false;
 
 			if(!HasTombstone())
@@ -271,6 +285,7 @@ namespace jelly
 		IBuffer*				GetBlob() noexcept { JELLY_ASSERT(m_blob); return m_blob.get(); }
 		bool					HasBlob() const noexcept { return (bool)m_blob; }
 		const _MetaType&		GetMeta() const noexcept { return m_meta; }
+		uint32_t				GetLockSeq() const noexcept { return m_lockSeq; }
 		const RuntimeState&		GetRuntimeState() const noexcept { return m_runtimeState; }
 		RuntimeState&			GetRuntimeState() noexcept { return m_runtimeState; }
 	
@@ -278,6 +293,7 @@ namespace jelly
 
 		_KeyType							m_key;
 		_MetaType							m_meta;
+		uint32_t							m_lockSeq;
 		std::unique_ptr<IBuffer>			m_blob;
 
 		// Runtime state, not serialized

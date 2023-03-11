@@ -18,6 +18,7 @@ namespace jelly
 	public:
 		BlobNodeRequest() noexcept
 			: m_seq(0)
+			, m_lockSeq(0)
 		{
 
 		}
@@ -54,11 +55,20 @@ namespace jelly
 			m_meta = aMeta;
 		}
 
+		//! Set lock sequence number
+		void
+		SetLockSeq(
+			uint32_t			aLockSeq) noexcept
+		{
+			m_lockSeq = aLockSeq;
+		}
+
 		//-------------------------------------------------------------------------------
 		// Data access
 
 		uint32_t						GetSeq() const noexcept { return m_seq; }			//!< Get blob sequence number
 		const _KeyType&					GetKey() const noexcept { return m_key; }			//!< Get blob key
+		uint32_t						GetLockSeq() const noexcept { return m_lockSeq; }	//!< Get lock sequence number
 		const std::optional<_MetaType>&	GetMeta() const noexcept { return m_meta; }			//!< Get meta data
 		IBuffer*						GetBlob() noexcept { return m_blob.get(); }			//!< Get pointer to blob object
 		const IBuffer*					GetBlob() const noexcept { return m_blob.get(); }	//!< Get const pointer to blob object
@@ -68,6 +78,7 @@ namespace jelly
 
 		uint32_t							m_seq;	
 		_KeyType							m_key;	
+		uint32_t							m_lockSeq;
 		std::optional<_MetaType>			m_meta;
 		std::unique_ptr<IBuffer>			m_blob;	
 	};

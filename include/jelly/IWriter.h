@@ -21,9 +21,13 @@ namespace jelly
 		WriteUInt(
 			_T							aValue)
 		{
-			VarSizeUInt::Encoder<_T> t;
-			t.Encode(aValue);
-			Write(t.GetBuffer(), t.GetBufferSize());
+			#if defined(JELLY_VAR_SIZE_UINTS)
+				VarSizeUInt::Encoder<_T> t;
+				t.Encode(aValue);
+				Write(t.GetBuffer(), t.GetBufferSize());
+			#else
+				WritePOD(aValue);
+			#endif
 		}
 
 		//! Writes a POD type.

@@ -134,14 +134,15 @@ namespace jelly
 		/**
 		 * Submits a set request to the queue.
 		 * 
-		 * Input  | <!-- -->
-		 * -------|-----------------------------------------------------------------------------------
-		 * m_key  | Request key.
-		 * m_seq  | Sequence number of the blob.
-		 * m_blob | The blob.
+		 * Input     | <!-- -->
+		 * ----------|---------------------------------------------------------------------------------------
+		 * m_key     | Request key.
+		 * m_seq     | Sequence number of the blob.
+		 * m_blob    | The blob.
+		 * m_lockSeq | Lock sequence number.
 		 * 
 		 * Output | <!-- -->
-		 * -------|-----------------------------------------------------------------------------------
+		 * -------|------------------------------------------------------------------------------------------
 		 * m_seq  | If REQUEST_RESULT_OUTDATED this returns the sequence number of the currently stored blob.
 		 */
 		void
@@ -197,15 +198,16 @@ namespace jelly
 		/**
 		* Submits a delete request to the queue.
 		*
-		* Input  | <!-- -->
-		* -------|-----------------------------------------------------------------------------------------------
-		* m_key  | Request key.
-		* m_seq  | Sequence number of the blob being deleted.
+		* Input     | <!-- -->
+		* ----------|-----------------------------------------------------------------------------------------------
+		* m_key     | Request key.
+		* m_seq     | Sequence number of the blob being deleted.
+		* m_lockSeq | Lock sequence number.
 		*
-		* Output | <!-- -->
-		* -------|-----------------------------------------------------------------------------------------------
-		* m_blob | The blob.
-		* m_seq  | If REQUEST_RESULT_OUTDATED this returns the sequence number of the currently stored blob.
+		* Output    | <!-- -->
+		* ----------|-----------------------------------------------------------------------------------------------
+		* m_blob    | The blob.
+		* m_seq     | If REQUEST_RESULT_OUTDATED this returns the sequence number of the currently stored blob.
 		*/
 		void
 		Delete(
@@ -281,6 +283,8 @@ namespace jelly
 
 			if(result.second)
 			{
+				// This is an insert.
+
 				if(aDelete)
 				{
 					return REQUEST_RESULT_DOES_NOT_EXIST;
@@ -297,11 +301,19 @@ namespace jelly
 			}
 			else
 			{
+				// This is an update.
+
 				if(item->GetSeq() >= aRequest->GetSeq())
 				{
 					// Trying to set an old version - return latest sequence number to requester
 					aRequest->SetSeq(item->GetSeq());
 					return REQUEST_RESULT_OUTDATED;
+				}
+
+				if(item->GetLockSeq() > aRequest->GetLockSeq())
+				{
+					// We don't have the lock
+					return REQUEST_RESULT_NOT_LOCKED;
 				}
 
 				if(item->HasBlob())
@@ -345,6 +357,7 @@ namespace jelly
 			item->GetRuntimeState().m_isResident = true; 
 
 			item->SetSeq(aRequest->GetSeq());
+			item->SetLockSeq(aRequest->GetLockSeq());
 			item->SetTimeStamp(aRequest->GetTimeStamp());
 
 			if(aRequest->GetMeta().has_value())

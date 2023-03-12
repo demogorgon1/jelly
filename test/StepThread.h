@@ -58,6 +58,7 @@ namespace jelly
 				, m_blobNode(aBlobNode)
 				, m_nextStepIndex(0)
 				, m_key(0)
+				, m_lowPrio(false)
 				, m_lockId(0)
 				, m_blobSeq(0)
 				, m_random(aRandom)
@@ -239,6 +240,18 @@ namespace jelly
 			}
 
 			void
+			FlushPendingBlobNodeLowPrioWAL()
+			{
+				_AddStep(__FUNCTION__, 0, 10, [&]()
+				{
+					_Message("Flush pending blob node low-prio WAL");
+
+					JELLY_ALWAYS_ASSERT(m_blobNode);
+					m_blobNode->FlushPendingLowPrioWAL(0);
+				});
+			}
+
+			void
 			FlushPendingBlobNodeStore()
 			{
 				_AddStep(__FUNCTION__, 0, 2, [&]()
@@ -279,6 +292,16 @@ namespace jelly
 				_AddStep(__FUNCTION__, 0, 0, [&, aKey]()
 				{
 					m_key = aKey;
+				});
+			}
+
+			void
+			SetLowPrio(
+				bool			aLowPrio)
+			{
+				_AddStep(__FUNCTION__, 0, 0, [&, aLowPrio]()
+				{
+					m_lowPrio = aLowPrio;
 				});
 			}
 
@@ -350,6 +373,7 @@ namespace jelly
 					m_setRequest = std::make_unique<_BlobNodeRequestType>();
 					m_setRequest->SetKey(m_key);
 					m_setRequest->SetSeq(++m_blobSeq);
+					m_setRequest->SetLowPrio(m_lowPrio);
 					m_setRequest->SetBlob(new UInt32Blob(m_key));
 					m_blobNode->Set(m_setRequest.get());
 				});								
@@ -384,6 +408,7 @@ namespace jelly
 
 			uint32_t								m_lockId;
 			uint32_t								m_key;
+			bool									m_lowPrio;
 			uint32_t								m_blobSeq;
 
 			std::unique_ptr<_LockNodeRequestType>	m_lockRequest;

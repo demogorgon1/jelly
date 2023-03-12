@@ -75,6 +75,7 @@ namespace jelly
 			Event() noexcept
 				: m_type(Type(0))
 				, m_concurrentWALIndex(0) 
+				, m_lowPrioWAL(false)
 			{
 
 			}
@@ -83,6 +84,7 @@ namespace jelly
 
 			CompactionJob						m_compactionJob;		// TYPE_PERFORM_COMPACTION
 			uint32_t							m_concurrentWALIndex;	// TYPE_FLUSH_PENDING_WAL
+			bool								m_lowPrioWAL;			// TYPE_FLUSH_PENDING_WAL
 		};
 
 		typedef std::function<void(const Event&)> EventHandler;
@@ -112,9 +114,13 @@ namespace jelly
 			// Initialize concurrent WAL state
 			{
 				m_concurrentWALState.resize(m_node->GetPendingWALCount());
+				m_concurrentWALStateLowPrio.resize(m_node->GetPendingLowPrioWALCount());
 
 				for(ConcurrentWALState& concurrentWALState : m_concurrentWALState)
 					concurrentWALState.m_flushCooldown.SetTimeout(m_config.GetInterval(Config::ID_MIN_WAL_FLUSH_INTERVAL_MS));
+
+				for (ConcurrentWALState& concurrentWALState : m_concurrentWALStateLowPrio)
+					concurrentWALState.m_flushCooldown.SetTimeout(m_config.GetInterval(Config::ID_MIN_LOW_PRIO_WAL_FLUSH_INTERVAL_MS));
 			}
 		}
 
@@ -129,6 +135,7 @@ namespace jelly
 			EventHandler		aEventHandler)
 		{
 			_UpdateConcurrentWALState(aEventHandler);
+			_UpdateConcurrentWALStateLowPrio(aEventHandler);
 			_UpdatePendingStoreState(aEventHandler);
 			_UpdateCleanupWALs(aEventHandler);
 			_UpdateCompaction(aEventHandler);
@@ -136,7 +143,7 @@ namespace jelly
 
 	private:
 
-		static Event EventFlushPendingWAL(uint32_t aConcurrentWALIndex) { Event t; t.m_type = Event::TYPE_FLUSH_PENDING_WAL; t.m_concurrentWALIndex = aConcurrentWALIndex; return t; }
+		static Event EventFlushPendingWAL(uint32_t aConcurrentWALIndex, bool aLowPrio) { Event t; t.m_type = Event::TYPE_FLUSH_PENDING_WAL; t.m_concurrentWALIndex = aConcurrentWALIndex; t.m_lowPrioWAL = aLowPrio; return t; }
 		static Event EventFlushPendingStore() { Event t; t.m_type = Event::TYPE_FLUSH_PENDING_STORE; return t; }
 		static Event EventCleanupWALs() { Event t; t.m_type = Event::TYPE_CLEANUP_WALS; return t; }
 		static Event EventPerformCompaction(const CompactionJob& aCompactionJob) { Event t; t.m_type = Event::TYPE_PERFORM_COMPACTION; t.m_compactionJob = aCompactionJob; return t; }
@@ -151,6 +158,7 @@ namespace jelly
 		};
 
 		std::vector<ConcurrentWALState>						m_concurrentWALState;
+		std::vector<ConcurrentWALState>						m_concurrentWALStateLowPrio;
 		Timer												m_cleanupWALsTimer;
 		Timer												m_compactionUpdateTimer;
 		std::unique_ptr<CompactionAdvisor>					m_compactionAdvisor;
@@ -158,7 +166,7 @@ namespace jelly
 		void
 		_UpdateConcurrentWALState(
 			EventHandler		aEventHandler)
-		{
+		{			
 			for (size_t i = 0; i < m_concurrentWALState.size(); i++)
 			{
 				ConcurrentWALState& concurrentWALState = m_concurrentWALState[i];
@@ -167,9 +175,28 @@ namespace jelly
 
 				if(pendingRequests > 0 && concurrentWALState.m_flushCooldown.HasExpired())
 				{
-					aEventHandler(EventFlushPendingWAL((uint32_t)i));
+					aEventHandler(EventFlushPendingWAL((uint32_t)i, false));
 
 					concurrentWALState.m_flushCooldown.SetTimeout(m_config.GetInterval(Config::ID_MIN_WAL_FLUSH_INTERVAL_MS));
+				}
+			}
+		}
+
+		void
+		_UpdateConcurrentWALStateLowPrio(
+			EventHandler		aEventHandler)
+		{			
+			for (size_t i = 0; i < m_concurrentWALState.size(); i++)
+			{
+				ConcurrentWALState& concurrentWALState = m_concurrentWALState[i];
+
+				size_t pendingRequests = m_node->GetPendingLowPrioWALRequestCount((uint32_t)i);
+
+				if(pendingRequests > 0 && concurrentWALState.m_flushCooldown.HasExpired())
+				{
+					aEventHandler(EventFlushPendingWAL((uint32_t)i, true));
+
+					concurrentWALState.m_flushCooldown.SetTimeout(m_config.GetInterval(Config::ID_MIN_LOW_PRIO_WAL_FLUSH_INTERVAL_MS));
 				}
 			}
 		}

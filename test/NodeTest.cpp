@@ -222,6 +222,8 @@ namespace jelly
 				std::atomic_int*		aGetCounter,
 				std::atomic_int*		aThreadCounter)
 			{
+				std::mt19937 random;
+				
 				while(!*aStopEvent)
 				{	
 					uint32_t blobSeq = UINT32_MAX;
@@ -278,7 +280,11 @@ namespace jelly
 						BlobNodeType::Request req;
 						req.SetKey(aKey);
 						req.SetSeq(++blobSeq);
-						req.SetBlob(new UInt32Blob(aKey));
+
+						if(random() % 2 == 0)
+							req.SetLowPrio(true);
+
+						req.SetBlob(new UInt32Blob(aKey));						
 						aBlobNode->Set(&req);
 						while (!req.IsCompleted())
 							std::this_thread::yield();
@@ -636,13 +642,15 @@ namespace jelly
 						lockNode.ProcessRequests();
 						blobNode.ProcessRequests();
 
-						std::atomic_uint32_t waiting = walConcurrency * 2;
+						std::atomic_uint32_t waiting = walConcurrency * 2 + 1;
 
 						for (uint32_t i = 0; i < walConcurrency; i++)
 							threadPool.Post([i, &lockNode, &waiting]() mutable { lockNode.FlushPendingWAL(i); waiting--; });
 
 						for (uint32_t i = 0; i < walConcurrency; i++)
 							threadPool.Post([i, &blobNode, &waiting]() mutable { blobNode.FlushPendingWAL(i); waiting--; });
+
+						threadPool.Post([&blobNode, &waiting]() mutable { blobNode.FlushPendingLowPrioWAL(0); waiting--; });
 
 						while(waiting > 0)
 							std::this_thread::yield();
@@ -1819,6 +1827,117 @@ namespace jelly
 				_VerifyBlobNodeWAL(aHost, 0, 0, { { 123, 1, 100 }, { 123, 3, 102 } });
 			}
 
+			void
+			_TestBlobNodeLowPrio(
+				TestDefaultHost* aHost)
+			{
+				aHost->DeleteAllFiles(UINT32_MAX);
+				aHost->GetDefaultConfigSource()->Clear();
+
+				{
+					BlobNodeType blobNode(aHost, 0);
+
+					// Do a low-prio set
+					{
+						BlobNodeType::Request req;
+						req.SetKey(123);
+						req.SetSeq(1);
+						req.SetLowPrio(true);
+						req.SetBlob(new UInt32Blob(100));
+						blobNode.Set(&req);
+						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
+						JELLY_ALWAYS_ASSERT(blobNode.FlushPendingWAL() == 0);
+						JELLY_ALWAYS_ASSERT(req.IsCompleted()); // Completed before low-prio flush
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
+						JELLY_ALWAYS_ASSERT(blobNode.FlushPendingLowPrioWAL() == 1);
+					}
+
+					// Read it back
+					{
+						BlobNodeType::Request req;
+						req.SetKey(123);
+						blobNode.Get(&req);
+						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
+						JELLY_ALWAYS_ASSERT(req.IsCompleted());
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
+						JELLY_ALWAYS_ASSERT(UInt32Blob::GetValue(req.GetBlob()) == 100);
+					}
+
+					// Do a low-prio set again, but no immediate flush
+					{
+						BlobNodeType::Request req;
+						req.SetKey(456);
+						req.SetSeq(1);
+						req.SetLowPrio(true);
+						req.SetBlob(new UInt32Blob(101));
+						blobNode.Set(&req);
+						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
+						JELLY_ALWAYS_ASSERT(blobNode.FlushPendingWAL() == 0);
+						JELLY_ALWAYS_ASSERT(req.IsCompleted()); 
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
+					}
+
+					// Do a high-prio set on the same key
+					{
+						BlobNodeType::Request req;
+						req.SetKey(456);
+						req.SetSeq(2);
+						req.SetBlob(new UInt32Blob(102));
+						blobNode.Set(&req);
+						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
+						JELLY_ALWAYS_ASSERT(blobNode.FlushPendingWAL() == 1);
+						JELLY_ALWAYS_ASSERT(req.IsCompleted()); 
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
+					}
+
+					// Read it back
+					{
+						BlobNodeType::Request req;
+						req.SetKey(456);
+						blobNode.Get(&req);
+						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
+						JELLY_ALWAYS_ASSERT(req.IsCompleted());
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
+						JELLY_ALWAYS_ASSERT(UInt32Blob::GetValue(req.GetBlob()) == 102);
+					}
+
+					// Do another low-prio, this time with a flush
+					{
+						BlobNodeType::Request req;
+						req.SetKey(456);
+						req.SetSeq(3);
+						req.SetLowPrio(true);
+						req.SetBlob(new UInt32Blob(103));
+						blobNode.Set(&req);
+						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
+						JELLY_ALWAYS_ASSERT(blobNode.FlushPendingWAL() == 0);
+						JELLY_ALWAYS_ASSERT(req.IsCompleted());
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
+						JELLY_ALWAYS_ASSERT(blobNode.FlushPendingLowPrioWAL() == 2); // Also flushing first low-prio request on this key
+					}
+
+					// Read it back again
+					{
+						BlobNodeType::Request req;
+						req.SetKey(456);
+						blobNode.Get(&req);
+						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
+						JELLY_ALWAYS_ASSERT(req.IsCompleted());
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
+						JELLY_ALWAYS_ASSERT(UInt32Blob::GetValue(req.GetBlob()) == 103);
+					}
+				}
+
+				// Low-prio WAL. Note that 2nd item is same as the last because serialization is deferred until flush. I'm not really sure
+				// if that's a problem, because usually there will be somewhat of a delay between requests on the same item anyway. Ideally
+				// the queue in WALWriter should be aware about adding multiple requests for the same item and only serialize it once. This
+				// check will cause a performance hit, also in the normal/common case, which probably isn't desirable.
+				_VerifyBlobNodeWAL(aHost, 0, 0, { { 123, 1, 100 }, { 456, 3, 103 }, { 456, 3, 103 } }); 
+
+				// High-prio WAL
+				_VerifyBlobNodeWAL(aHost, 0, 1, { { 456, 2, 102 } }); 
+			}
+
 		}
 
 		namespace NodeTest
@@ -1857,6 +1976,9 @@ namespace jelly
 
 				// Test blob node lock sequence numbering
 				_TestBlobNodeLockVerification(&host);
+
+				// Test low-priority blob node writes
+				_TestBlobNodeLowPrio(&host);
 
 				if(aConfig->m_hammerTest)
 				{

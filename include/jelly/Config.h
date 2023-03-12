@@ -24,6 +24,7 @@ namespace jelly
 			// Node
 			ID_WAL_SIZE_LIMIT,
 			ID_WAL_CONCURRENCY,
+			ID_WAL_CONCURRENCY_LOW_PRIO,
 			ID_BACKUP_PATH,
 			ID_BACKUP_COMPACTION,
 			ID_BACKUP_INCREMENTAL,
@@ -34,6 +35,7 @@ namespace jelly
 
 			// HousekeepingAdvisor
 			ID_MIN_WAL_FLUSH_INTERVAL_MS,
+			ID_MIN_LOW_PRIO_WAL_FLUSH_INTERVAL_MS,
 			ID_MAX_CLEANUP_WAL_INTERVAL_MS,
 			ID_MIN_COMPACTION_INTERVAL_MS,
 			ID_PENDING_STORE_ITEM_LIMIT,
@@ -84,6 +86,8 @@ namespace jelly
 			   "If a WAL file reaches this size it will be closed and a new one created." },
 			/* ID_WAL_CONCURRENCY */                        { TYPE_UINT32,   "wal_concurrency",                        "1",           true,
 			   "Number of WALs to keep open at the same time. These WALs can be flushed in parallel." },
+			/* ID_WAL_CONCURRENCY_LOW_PRIO */				{ TYPE_UINT32,	 "wal_concurrency_low_prio",               "1",			  true,
+			   "Number of low priority WALs to keep open at the same time. Like normal WALs these can be flushed in parallel." },
 			/* ID_BACKUP_PATH */							{ TYPE_STRING,   "backup_path",							   "backups",	  false,
 			   "Path to where backups should be created. This path must point to a directory that is on the same disk volume as the host root due "
 			   "to the creation of hard links." },
@@ -101,6 +105,8 @@ namespace jelly
 		    //----------------------------------------------+--------------+-----------------------------------------+--------------+--------------------
 			/* ID_MIN_WAL_FLUSH_INTERVAL_MS */				{ TYPE_INTERVAL, "min_wal_flush_interval",                 "500ms",       false,
 			   "HousekeepingAdvisor: Duration between WAL flushes will never be shorter than this." },
+			/* ID_MIN_LOW_PRIO_WAL_FLUSH_INTERVAL_MS */		{ TYPE_INTERVAL, "min_low_prio_wal_flush_interval",		   "30s",		  false,
+			   "HousekeepingAdvisor: Duration between low-priority WAL flushes will never be shorter than this." },
 			/* ID_MAX_CLEANUP_WAL_INTERVAL_MS */            { TYPE_INTERVAL, "max_cleanup_wal_interval",               "2m",          false,
 			   "HousekeepingAdvisor: Maximum time between WAL cleanups. Usually they'll be triggered after each pending store flush as well. " },
 			/* ID_MIN_COMPACTION_INTERVAL_MS */             { TYPE_INTERVAL, "min_compaction_interval",                "5s",          false,

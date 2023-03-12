@@ -481,7 +481,10 @@ namespace jelly
 					ReplicationNetwork*	/*aReplicationNetwork*/) override
 				{
 					for(size_t i = 0; i < m_pending.size(); i++)
-						m_pending[i].first->Signal();
+					{
+						if(m_pending[i].first != NULL)
+							m_pending[i].first->Signal();
+					}
 
 					size_t count = m_pending.size();
 					m_pending.clear();
@@ -493,8 +496,11 @@ namespace jelly
 				{
 					for (size_t i = 0; i < m_pending.size(); i++)
 					{
-						*(m_pending[i].second) = REQUEST_RESULT_CANCELED;
-						m_pending[i].first->Signal();
+						if(m_pending[i].second != NULL)
+							*(m_pending[i].second) = REQUEST_RESULT_CANCELED;
+
+						if(m_pending[i].first != NULL)
+							m_pending[i].first->Signal();
 					}
 
 					m_pending.clear();

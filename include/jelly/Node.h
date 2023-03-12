@@ -58,8 +58,8 @@ namespace jelly
 				m_fileLock.reset(aHost->CreateNodeLock(aNodeId));
 			}
 
-			uint32_t walConcurrency = m_config.GetUInt32(Config::ID_WAL_CONCURRENCY);
-			m_pendingWALs.resize((size_t)walConcurrency, NULL);
+			m_pendingWALs.resize((size_t)m_config.GetUInt32(Config::ID_WAL_CONCURRENCY), NULL);
+			m_pendingWALsLowPrio.resize((size_t)m_config.GetUInt32(Config::ID_WAL_CONCURRENCY_LOW_PRIO), NULL);
 		}
 
 		virtual 
@@ -291,8 +291,7 @@ namespace jelly
 		/**
 		 * Flush the specified concurrent WAL. This must be done after ProcessRequests(), but doesn't need to be
 		 * on the main thread. Requests that required stuff to be written to a WAL isn't going to be flagged as
-		 * completed before the WAL has been flushed. 
-		 * Returns number of items flushed.
+		 * completed before the WAL has been flushed. Returns number of items flushed.
 		 */
 		size_t
 		FlushPendingWAL(
@@ -300,36 +299,21 @@ namespace jelly
 		{
 			JELLY_CONTEXT(Exception::CONTEXT_NODE_FLUSH_PENDING_WAL);
 
-			size_t count = 0;
+			return _FlushPendingWAL(aWALConcurrentIndex, m_pendingWALs);
+		}
 
-			if (aWALConcurrentIndex == UINT32_MAX)
-			{
-				// Flush all pending WALs
-				for (WAL* pendingWAL : m_pendingWALs)
-				{
-					if (pendingWAL != NULL)
-					{
-						ScopedTimeSampler timeSampler(m_host->GetStats(), m_statsContext.m_idFlushPendingWALTime);
+		/**
+		 * Flush the specified concurrent low-priority WAL. Like FlushPendingWAL(), this must be done after 
+		 * ProcessRequests(), but doesn't need to be on the main thread. Note that low-priority requests are always
+		 * signaled for completion immediately after processing. Returns number of items flushed.
+		 */
+		size_t
+		FlushPendingLowPrioWAL(
+			uint32_t		aWALConcurrentIndex = UINT32_MAX)
+		{
+			JELLY_CONTEXT(Exception::CONTEXT_NODE_FLUSH_PENDING_WAL);
 
-						count += pendingWAL->GetWriter()->Flush(m_replicationNetwork);
-					}
-				}
-			}
-			else
-			{
-				// Flush only specific pending WAL
-				JELLY_ASSERT(aWALConcurrentIndex < m_pendingWALs.size());
-
-				WAL* pendingWAL = m_pendingWALs[aWALConcurrentIndex];
-				if (pendingWAL != NULL)
-				{
-					ScopedTimeSampler timeSampler(m_host->GetStats(), m_statsContext.m_idFlushPendingWALTime);
-
-					count += pendingWAL->GetWriter()->Flush(m_replicationNetwork);
-				}
-			}
-
-			return count;
+			return _FlushPendingWAL(aWALConcurrentIndex, m_pendingWALsLowPrio);
 		}
 
 		/**
@@ -340,9 +324,26 @@ namespace jelly
 		GetPendingWALRequestCount(
 			uint32_t		aWALConcurrentIndex) const noexcept
 		{
-			JELLY_ASSERT(aWALConcurrentIndex < m_pendingWALs.size());
+			JELLY_ASSERT((size_t)aWALConcurrentIndex < m_pendingWALs.size());
 
 			const WAL* pendingWAL = m_pendingWALs[aWALConcurrentIndex];
+			if (pendingWAL != NULL)
+				return pendingWAL->GetWriter()->GetPendingWriteCount();
+
+			return 0;
+		}
+
+		/**
+		 * Return the number of requests waiting to be flushed to the specified concurrent low-priority WAL. 
+		 * This should be called on the main thread, before any calls to FlushPendingWAL().
+		 */
+		size_t
+		GetPendingLowPrioWALRequestCount(
+			uint32_t		aWALConcurrentIndex) const noexcept
+		{
+			JELLY_ASSERT((size_t)aWALConcurrentIndex < m_pendingWALsLowPrio.size());
+
+			const WAL* pendingWAL = m_pendingWALsLowPrio[aWALConcurrentIndex];
 			if (pendingWAL != NULL)
 				return pendingWAL->GetWriter()->GetPendingWriteCount();
 
@@ -596,6 +597,7 @@ namespace jelly
 		void
 		WriteToWAL(
 			_ItemType*				aItem,
+			bool					aLowPrio,
 			CompletionEvent*		aCompletionEvent,
 			RequestResult*			aResult,
 			Exception::Code*		aException)
@@ -613,15 +615,19 @@ namespace jelly
 			}
 
 			{
+				std::vector<WAL*>& pendingWALs = aLowPrio ? m_pendingWALsLowPrio : m_pendingWALs;
+
 				uint32_t walConcurrencyIndex = 0;
 
 				// Pick a pending WAL to write to, using the hash of item key
 				{
-					size_t hash = aItem->GetKey().GetHash();
-					walConcurrencyIndex = (uint32_t)(m_pendingWALs.size() * (hash >> 32) / 0x100000000);
+					static_assert(sizeof(size_t) >= sizeof(uint64_t));
+					size_t hash = (size_t)aItem->GetKey().GetHash();
+
+					walConcurrencyIndex = (uint32_t)(pendingWALs.size() * (hash >> 32) / 0x100000000);
 				}
 
-				WAL* wal = _GetPendingWAL(walConcurrencyIndex);
+				WAL* wal = _GetPendingWAL(walConcurrencyIndex, pendingWALs);
 
 				// Append to WAL
 				wal->GetWriter()->WriteItem(aItem, aCompletionEvent, aResult, aException);
@@ -656,6 +662,7 @@ namespace jelly
 		uint32_t			GetNodeId() const noexcept { return m_nodeId; }											///< Returns node id.
 		bool				IsStopped() const noexcept { std::lock_guard lock(m_requestsLock); return m_stopped; }	///< Returns whether node has been requested to stop.
 		size_t				GetPendingWALCount() const noexcept { return m_pendingWALs.size(); }					///< Returns number of pending WALs.
+		size_t				GetPendingLowPrioWALCount() const noexcept { return m_pendingWALsLowPrio.size(); }		///< Returns number of pending low-priority WALs.
 		IHost*				GetHost() noexcept { return m_host; }													///< Returns pointer to host object associated with this node.
 		FileStatsContext*	GetStoreFileStatsContext() noexcept { return &m_statsContext.m_fileStore; }				///< Returns context for file statistics.
 
@@ -767,6 +774,7 @@ namespace jelly
 		Queue<_RequestType>											m_requests[2];
 
 		std::vector<WAL*>											m_pendingWALs;
+		std::vector<WAL*>											m_pendingWALsLowPrio;
 		std::vector<WAL*>											m_wals;
 
 		std::mutex													m_currentCompactionStoreIdsLock;
@@ -777,13 +785,14 @@ namespace jelly
 
 		WAL*
 		_GetPendingWAL(
-			uint32_t		aConcurrentWALIndex)
+			uint32_t			aConcurrentWALIndex,
+			std::vector<WAL*>&	aPendingWALs)
 		{
 			// Get the pending WAL for the concurrent WAL index - if it's getting too big close it and make a new one
 
-			JELLY_ASSERT(aConcurrentWALIndex < m_pendingWALs.size());
+			JELLY_ASSERT((size_t)aConcurrentWALIndex < aPendingWALs.size());
 
-			WAL*& pendingWAL = m_pendingWALs[aConcurrentWALIndex];
+			WAL*& pendingWAL = aPendingWALs[aConcurrentWALIndex];
 
 			if (pendingWAL != NULL)
 			{
@@ -802,6 +811,43 @@ namespace jelly
 			}
 
 			return pendingWAL;
+		}
+
+		size_t
+		_FlushPendingWAL(
+			uint32_t			aConcurrentWALIndex,
+			std::vector<WAL*>&	aPendingWALs)
+		{
+			size_t count = 0;
+
+			if (aConcurrentWALIndex == UINT32_MAX)
+			{
+				// Flush all pending WALs
+				for (WAL* pendingWAL : aPendingWALs)
+				{
+					if (pendingWAL != NULL)
+					{
+						ScopedTimeSampler timeSampler(m_host->GetStats(), m_statsContext.m_idFlushPendingWALTime);
+
+						count += pendingWAL->GetWriter()->Flush(m_replicationNetwork);
+					}
+				}
+			}
+			else
+			{
+				// Flush only specific pending WAL
+				JELLY_ASSERT(aConcurrentWALIndex < m_pendingWALs.size());
+
+				WAL* pendingWAL = aPendingWALs[aConcurrentWALIndex];
+				if (pendingWAL != NULL)
+				{
+					ScopedTimeSampler timeSampler(m_host->GetStats(), m_statsContext.m_idFlushPendingWALTime);
+
+					count += pendingWAL->GetWriter()->Flush(m_replicationNetwork);
+				}
+			}
+
+			return count;
 		}
 	};
 

@@ -26,20 +26,21 @@ namespace jelly
 		//! the error occured.
 		enum Context : uint32_t
 		{
-			CONTEXT_NONE,							//!< No context (or unknown)
-			CONTEXT_BACKUP_PERFORM,					//!< While performing a backup
-			CONTEXT_BLOB_NODE_INIT,					//!< While restoring a blob node
-			CONTEXT_LOCK_NODE_INIT,					//!< While restoring a lock node
-			CONTEXT_NODE_START_BACKUP,				//!< While starting a backup
-			CONTEXT_NODE_FINALIZE_BACKUP,			//!< While finalazing a backup
-			CONTEXT_NODE_PROCESS_REPLICATION,		//!< While processing replication data from another node
-			CONTEXT_NODE_PROCESS_REQUESTS,			//!< While processing requests
-			CONTEXT_NODE_FLUSH_PENDING_WAL,			//!< While flushing pending WALs
-			CONTEXT_NODE_FLUSH_PENDING_STORE,		//!< While flushing a pending store
-			CONTEXT_NODE_CLEANUP_WALS,				//!< While cleaning up WALs
-			CONTEXT_NODE_PERFORM_COMPACTION,		//!< While performing (minor) compaction
-			CONTEXT_NODE_PERFORM_MAJOR_COMPECTION,	//!< While performing major compaction
-			CONTEXT_NODE_APPLY_COMPACTION_RESULT,	//!< While applying compaction results
+			CONTEXT_NONE,								//!< No context (or unknown)
+			CONTEXT_BACKUP_PERFORM,						//!< While performing a backup
+			CONTEXT_BLOB_NODE_INIT,						//!< While restoring a blob node
+			CONTEXT_LOCK_NODE_INIT,						//!< While restoring a lock node
+			CONTEXT_NODE_START_BACKUP,					//!< While starting a backup
+			CONTEXT_NODE_FINALIZE_BACKUP,				//!< While finalazing a backup
+			CONTEXT_NODE_PROCESS_REPLICATION,			//!< While processing replication data from another node
+			CONTEXT_NODE_PROCESS_REQUESTS,				//!< While processing requests
+			CONTEXT_NODE_FLUSH_PENDING_WAL,				//!< While flushing pending WALs
+			CONTEXT_NODE_FLUSH_PENDING_LOW_PRIO_WAL,	//!< While flushing pending low-priority WALs
+			CONTEXT_NODE_FLUSH_PENDING_STORE,			//!< While flushing a pending store
+			CONTEXT_NODE_CLEANUP_WALS,					//!< While cleaning up WALs
+			CONTEXT_NODE_PERFORM_COMPACTION,			//!< While performing (minor) compaction
+			CONTEXT_NODE_PERFORM_MAJOR_COMPECTION,		//!< While performing major compaction
+			CONTEXT_NODE_APPLY_COMPACTION_RESULT,		//!< While applying compaction results
 
 			NUM_CONTEXTS
 		};
@@ -49,13 +50,13 @@ namespace jelly
 		//! during which type of request the error occurred.		
 		enum RequestType : uint32_t
 		{
-			REQUEST_TYPE_NONE,						//!< Error didn't happen during a request
-			REQUEST_TYPE_BLOB_NODE_SET,				//!< While performing a blob node set request
-			REQUEST_TYPE_BLOB_NODE_GET,				//!< While performing a blob node get request
-			REQUEST_TYPE_BLOB_NODE_DELETE,			//!< While performing a blob node delete request
-			REQUEST_TYPE_LOCK_NODE_LOCK,			//!< While performing a lock node lock request
-			REQUEST_TYPE_LOCK_NODE_UNLOCK,			//!< While performing a lock node unlock request
-			REQUEST_TYPE_LOCK_NODE_DELETE,			//!< While performing a lock node delete request
+			REQUEST_TYPE_NONE,							//!< Error didn't happen during a request
+			REQUEST_TYPE_BLOB_NODE_SET,					//!< While performing a blob node set request
+			REQUEST_TYPE_BLOB_NODE_GET,					//!< While performing a blob node get request
+			REQUEST_TYPE_BLOB_NODE_DELETE,				//!< While performing a blob node delete request
+			REQUEST_TYPE_LOCK_NODE_LOCK,				//!< While performing a lock node lock request
+			REQUEST_TYPE_LOCK_NODE_UNLOCK,				//!< While performing a lock node unlock request
+			REQUEST_TYPE_LOCK_NODE_DELETE,				//!< While performing a lock node delete request
 
 			NUM_REQUEST_TYPES
 		};
@@ -64,18 +65,18 @@ namespace jelly
 		//! categories.
 		enum Category : uint32_t
 		{
-			CATEGORY_NONE,							//!< No category
-			CATEGORY_DISK_READ,						//!< Disk read error
-			CATEGORY_DISK_WRITE,					//!< Disk write error
-			CATEGORY_DISK_AVAILABLE_SPACE,			//!< Error due to low available disk space
-			CATEGORY_DISK_CREATE_FILE,				//!< Failed to create a file or directory
-			CATEGORY_DISK_OPEN_FILE,				//!< Failed to open a file
-			CATEGORY_BACKUP,						//!< Backup related error
-			CATEGORY_COMPACTION,					//!< Compaction related error
-			CATEGORY_COMPRESSION,					//!< Compression related error
-			CATEGORY_DECOMPRESSION,					//!< Decompression related error
-			CATEGORY_SYSTEM,						//!< System error
-			CATEGORY_CONFIGURATION,					//!< Configuration error
+			CATEGORY_NONE,								//!< No category
+			CATEGORY_DISK_READ,							//!< Disk read error
+			CATEGORY_DISK_WRITE,						//!< Disk write error
+			CATEGORY_DISK_AVAILABLE_SPACE,				//!< Error due to low available disk space
+			CATEGORY_DISK_CREATE_FILE,					//!< Failed to create a file or directory
+			CATEGORY_DISK_OPEN_FILE,					//!< Failed to open a file
+			CATEGORY_BACKUP,							//!< Backup related error
+			CATEGORY_COMPACTION,						//!< Compaction related error
+			CATEGORY_COMPRESSION,						//!< Compression related error
+			CATEGORY_DECOMPRESSION,						//!< Decompression related error
+			CATEGORY_SYSTEM,							//!< System error
+			CATEGORY_CONFIGURATION,						//!< Configuration error
 
 			NUM_CATEGORIES
 		};
@@ -158,6 +159,7 @@ namespace jelly
 			"NODE_PROCESS_REPLICATION",
 			"NODE_PROCESS_REQUESTS",
 			"NODE_FLUSH_PENDING_WAL",
+			"NODE_FLUSH_PENDING_LOW_PRIO_WAL",
 			"NODE_FLUSH_PENDING_STORE",
 			"NODE_CLEANUP_WALS",
 			"NODE_PERFORM_COMPACTION",

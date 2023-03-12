@@ -18,6 +18,7 @@ namespace jelly
 			, m_next(NULL)
 			, m_timeStamp(0)
 			, m_hasPendingWrite(false)
+			, m_lowPrio(false)
 			, m_exception(0)
 		{
 
@@ -42,6 +43,13 @@ namespace jelly
 			std::function<void()>	aExecutionCallback) noexcept
 		{
 			m_executionCallback = aExecutionCallback;
+		}
+
+		void
+		SetLowPrio(
+			bool					aLowPrio) noexcept
+		{
+			m_lowPrio = aLowPrio;
 		}
 
 		void
@@ -87,9 +95,18 @@ namespace jelly
 			_NodeType*				aNode,
 			_ItemType*				aItem)
 		{
-			m_hasPendingWrite = true;
+			if(m_lowPrio)
+			{
+				// Signal as completed immediately after being queued up in the WAL
+				aNode->WriteToWAL(aItem, true, NULL, NULL, NULL);
+			}
+			else
+			{
+				// Not going to be signaled as completed before WAL has been flushed
+				m_hasPendingWrite = true;
 
-			aNode->WriteToWAL(aItem, &m_completed, &m_result, &m_exception);
+				aNode->WriteToWAL(aItem, false, &m_completed, &m_result, &m_exception);
+			}
 		}
 
 		//---------------------------------------------------------------------------------------------------
@@ -99,6 +116,7 @@ namespace jelly
 		RequestResult	GetResult() const noexcept { return m_result; }					//!< Returns result after completion.
 		uint64_t		GetTimeStamp() const noexcept { return m_timeStamp; }			//!< Returns time stamp after completion.
 		Exception::Code	GetException() const noexcept { return m_exception; }			//!< Returns exception if GetResult() is RESULT_EXCEPTION.
+		bool			IsLowPrio() const noexcept { return m_lowPrio; }
 
 		_RequestType*	GetNext() noexcept { return m_next; }
 		bool			HasPendingWrite() const noexcept { return m_hasPendingWrite; }
@@ -110,6 +128,7 @@ namespace jelly
 		Exception::Code					m_exception;
 		CompletionEvent					m_completed;		
 		bool							m_hasPendingWrite;
+		bool							m_lowPrio;
 		_RequestType*					m_next;
 		std::function<void()>			m_executionCallback;
 	};

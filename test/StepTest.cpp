@@ -58,6 +58,7 @@ namespace jelly
 				t->RestartBlobNode();
 				t->ProcessBlobNodeRequests();
 				t->FlushPendingBlobNodeWAL();
+				t->FlushPendingBlobNodeLowPrioWAL();
 				t->FlushPendingBlobNodeStore();
 				t->CleanupBlobNodeWALs();
 
@@ -86,7 +87,11 @@ namespace jelly
 				t->Get();
 
 				for(uint32_t i = 0; i < 5; i++)
+				{
+					t->SetLowPrio(i % 2 == 0);
+
 					t->Set();
+				}
 
 				t->Unlock();
 

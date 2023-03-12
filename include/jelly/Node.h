@@ -60,6 +60,8 @@ namespace jelly
 
 			m_pendingWALs.resize((size_t)m_config.GetUInt32(Config::ID_WAL_CONCURRENCY), NULL);
 			m_pendingWALsLowPrio.resize((size_t)m_config.GetUInt32(Config::ID_WAL_CONCURRENCY_LOW_PRIO), NULL);
+
+			m_lowPrioRequestReplicationEnabled = m_config.GetBool(Config::ID_REPLICATE_LOW_PRIO_REQUESTS);
 		}
 
 		virtual 
@@ -299,7 +301,7 @@ namespace jelly
 		{
 			JELLY_CONTEXT(Exception::CONTEXT_NODE_FLUSH_PENDING_WAL);
 
-			return _FlushPendingWAL(aWALConcurrentIndex, m_pendingWALs);
+			return _FlushPendingWAL(aWALConcurrentIndex, m_pendingWALs, m_replicationNetwork);
 		}
 
 		/**
@@ -311,9 +313,9 @@ namespace jelly
 		FlushPendingLowPrioWAL(
 			uint32_t		aWALConcurrentIndex = UINT32_MAX)
 		{
-			JELLY_CONTEXT(Exception::CONTEXT_NODE_FLUSH_PENDING_WAL);
+			JELLY_CONTEXT(Exception::CONTEXT_NODE_FLUSH_PENDING_LOW_PRIO_WAL);
 
-			return _FlushPendingWAL(aWALConcurrentIndex, m_pendingWALsLowPrio);
+			return _FlushPendingWAL(aWALConcurrentIndex, m_pendingWALsLowPrio, m_lowPrioRequestReplicationEnabled ? m_replicationNetwork : NULL);
 		}
 
 		/**
@@ -782,6 +784,7 @@ namespace jelly
 		bool														m_currentCompactionIsMajor;
 
 		std::unique_ptr<File>										m_fileLock;
+		bool														m_lowPrioRequestReplicationEnabled;
 
 		WAL*
 		_GetPendingWAL(
@@ -816,7 +819,8 @@ namespace jelly
 		size_t
 		_FlushPendingWAL(
 			uint32_t			aConcurrentWALIndex,
-			std::vector<WAL*>&	aPendingWALs)
+			std::vector<WAL*>&	aPendingWALs,
+			ReplicationNetwork*	aReplicationNetwork)
 		{
 			size_t count = 0;
 
@@ -829,7 +833,7 @@ namespace jelly
 					{
 						ScopedTimeSampler timeSampler(m_host->GetStats(), m_statsContext.m_idFlushPendingWALTime);
 
-						count += pendingWAL->GetWriter()->Flush(m_replicationNetwork);
+						count += pendingWAL->GetWriter()->Flush(aReplicationNetwork);
 					}
 				}
 			}
@@ -843,7 +847,7 @@ namespace jelly
 				{
 					ScopedTimeSampler timeSampler(m_host->GetStats(), m_statsContext.m_idFlushPendingWALTime);
 
-					count += pendingWAL->GetWriter()->Flush(m_replicationNetwork);
+					count += pendingWAL->GetWriter()->Flush(aReplicationNetwork);
 				}
 			}
 

@@ -25,6 +25,7 @@ namespace jelly
 			ID_WAL_SIZE_LIMIT,
 			ID_WAL_CONCURRENCY,
 			ID_WAL_CONCURRENCY_LOW_PRIO,
+			ID_REPLICATE_LOW_PRIO_REQUESTS,
 			ID_BACKUP_PATH,
 			ID_BACKUP_COMPACTION,
 			ID_BACKUP_INCREMENTAL,
@@ -88,6 +89,8 @@ namespace jelly
 			   "Number of WALs to keep open at the same time. These WALs can be flushed in parallel." },
 			/* ID_WAL_CONCURRENCY_LOW_PRIO */				{ TYPE_UINT32,	 "wal_concurrency_low_prio",               "1",			  true,
 			   "Number of low priority WALs to keep open at the same time. Like normal WALs these can be flushed in parallel." },
+			/* ID_REPLICATE_LOW_PRIO_REQUESTS */			{ TYPE_BOOL,	 "replicate_low_prio_requests",	           "true",        true,
+			   "If disabled, low-priority requests will not be submitted to the replication network." },
 			/* ID_BACKUP_PATH */							{ TYPE_STRING,   "backup_path",							   "backups",	  false,
 			   "Path to where backups should be created. This path must point to a directory that is on the same disk volume as the host root due "
 			   "to the creation of hard links." },

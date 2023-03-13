@@ -1,5 +1,6 @@
 #include <jelly/Base.h>
 
+#include <jelly/Completion.h>
 #include <jelly/CompletionEvent.h>
 #include <jelly/Compression.h>
 #include <jelly/ErrorUtils.h>
@@ -56,13 +57,11 @@ namespace jelly
 	void
 	WALWriter::WriteItem(
 		const ItemBase*					aItem,
-		CompletionEvent*				aCompletionEvent,
-		RequestResult*					aResult,
-		Exception::Code*				aException) 
+		Completion*						aCompletion) 
 	{
 		JELLY_ASSERT(!m_hadFailure);
 
-		m_pendingItemWrites.push_back({aItem, aCompletionEvent, aResult, aException});
+		m_pendingItemWrites.push_back({ aItem, aCompletion });
 	}
 
 	size_t
@@ -93,14 +92,8 @@ namespace jelly
 			// Something went wrong while writing or flushing, fail all requests
 			for (PendingItemWrite& t : m_pendingItemWrites)
 			{
-				if(t.m_result != NULL)
-					*t.m_result = REQUEST_RESULT_EXCEPTION;
-
-				if(t.m_exception != NULL)
-					*t.m_exception = e;
-
-				if (t.m_completionEvent != NULL)
-					t.m_completionEvent->Signal();
+				if(t.m_completion != NULL)
+					t.m_completion->OnException(e);
 			}
 
 			m_pendingItemWrites.clear();
@@ -112,8 +105,8 @@ namespace jelly
 		// Writing completed successfully
 		for (PendingItemWrite& t : m_pendingItemWrites)
 		{
-			if(t.m_completionEvent != NULL)
-				t.m_completionEvent->Signal();
+			if(t.m_completion != NULL)
+				t.m_completion->Signal();
 		}
 
 		if(aReplicationNetwork != NULL && aReplicationNetwork->IsLocalNodeMaster())
@@ -136,11 +129,8 @@ namespace jelly
 	{
 		for (PendingItemWrite& t : m_pendingItemWrites)
 		{
-			if(t.m_result != NULL)
-				*t.m_result = REQUEST_RESULT_CANCELED;
-
-			if(t.m_completionEvent != NULL)
-				t.m_completionEvent->Signal();
+			if(t.m_completion != NULL)
+				t.m_completion->OnCancel();
 		}
 
 		m_pendingItemWrites.clear();

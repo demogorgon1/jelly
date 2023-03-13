@@ -29,9 +29,7 @@ namespace jelly
 		size_t		GetSize() const override;
 		void		WriteItem(
 						const ItemBase*					aItem,
-						CompletionEvent*				aCompletionEvent,
-						RequestResult*					aResult,
-						Exception::Code*				aException) override;
+						Completion*						aCompletion) override;
 		size_t		Flush(
 						ReplicationNetwork*				aReplicationNetwork) override;
 		void		Cancel() override;
@@ -43,9 +41,7 @@ namespace jelly
 		struct PendingItemWrite
 		{
 			const ItemBase*										m_item;
-			CompletionEvent*									m_completionEvent;
-			RequestResult*										m_result;
-			Exception::Code*									m_exception;
+			Completion*											m_completion;
 		};
 
 		std::vector<PendingItemWrite>							m_pendingItemWrites;

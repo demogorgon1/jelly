@@ -1,11 +1,9 @@
 #pragma once
 
-#include "RequestResult.h"
-
 namespace jelly
 {
 
-	struct CompletionEvent;
+	struct Completion;
 	class ItemBase;
 	class ReplicationNetwork;
 
@@ -19,9 +17,7 @@ namespace jelly
 		virtual size_t	GetSize() const = 0;
 		virtual void	WriteItem(
 							const ItemBase*		aItem,
-							CompletionEvent*	aCompletionEvent,
-							RequestResult*		aResult,
-							Exception::Code*	aException) = 0;
+							Completion*			aCompletion) = 0;
 		virtual size_t	Flush(
 							ReplicationNetwork*	aReplicationNetwork) = 0;
 		virtual void	Cancel() = 0;

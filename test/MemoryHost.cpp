@@ -466,14 +466,12 @@ namespace jelly
 				void	
 				WriteItem(
 					const ItemBase*		aItem,
-					CompletionEvent*	aCompletionEvent,
-					RequestResult*		aResult,
-					Exception::Code*	/*aException*/) override
+					Completion*			aCompletion) override
 				{
 					BufferListWriter writer(m_bufferList);
 					aItem->Write(&writer);
 
-					m_pending.push_back(std::make_pair(aCompletionEvent, aResult));
+					m_pending.push_back(aCompletion);
 				}
 
 				size_t	
@@ -482,8 +480,8 @@ namespace jelly
 				{
 					for(size_t i = 0; i < m_pending.size(); i++)
 					{
-						if(m_pending[i].first != NULL)
-							m_pending[i].first->Signal();
+						if(m_pending[i] != NULL)
+							m_pending[i]->Signal();
 					}
 
 					size_t count = m_pending.size();
@@ -496,11 +494,8 @@ namespace jelly
 				{
 					for (size_t i = 0; i < m_pending.size(); i++)
 					{
-						if(m_pending[i].second != NULL)
-							*(m_pending[i].second) = REQUEST_RESULT_CANCELED;
-
-						if(m_pending[i].first != NULL)
-							m_pending[i].first->Signal();
+						if(m_pending[i] != NULL)
+							m_pending[i]->OnCancel();
 					}
 
 					m_pending.clear();
@@ -520,7 +515,7 @@ namespace jelly
 
 				// Public data
 				BufferList*													m_bufferList;
-				std::vector<std::pair<CompletionEvent*, RequestResult*>>	m_pending;
+				std::vector<Completion*>									m_pending;
 			};
 		};
 

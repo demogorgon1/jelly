@@ -339,7 +339,7 @@ namespace jelly
 			{
 				result.first->MoveFrom(&aItem);
 
-				this->WriteToWAL(result.first, false, NULL, NULL, NULL);
+				this->WriteToWAL(result.first, false, NULL);
 			}
 		}
 

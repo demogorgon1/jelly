@@ -200,7 +200,7 @@ namespace jelly
 		{
 			std::vector<_RequestType*> pendingRequests;
 
-			// Flag request queue as locked, get any pending requests there are
+			// Flag request queue as stopped, get any pending requests there are
 			{
 				std::lock_guard lock(m_requestsLock);
 
@@ -600,9 +600,7 @@ namespace jelly
 		WriteToWAL(
 			_ItemType*				aItem,
 			bool					aLowPrio,
-			CompletionEvent*		aCompletionEvent,
-			RequestResult*			aResult,
-			Exception::Code*		aException)
+			Completion*				aCompletion)
 		{
 			typename _ItemType::RuntimeState& runtimeState = aItem->GetRuntimeState();
 
@@ -632,7 +630,7 @@ namespace jelly
 				WAL* wal = _GetPendingWAL(walConcurrencyIndex, pendingWALs);
 
 				// Append to WAL
-				wal->GetWriter()->WriteItem(aItem, aCompletionEvent, aResult, aException);
+				wal->GetWriter()->WriteItem(aItem, aCompletion);
 								
 				runtimeState.m_pendingWAL = wal;
 				runtimeState.m_pendingWAL->AddReference();

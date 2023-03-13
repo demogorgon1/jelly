@@ -1,7 +1,6 @@
 #pragma once
 
-#include "CompletionEvent.h"
-#include "RequestResult.h"
+#include "Completion.h"
 
 namespace jelly
 {
@@ -14,12 +13,10 @@ namespace jelly
 	{
 	public:
 		Request() noexcept
-			: m_result(REQUEST_RESULT_NONE) 
-			, m_next(NULL)
+			: m_next(NULL)
 			, m_timeStamp(0)
 			, m_hasPendingWrite(false)
 			, m_lowPrio(false)
-			, m_exception(0)
 		{
 
 		}
@@ -28,7 +25,7 @@ namespace jelly
 		SetResult(
 			RequestResult			aResult) noexcept
 		{
-			m_result = aResult;
+			m_completion.m_result = aResult;
 		}
 
 		void
@@ -56,7 +53,7 @@ namespace jelly
 		Execute() noexcept
 		{
 			JELLY_ASSERT(m_executionCallback);
-			JELLY_ASSERT(m_result == REQUEST_RESULT_NONE);
+			JELLY_ASSERT(m_completion.m_result == REQUEST_RESULT_NONE);
 			JELLY_ASSERT(!IsCompleted());
 
 			try
@@ -65,19 +62,16 @@ namespace jelly
 			}
 			catch(Exception::Code e)
 			{
-				m_exception = e;
+				m_completion.m_exception = e;
 
-				m_result = REQUEST_RESULT_EXCEPTION;
+				m_completion.m_result = REQUEST_RESULT_EXCEPTION;
 			}				
 		}
 
 		void
 		SignalCompletion() noexcept
 		{
-			JELLY_ASSERT(m_result != REQUEST_RESULT_NONE);
-			JELLY_ASSERT(!IsCompleted());
-
-			m_completed.Signal();
+			m_completion.Signal();
 		}
 
 		void
@@ -98,25 +92,25 @@ namespace jelly
 			if(m_lowPrio)
 			{
 				// Signal as completed immediately after being queued up in the WAL
-				aNode->WriteToWAL(aItem, true, NULL, NULL, NULL);
+				aNode->WriteToWAL(aItem, true, NULL);
 			}
 			else
 			{
 				// Not going to be signaled as completed before WAL has been flushed
 				m_hasPendingWrite = true;
 
-				aNode->WriteToWAL(aItem, false, &m_completed, &m_result, &m_exception);
+				aNode->WriteToWAL(aItem, false, &m_completion);
 			}
 		}
 
 		//---------------------------------------------------------------------------------------------------
 		// Data access
 
-		bool			IsCompleted() const noexcept { return m_completed.Poll(); }		//!< Poll request for completion.
-		RequestResult	GetResult() const noexcept { return m_result; }					//!< Returns result after completion.
-		uint64_t		GetTimeStamp() const noexcept { return m_timeStamp; }			//!< Returns time stamp after completion.
-		Exception::Code	GetException() const noexcept { return m_exception; }			//!< Returns exception if GetResult() is RESULT_EXCEPTION.
-		bool			IsLowPrio() const noexcept { return m_lowPrio; }
+		bool			IsCompleted() const noexcept { return m_completion.m_completed.Poll(); }	//!< Poll request for completion.
+		RequestResult	GetResult() const noexcept { return m_completion.m_result; }				//!< Returns result after completion.
+		Exception::Code	GetException() const noexcept { return m_completion.m_exception; }			//!< Returns exception if GetResult() is RESULT_EXCEPTION.
+		uint64_t		GetTimeStamp() const noexcept { return m_timeStamp; }						//!< Returns time stamp after completion.
+		bool			IsLowPrio() const noexcept { return m_lowPrio; }							//!< Returns low-priority request flag.
 
 		_RequestType*	GetNext() noexcept { return m_next; }
 		bool			HasPendingWrite() const noexcept { return m_hasPendingWrite; }
@@ -124,9 +118,7 @@ namespace jelly
 	protected:
 		
 		uint64_t						m_timeStamp;
-		RequestResult					m_result;		
-		Exception::Code					m_exception;
-		CompletionEvent					m_completed;		
+		Completion						m_completion;
 		bool							m_hasPendingWrite;
 		bool							m_lowPrio;
 		_RequestType*					m_next;

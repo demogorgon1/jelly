@@ -56,20 +56,20 @@ namespace jelly
 				_UpdateHousekeepingAdvisor(housekeepingAdvisor, {});
 
 				// Do a set
-				{
-					BlobNodeType::Request req;
-					req.SetKey(1);
-					req.SetSeq(1);
-					req.SetBlob(new UInt32Blob(123));
-					blobNode.Set(&req);
-					JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
-				}
+				BlobNodeType::Request req;
+				req.SetKey(1);
+				req.SetSeq(1);
+				req.SetBlob(new UInt32Blob(123));
+				blobNode.Set(&req);
+				JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
 
 				// Since we now have a pending request, advisor should suggest a "flush pending WAL"
 				_UpdateHousekeepingAdvisor(housekeepingAdvisor, 
 				{
 					[](const HousekeepingAdvisorType::Event& aEvent) { JELLY_ALWAYS_ASSERT(aEvent.m_type == HousekeepingAdvisorType::Event::TYPE_FLUSH_PENDING_WAL); JELLY_UNUSED(aEvent); }
 				});
+
+				blobNode.Stop();
 			}
 
 		}

@@ -140,7 +140,7 @@ namespace jelly
 			if(buffer[0] != '\0')
 				fprintf(stderr, "%s\n", buffer);
 
-			#if defined(_DEBUG)
+			#if !defined(NDEBUG)
 				DebugBreak();
 			#else
 				#if defined(_WIN32)

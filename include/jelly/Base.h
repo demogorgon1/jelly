@@ -42,7 +42,7 @@
 	#define JELLY_THREAD_LOCAL(_Type) thread_local _Type
 #endif
 
-#if defined(JELLY_SIMULATE_ERRORS) && !defined(_DEBUG)
+#if defined(JELLY_SIMULATE_ERRORS) && defined(NDEBUG)
 	// We'll only support simulating errors in debug builds
 	#undef JELLY_SIMULATE_ERRORS
 #endif

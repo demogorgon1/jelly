@@ -35,8 +35,6 @@ namespace jelly
 		OnException(
 			Exception::Code		aException) noexcept
 		{
-			JELLY_ASSERT(!m_completed.Poll());
-
 			m_result = REQUEST_RESULT_EXCEPTION;
 			m_exception = aException;
 			
@@ -46,8 +44,6 @@ namespace jelly
 		void
 		OnCancel() noexcept
 		{
-			JELLY_ASSERT(!m_completed.Poll());
-
 			m_result = REQUEST_RESULT_CANCELED;
 			
 			Signal();

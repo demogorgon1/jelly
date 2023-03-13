@@ -93,7 +93,12 @@ namespace jelly
 			for (PendingItemWrite& t : m_pendingItemWrites)
 			{
 				if(t.m_completion != NULL)
-					t.m_completion->OnException(e);
+				{	
+					t.m_completion->m_result = REQUEST_RESULT_EXCEPTION;
+					t.m_completion->m_exception = e;
+
+					t.m_completion->Signal();
+				}
 			}
 
 			m_pendingItemWrites.clear();
@@ -125,7 +130,7 @@ namespace jelly
 	}
 
 	void		
-	WALWriter::Cancel() 
+	WALWriter::Cancel() noexcept
 	{
 		for (PendingItemWrite& t : m_pendingItemWrites)
 		{

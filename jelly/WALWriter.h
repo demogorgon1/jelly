@@ -6,9 +6,8 @@
 
 namespace jelly
 {
-
+	
 	struct FileHeader;
-
 	class IStats;
 
 	// DefaultHost implementation of IWALWriter
@@ -32,7 +31,7 @@ namespace jelly
 						Completion*						aCompletion) override;
 		size_t		Flush(
 						ReplicationNetwork*				aReplicationNetwork) override;
-		void		Cancel() override;
+		void		Cancel() noexcept override;
 		size_t		GetPendingWriteCount() const override;
 		bool		HadFailure() const override;
 

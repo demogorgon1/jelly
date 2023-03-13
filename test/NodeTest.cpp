@@ -1938,6 +1938,94 @@ namespace jelly
 				_VerifyBlobNodeWAL(aHost, 0, 1, { { 456, 2, 102 } }); 
 			}
 
+			void
+			_TestBlobNodeCompletionCallbacks(
+				TestDefaultHost* aHost)
+			{
+				aHost->DeleteAllFiles(UINT32_MAX);
+				aHost->GetDefaultConfigSource()->Clear();
+
+				{
+					BlobNodeType blobNode(aHost, 0);
+
+					// Plain set request, callback should be called during flush 
+					{
+						BlobNodeType::Request req;
+						req.SetKey(123);
+						req.SetSeq(1);
+						req.SetBlob(new UInt32Blob(100));
+
+						size_t callbackCount = 0;
+						req.SetCompletionCallback([&callbackCount] { callbackCount++; });
+
+						blobNode.Set(&req);
+						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
+						JELLY_ALWAYS_ASSERT(callbackCount == 0);
+						JELLY_ALWAYS_ASSERT(blobNode.FlushPendingWAL() == 1);
+						JELLY_ALWAYS_ASSERT(callbackCount == 1);
+						JELLY_ALWAYS_ASSERT(req.IsCompleted());
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);												
+					}
+
+					// Read, callback should be called during processing
+					{
+						BlobNodeType::Request req;
+						req.SetKey(123);
+						req.SetSeq(1);
+
+						size_t callbackCount = 0;
+						req.SetCompletionCallback([&callbackCount] { callbackCount++; });
+
+						blobNode.Get(&req);
+						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
+						JELLY_ALWAYS_ASSERT(callbackCount == 1);
+						JELLY_ALWAYS_ASSERT(req.IsCompleted());
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
+					}
+
+					// Do a write and cancel before processing
+					{
+						BlobNodeType::Request req;
+						req.SetKey(123);
+						req.SetSeq(2);
+						req.SetBlob(new UInt32Blob(101));
+
+						size_t callbackCount = 0;
+						req.SetCompletionCallback([&callbackCount] { callbackCount++; });
+
+						blobNode.Stop();
+						blobNode.Set(&req);
+
+						JELLY_ALWAYS_ASSERT(callbackCount == 1);
+						JELLY_ALWAYS_ASSERT(req.IsCompleted());
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_CANCELED);
+					}
+				}
+
+				// Restart 
+
+				{
+					BlobNodeType blobNode(aHost, 0);
+
+					// Do a write and cancel before flushing
+					{
+						BlobNodeType::Request req;
+						req.SetKey(123);
+						req.SetSeq(3);
+						req.SetBlob(new UInt32Blob(102));
+
+						size_t callbackCount = 0;
+						req.SetCompletionCallback([&callbackCount] { callbackCount++; });
+
+						blobNode.Set(&req);
+						JELLY_ALWAYS_ASSERT(blobNode.ProcessRequests() == 1);
+						blobNode.Stop();
+						JELLY_ALWAYS_ASSERT(callbackCount == 1);
+						JELLY_ALWAYS_ASSERT(req.IsCompleted());
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_CANCELED);
+					}
+				}
+			}
 		}
 
 		namespace NodeTest
@@ -1979,6 +2067,9 @@ namespace jelly
 
 				// Test low-priority blob node writes
 				_TestBlobNodeLowPrio(&host);
+
+				// Test completion callbacks
+				_TestBlobNodeCompletionCallbacks(&host);
 
 				if(aConfig->m_hammerTest)
 				{

@@ -69,12 +69,6 @@ namespace jelly
 		}
 
 		void
-		SignalCompletion() noexcept
-		{
-			m_completion.Signal();
-		}
-
-		void
 		SetNext(
 			_RequestType*			aNext) noexcept
 		{
@@ -103,6 +97,17 @@ namespace jelly
 			}
 		}
 
+		/**
+		 * \brief Sets a callback to be called on completion. Don't make any assumptions about which thread
+		 * this is called on. The callback must not throw any exceptions.
+		 */
+		void
+		SetCompletionCallback(
+			std::function<void()>	aCallback) noexcept
+		{
+			m_completion.m_callback = aCallback;
+		}
+
 		//---------------------------------------------------------------------------------------------------
 		// Data access
 
@@ -114,6 +119,7 @@ namespace jelly
 
 		_RequestType*	GetNext() noexcept { return m_next; }
 		bool			HasPendingWrite() const noexcept { return m_hasPendingWrite; }
+		Completion*		GetCompletion() noexcept { return &m_completion; }
 
 	protected:
 		

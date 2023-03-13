@@ -10,7 +10,9 @@ namespace jelly
 
 	struct Completion
 	{
-		Completion()
+		typedef std::function<void()> Callback;
+
+		Completion() noexcept
 			: m_result(REQUEST_RESULT_NONE)
 			, m_exception(0)
 		{
@@ -23,6 +25,9 @@ namespace jelly
 			JELLY_ASSERT(m_result != REQUEST_RESULT_NONE);
 			JELLY_ASSERT(!m_completed.Poll());
 
+			if(m_callback)
+				m_callback();
+
 			m_completed.Signal();
 		}
 
@@ -30,28 +35,29 @@ namespace jelly
 		OnException(
 			Exception::Code		aException) noexcept
 		{
-			JELLY_ASSERT(m_result != REQUEST_RESULT_NONE);
 			JELLY_ASSERT(!m_completed.Poll());
 
 			m_result = REQUEST_RESULT_EXCEPTION;
 			m_exception = aException;
-			m_completed.Signal();
+			
+			Signal();
 		}
 
 		void
 		OnCancel() noexcept
 		{
-			JELLY_ASSERT(m_result != REQUEST_RESULT_NONE);
 			JELLY_ASSERT(!m_completed.Poll());
 
 			m_result = REQUEST_RESULT_CANCELED;
-			m_completed.Signal();
+			
+			Signal();
 		}
 
 		// Public data
 		RequestResult					m_result;		
 		Exception::Code					m_exception;
 		CompletionEvent					m_completed;		
+		Callback						m_callback;
 	};
 
 }

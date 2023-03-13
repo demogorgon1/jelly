@@ -220,10 +220,7 @@ namespace jelly
 
 			// Cancel all pending requests
 			for(_RequestType* request : pendingRequests)
-			{
-				request->SetResult(REQUEST_RESULT_CANCELED);
-				request->SignalCompletion();
-			}
+				request->GetCompletion()->OnCancel();
 
 			// Notify WALs
 			for(WAL* wal : m_wals)
@@ -277,7 +274,7 @@ namespace jelly
 					_RequestType* next = request->GetNext();
 
 					if (!request->HasPendingWrite() || request->GetResult() == REQUEST_RESULT_EXCEPTION)
-						request->SignalCompletion();
+						request->GetCompletion()->Signal();
 
 					request = next;
 				}
@@ -730,8 +727,7 @@ namespace jelly
 
 			if(canceled)
 			{
-				aRequest->SetResult(REQUEST_RESULT_CANCELED);
-				aRequest->SignalCompletion();
+				aRequest->GetCompletion()->OnCancel();
 			}
 		}
 

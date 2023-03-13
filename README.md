@@ -13,6 +13,7 @@ in a game server or as the inner-most moving parts of a larger distributed datab
 * Efficient and cheap to host for small-scale online games, but scales reasonably well into larger systems.
 * Multiple options regarding how to design a network topography that match the requirements of your particular project.
 * Persistent blob-locking mechanism to prevent game servers fighting over data. 
+* Improve write performance using request priorities: some player progress data updates will be less important than others.
 * Implemented as a Log Structured database engine.
 
 ## Usage

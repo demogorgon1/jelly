@@ -10,7 +10,7 @@ namespace jelly
 	/**
 	 * Possible request results
 	 */
-	enum RequestResult
+	enum RequestResult : uint8_t
 	{
 		REQUEST_RESULT_NONE,				//!< No result yet
 		REQUEST_RESULT_OK,					//!< Request was completed succesfully

@@ -60,6 +60,31 @@ namespace jelly
 			return Read(&aOutValue, sizeof(_T)) == sizeof(_T);
 		}
 
+		//! Helper for reading a vector of objects.
+		template <typename _T>
+		bool
+		ReadObjects(
+			std::vector<_T>&		aOut,
+			size_t					aMaxCount = 1024)
+		{
+			size_t count;
+			if(!ReadUInt(count))
+				return false;
+
+			if(count > aMaxCount)	
+				return false;
+
+			aOut.resize(count);
+
+			for(_T& t : aOut)
+			{
+				if(!t.Read(this))
+					return false;
+			}
+
+			return true;
+		}
+
 		//---------------------------------------------------------------------------
 		// Virtual interface
 

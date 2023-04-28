@@ -39,6 +39,17 @@ namespace jelly
 			Write(&aValue, sizeof(_T));
 		}
 
+		//! Helper for writing a vector of objects
+		template <typename _T>
+		void
+		WriteObjects(
+			const std::vector<_T>&		aObjects)
+		{
+			WriteUInt(aObjects.size());
+			for(const _T& t : aObjects)
+				t.Write(this);
+		}
+
 		//------------------------------------------------------------------------------------
 		// Virtual interface
 

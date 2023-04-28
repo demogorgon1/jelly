@@ -32,6 +32,9 @@ namespace jelly
 		, m_filePrefix(aFilePrefix != NULL ? aFilePrefix : "")
 		, m_configSource(aConfigSource)
 	{
+		// If root directory doesn't exist, create it
+		std::filesystem::create_directories(aRoot);
+
 		{
 			// Make sure that no other host operates in the same root
 			std::string fileLockPath = StringUtils::Format("%s/%shost.lck", aRoot, aFilePrefix);

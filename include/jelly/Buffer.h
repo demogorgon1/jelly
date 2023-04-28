@@ -46,6 +46,15 @@ namespace jelly
 			_Copy(aOther);
 		}
 
+		Buffer(
+			uint8_t*					aData,
+			size_t						aSize) noexcept
+			: m_size(aSize)
+			, m_bufferSize(aSize)
+			, m_data(aData)
+		{
+		}
+
 		virtual
 		~Buffer() 
 		{

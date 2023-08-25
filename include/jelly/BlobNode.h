@@ -276,7 +276,7 @@ namespace jelly
 
 			uint32_t requestSeq = aRequest->GetSeq();
 
-			std::pair<Item*, bool> result = this->m_table.InsertOrUpdate(aRequest->GetKey(), [aRequest, aDelete]()
+			std::pair<Item*, bool> result = this->m_table.InsertOrUpdate(aRequest->GetKey(), [aRequest, aDelete, requestSeq]()
 			{
 				if(aDelete)
 					return (Item*)NULL;

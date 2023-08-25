@@ -28,7 +28,7 @@ namespace jelly
 				m_length = strlen(aValue);
 				JELLY_ALWAYS_ASSERT(m_length < _Size);
 				memcpy(m_value, aValue, m_length);
-				memset(m_value + length, 0, _Size - m_length);
+				memset(m_value + m_length, 0, _Size - m_length);
 			}
 			else
 			{				

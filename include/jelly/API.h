@@ -32,6 +32,7 @@
 #include "Request.h"
 #include "RequestResult.h"
 #include "Stat.h"
+#include "StaticStringKey.h"
 #include "StringUtils.h"
 #include "UIntKey.h"
 #include "UIntVectorKey.h"

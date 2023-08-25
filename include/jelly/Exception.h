@@ -77,6 +77,7 @@ namespace jelly
 			CATEGORY_DECOMPRESSION,						//!< Decompression related error
 			CATEGORY_SYSTEM,							//!< System error
 			CATEGORY_CONFIGURATION,						//!< Configuration error
+			CATEGORY_USER,								//!< User error
 
 			NUM_CATEGORIES
 		};
@@ -139,6 +140,7 @@ namespace jelly
 			ERROR_NOT_ENOUGH_AVAILABLE_SPACE_FOR_BACKUP,
 			ERROR_MAJOR_COMPACTION_IN_PROGRESS,
 			ERROR_COMPACTION_IN_PROGRESS,
+			ERROR_STRING_KEY_TOO_LONG,
 
 			NUM_ERRORS
 		};
@@ -193,7 +195,8 @@ namespace jelly
 			"COMPRESSION",
 			"DECOMPRESSION",
 			"SYSTEM",
-			"CONFIGURATION"
+			"CONFIGURATION",
+			"USER"
 		};
 
 		//! Information by an entry in the Error enum. Retrieve with GetErrorInfo().
@@ -259,7 +262,8 @@ namespace jelly
 			{ "NOTHING_TO_BACKUP",							CATEGORY_BACKUP,				"No data available for backup." },
 			{ "NOT_ENOUGH_AVAILABLE_SPACE_FOR_BACKUP",		CATEGORY_DISK_AVAILABLE_SPACE,	"Not enough available space to start backup." },
 			{ "MAJOR_COMPACTION_IN_PROGRESS",				CATEGORY_COMPACTION,			"Major compaction already in progress." },
-			{ "COMPACTION_IN_PROGRESS",						CATEGORY_COMPACTION,			"Tried to perform compaction on a store that is currently being compacted." }
+			{ "COMPACTION_IN_PROGRESS",						CATEGORY_COMPACTION,			"Tried to perform compaction on a store that is currently being compacted." },
+			{ "STRING_KEY_TOO_LONG",						CATEGORY_USER,					"Maximum length for string keys exceeded." }
 		};
 
 		static_assert(sizeof(CATEGORY_STRINGS) / sizeof(const char*) == NUM_CATEGORIES);

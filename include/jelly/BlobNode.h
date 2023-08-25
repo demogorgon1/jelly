@@ -15,13 +15,15 @@ namespace jelly
 	/**
 	 * \brief A node for storing blobs.
 	 * 
-	 * \tparam _KeyType			Key type. For example \ref UIntKey.
-	 * \tparam _MetaType		Meta data type.
+	 * \tparam _KeyType				Key type. For example \ref UIntKey.
+	 * \tparam _MetaType			Meta data type.
+	 * \tparam _AutoIncrementSeq	Automatically increment blob sequence numbers when updated.
 	 */
 	template 
 	<
 		typename _KeyType,
-		typename _MetaType = MetaData::Dummy
+		typename _MetaType = MetaData::Dummy,
+		bool _AutoIncrementSeq = false
 	>
 	class BlobNode
 		: public Node<
@@ -272,12 +274,14 @@ namespace jelly
 				this->m_host->GetStats()->Emit(Stat::ID_COMPRESSED_BLOB_SIZE, newBlob->GetSize());
 			}
 
+			uint32_t requestSeq = aRequest->GetSeq();
+
 			std::pair<Item*, bool> result = this->m_table.InsertOrUpdate(aRequest->GetKey(), [aRequest, aDelete]()
 			{
 				if(aDelete)
 					return (Item*)NULL;
 				else
-					return new Item(aRequest->GetKey(), aRequest->GetSeq());
+					return new Item(aRequest->GetKey(), requestSeq);
 			});
 
 			Item* item = result.first;
@@ -304,7 +308,10 @@ namespace jelly
 			{
 				// This is an update.
 
-				if(item->GetSeq() >= aRequest->GetSeq())
+				if(_AutoIncrementSeq)
+					requestSeq = item->GetSeq() + 1;
+
+				if(item->GetSeq() >= requestSeq)
 				{
 					// Trying to set an old version - return latest sequence number to requester
 					aRequest->SetSeq(item->GetSeq());
@@ -357,7 +364,7 @@ namespace jelly
 
 			item->GetRuntimeState().m_isResident = true; 
 
-			item->SetSeq(aRequest->GetSeq());
+			item->SetSeq(requestSeq);
 			item->SetTimeStamp(aRequest->GetTimeStamp());
 
 			if(aRequest->GetMeta().has_value())

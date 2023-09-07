@@ -658,6 +658,7 @@ namespace jelly
 
 		uint32_t			GetNodeId() const noexcept { return m_nodeId; }											///< Returns node id.
 		bool				IsStopped() const noexcept { std::lock_guard lock(m_requestsLock); return m_stopped; }	///< Returns whether node has been requested to stop.
+		size_t				GetWALCount() const noexcept { return m_wals.size(); }									///< Returns total number of WALs, including pending WALs.
 		size_t				GetPendingWALCount() const noexcept { return m_pendingWALs.size(); }					///< Returns number of pending WALs.
 		size_t				GetPendingLowPrioWALCount() const noexcept { return m_pendingWALsLowPrio.size(); }		///< Returns number of pending low-priority WALs.
 		IHost*				GetHost() noexcept { return m_host; }													///< Returns pointer to host object associated with this node.

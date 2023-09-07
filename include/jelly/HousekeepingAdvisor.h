@@ -208,10 +208,12 @@ namespace jelly
 			size_t pendingStoreItemCount = m_node->GetPendingStoreItemCount();	
 			size_t pendingStoreWALItemCount = m_node->GetPendingStoreWALItemCount();
 			size_t totalWALSize = m_node->GetTotalWALSize();
+			size_t totalWALCount = m_node->GetWALCount();
 
 			if(pendingStoreWALItemCount > m_config.GetSize(Config::ID_PENDING_STORE_WAL_ITEM_LIMIT) 
 				|| pendingStoreItemCount > m_config.GetSize(Config::ID_PENDING_STORE_ITEM_LIMIT)
-				|| totalWALSize > m_config.GetSize(Config::ID_PENDING_STORE_WAL_SIZE_LIMIT))
+				|| totalWALSize > m_config.GetSize(Config::ID_PENDING_STORE_WAL_SIZE_LIMIT)
+				|| totalWALCount > m_config.GetSize(Config::ID_PENDING_STORE_WAL_COUNT_LIMIT))
 			{
 				aEventHandler(EventFlushPendingStore());
 				

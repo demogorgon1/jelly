@@ -66,7 +66,7 @@ namespace jelly
 		{
 			SetSeq(aSeq);
 
-			m_blob = aBlob;
+			m_blob.reset(aBlob);
 		}
 
 		void

@@ -497,7 +497,7 @@ namespace jelly
 
 		void
 		_InitStatsContext(
-			NodeBase::StatsContext*		aStatsContext) noexcept
+			typename NodeBase::StatsContext*					aStatsContext) noexcept
 		{
 			aStatsContext->m_fileWAL.m_idRead = Stat::ID_DISK_READ_BLOB_WAL_BYTES;
 			aStatsContext->m_fileWAL.m_idWrite = Stat::ID_DISK_WRITE_BLOB_WAL_BYTES;

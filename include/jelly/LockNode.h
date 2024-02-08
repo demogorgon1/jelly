@@ -345,7 +345,7 @@ namespace jelly
 
 		void
 		_InitStatsContext(
-			NodeBase::StatsContext*			aStatsContext)
+			typename NodeBase::StatsContext*					aStatsContext)
 		{
 			aStatsContext->m_fileWAL.m_idRead = Stat::ID_DISK_READ_LOCK_WAL_BYTES;
 			aStatsContext->m_fileWAL.m_idWrite = Stat::ID_DISK_WRITE_LOCK_WAL_BYTES;

@@ -76,7 +76,6 @@ namespace jelly
 		ConfigProxy*							aConfig,
 		Strategy								aStrategy)
 		: m_host(aHost)
-		, m_config(aConfig)
 		, m_compactionStrategyUpdateCooldown(aConfig, Config::ID_COMPACTION_STRATEGY_UPDATE_INTERVAL_MS)
 		, m_nodeId(aNodeId)
 		, m_suggestionBufferReadOffset(0)

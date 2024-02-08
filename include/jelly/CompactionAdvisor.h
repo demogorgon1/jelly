@@ -32,8 +32,6 @@ namespace jelly
 
 		uint32_t											m_nodeId;
 		IHost*												m_host;
-		ConfigProxy*										m_config;
-		Strategy											m_strategy;
 
 		Timer												m_compactionStrategyUpdateCooldown;
 

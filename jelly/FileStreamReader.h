@@ -37,7 +37,6 @@ namespace jelly
 	private:
 
 		File												m_file;
-		size_t												m_offset;
 		std::unique_ptr<Compression::IStreamDecompressor>	m_decompressor;
 			
 		struct Buffer;

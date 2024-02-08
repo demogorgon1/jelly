@@ -22,6 +22,7 @@ jelly_option(JELLY_EXTRA_ERROR_INFO "Enable extra error information." ON)
 jelly_option(JELLY_SIMULATE_ERRORS "Enable support for simulating errors in debug builds." OFF)
 jelly_option(JELLY_EXAMPLES "Build examples." ON)
 jelly_option(JELLY_TEST "Build tests." ON)
+jelly_option(JELLY_DISABLE_WARNING_CLASS_MEMACCESS "-Wno-class-memaccess" ON)
 
 enable_testing()
 
@@ -51,10 +52,16 @@ else()
 		-Wextra 
 		-pedantic 
 		-Werror 
-		-Wno-unused-function 	# I want unused functions for debugging purposes
-		-Wno-reorder			# I want to be able to initialize class members in any order
-		-Wno-class-memaccess	# I want to be able to memset() things that I know are safe to memset()
+		-Wno-unused-function 		# I want unused functions for debugging purposes
+		-Wno-reorder				# I want to be able to initialize class members in any order
 	)	
+	
+	if(JELLY_DISABLE_WARNING_CLASS_MEMACCESS)
+		# This option seems to be missing sometimes
+		add_compile_options(
+			-Wno-class-memaccess	# I want to be able to memset() things that I know are safe to memset()
+		)		
+	endif()
 endif()
 
 add_subdirectory(jelly)

@@ -141,6 +141,7 @@ namespace jelly
 			ERROR_MAJOR_COMPACTION_IN_PROGRESS,
 			ERROR_COMPACTION_IN_PROGRESS,
 			ERROR_STRING_KEY_TOO_LONG,
+			ERROR_TEST,
 
 			NUM_ERRORS
 		};
@@ -263,7 +264,8 @@ namespace jelly
 			{ "NOT_ENOUGH_AVAILABLE_SPACE_FOR_BACKUP",		CATEGORY_DISK_AVAILABLE_SPACE,	"Not enough available space to start backup." },
 			{ "MAJOR_COMPACTION_IN_PROGRESS",				CATEGORY_COMPACTION,			"Major compaction already in progress." },
 			{ "COMPACTION_IN_PROGRESS",						CATEGORY_COMPACTION,			"Tried to perform compaction on a store that is currently being compacted." },
-			{ "STRING_KEY_TOO_LONG",						CATEGORY_USER,					"Maximum length for string keys exceeded." }
+			{ "STRING_KEY_TOO_LONG",						CATEGORY_USER,					"Maximum length for string keys exceeded." },
+			{ "TEST",										CATEGORY_NONE,					"Test error." }
 		};
 
 		static_assert(sizeof(CATEGORY_STRINGS) / sizeof(const char*) == NUM_CATEGORIES);
@@ -323,6 +325,8 @@ namespace jelly
 		GetErrorInfo(
 			uint32_t		aError) noexcept
 		{
+			if(aError >= (uint32_t)NUM_ERRORS)
+				return NULL;
 			return &ERROR_INFO[aError];
 		}
 
@@ -331,6 +335,8 @@ namespace jelly
 		GetCategoryString(
 			uint32_t		aId) noexcept
 		{
+			if (aId >= (uint32_t)NUM_CATEGORIES)
+				return NULL;
 			return CATEGORY_STRINGS[aId];
 		}
 
@@ -339,6 +345,8 @@ namespace jelly
 		GetRequestTypeString(
 			uint32_t		aId) noexcept
 		{
+			if (aId >= (uint32_t)NUM_REQUEST_TYPES)
+				return NULL;
 			return REQUEST_TYPE_STRINGS[aId];
 		}
 
@@ -347,6 +355,8 @@ namespace jelly
 		GetContextString(
 			uint32_t		aId) noexcept
 		{
+			if (aId >= (uint32_t)NUM_CONTEXTS)
+				return NULL;
 			return CONTEXT_STRINGS[aId];
 		}
 

@@ -44,7 +44,8 @@ endif()
 if (MSVC)
     # warning level 4 and all warnings as errors
     add_compile_options(/W4 /WX)
-	add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+	add_compile_definitions(_CRT_SECURE_NO_WARNINGS)	
+	add_compile_definitions(_ITERATOR_DEBUG_LEVEL=0)	
 else()
     # lots of warnings and all warnings as errors
     add_compile_options(

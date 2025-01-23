@@ -23,6 +23,7 @@ jelly_option(JELLY_SIMULATE_ERRORS "Enable support for simulating errors in debu
 jelly_option(JELLY_EXAMPLES "Build examples." ON)
 jelly_option(JELLY_TEST "Build tests." ON)
 jelly_option(JELLY_DISABLE_WARNING_CLASS_MEMACCESS "-Wno-class-memaccess" ON)
+jelly_option(JELLY_DISABLE_MSVC_ITERATOR_DEBUG "_ITERATOR_DEBUG_LEVEL=0" ON)
 
 enable_testing()
 
@@ -45,7 +46,10 @@ if (MSVC)
     # warning level 4 and all warnings as errors
     add_compile_options(/W4 /WX)
 	add_compile_definitions(_CRT_SECURE_NO_WARNINGS)	
-	add_compile_definitions(_ITERATOR_DEBUG_LEVEL=0)	
+	
+	if(JELLY_DISABLE_MSVC_ITERATOR_DEBUG)
+		add_compile_definitions(_ITERATOR_DEBUG_LEVEL=0)	
+	endif()
 else()
     # lots of warnings and all warnings as errors
     add_compile_options(

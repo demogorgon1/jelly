@@ -1,0 +1,21 @@
+var searchData=
+[
+  ['ibuffer_0',['IBuffer',['../classjelly_1_1IBuffer.html',1,'jelly']]],
+  ['iconfigsource_1',['IConfigSource',['../classjelly_1_1IConfigSource.html',1,'jelly']]],
+  ['id_2',['Id',['../Config_8h.html#a4ae33e5b5943d1493ea8b3c3515479c6',1,'jelly::Config::Id'],['../Stat_8h.html#a913f89ed124480a46fc47f376df6fbe1',1,'jelly::Stat::Id']]],
+  ['ihost_3',['IHost',['../classjelly_1_1IHost.html',1,'jelly']]],
+  ['info_4',['Info',['../structjelly_1_1Config_1_1Info.html',1,'jelly::Config::Info'],['../structjelly_1_1Stat_1_1Info.html',1,'jelly::Stat::Info']]],
+  ['iprovider_5',['IProvider',['../classjelly_1_1Compression_1_1IProvider.html',1,'jelly::Compression']]],
+  ['ireader_6',['IReader',['../classjelly_1_1IReader.html',1,'jelly']]],
+  ['iscompleted_7',['IsCompleted',['../classjelly_1_1Request.html#a2a913a7d87b787125cbdf596455ddf81',1,'jelly::Request']]],
+  ['isforced_8',['IsForced',['../classjelly_1_1LockNodeRequest.html#a361239ff565ffdee0ded42631681f705',1,'jelly::LockNodeRequest']]],
+  ['islowprio_9',['IsLowPrio',['../classjelly_1_1Request.html#a2f4453c5082d7ee5df868c05e827e824',1,'jelly::Request']]],
+  ['isnowrite_10',['IsNoWrite',['../classjelly_1_1BlobNodeRequest.html#afb63172a0840a8b3115274871d1bcdb4',1,'jelly::BlobNodeRequest']]],
+  ['isset_11',['IsSet',['../structjelly_1_1CompactionJob.html#a873e35a6cceccff94125fe077ba0f0e5',1,'jelly::CompactionJob']]],
+  ['isstatic_12',['IsStatic',['../classjelly_1_1Buffer.html#ac9463e3a6ddce4a3d06e442128dde5a9',1,'jelly::Buffer']]],
+  ['isstopped_13',['IsStopped',['../classjelly_1_1Node.html#aa964c8175fb02b0467fd59287ab4a99f',1,'jelly::Node']]],
+  ['istats_14',['IStats',['../classjelly_1_1IStats.html',1,'jelly']]],
+  ['istreamcompressor_15',['IStreamCompressor',['../classjelly_1_1Compression_1_1IStreamCompressor.html',1,'jelly::Compression']]],
+  ['istreamdecompressor_16',['IStreamDecompressor',['../classjelly_1_1Compression_1_1IStreamDecompressor.html',1,'jelly::Compression']]],
+  ['iwriter_17',['IWriter',['../classjelly_1_1IWriter.html',1,'jelly']]]
+];

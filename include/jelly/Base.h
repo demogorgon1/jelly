@@ -38,8 +38,10 @@
 
 #if defined(_MSC_VER)
 	#define JELLY_THREAD_LOCAL(_Type) __declspec(thread) _Type
+	#define JELLY_NO_RETURN __declspec(noreturn)
 #else
 	#define JELLY_THREAD_LOCAL(_Type) thread_local _Type
+	#define JELLY_NO_RETURN [[noreturn]]
 #endif
 
 #if defined(JELLY_SIMULATE_ERRORS) && defined(NDEBUG)

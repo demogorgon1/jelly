@@ -64,29 +64,29 @@ namespace jelly
 
 		//----------------------------------------------------------------------------------------
 
-		void			Terminate(
-							const char*													aFormat,
-							...);
-		void			AssertFailed(
-							const char*													aFile,
-							int															aLineNum,
-							const char*													aAssertString,
-							const char*													aMessageFormat,
-							...);
-		void			CheckFailed(
-							Exception::Error											aError,
-							const char*													aMessageFormat,
-							...);
-		void			DebugBreak();
+		void					Terminate(
+									const char*													aFormat,
+									...);
+		void					AssertFailed(
+									const char*													aFile,
+									int															aLineNum,
+									const char*													aAssertString,
+									const char*													aMessageFormat,
+									...);
+		JELLY_NO_RETURN void	CheckFailed(
+									Exception::Error											aError,
+									const char*													aMessageFormat,
+									...);
+		void					DebugBreak();
 
 #if defined(JELLY_SIMULATE_ERRORS)
-		void			ResetErrorSimulation();
-		void			SimulateError(
-							Exception::Error											aError,
-							uint32_t													aProbability,
-							uint32_t													aOccurances);						
-		bool			ShouldSimulateError(	
-							Exception::Error											aError);
+		void					ResetErrorSimulation();
+		void					SimulateError(
+									Exception::Error											aError,
+									uint32_t													aProbability,
+									uint32_t													aOccurances);						
+		bool					ShouldSimulateError(	
+									Exception::Error											aError);
 #endif
 
 		//----------------------------------------------------------------------------------------

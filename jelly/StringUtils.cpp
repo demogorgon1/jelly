@@ -108,7 +108,6 @@ namespace jelly
 				return false;
 
 			JELLY_FAIL(Exception::ERROR_INVALID_BOOL, "String=%s", aString);
-			return false;
 		}
 
 		uint32_t	

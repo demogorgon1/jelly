@@ -13,6 +13,27 @@ namespace jelly
 	namespace Compaction
 	{
 
+		// Returns the store id to pass to ItemBase::ShouldBePruned() when compacting the specified stores. Tombstones can
+		// only be pruned if all stores are part of the compaction: stores made by compactions get new (higher) ids, so any
+		// store not included could have an older version of a deleted item, which would come back after a restart.
+		inline uint32_t
+		GetPruneTombstonesStoreId(
+			IHost*										aHost,
+			uint32_t									aNodeId,
+			const std::vector<uint32_t>&				aStoreIds)
+		{
+			std::vector<IHost::StoreInfo> storeInfo;
+			aHost->GetStoreInfo(aNodeId, storeInfo);
+
+			for(const IHost::StoreInfo& store : storeInfo)
+			{
+				if(std::find(aStoreIds.cbegin(), aStoreIds.cend(), store.m_id) == aStoreIds.cend())
+					return 0; // Don't prune any tombstones
+			}
+
+			return UINT32_MAX; // Prune all tombstones
+		}
+
 		// Do a compaction of just 2 stores
 		template <typename _KeyType, typename _ItemType>
 		size_t
@@ -270,10 +291,12 @@ namespace jelly
 		{
 			aOut->SetStoreIds(aCompactionJob.m_storeIds);
 
+			uint32_t pruneTombstonesStoreId = GetPruneTombstonesStoreId(aHost, aNodeId, aCompactionJob.m_storeIds);
+
 			if(aCompactionJob.m_storeIds.size() == 2)
-				return PerformOnTwoStores<_KeyType, _ItemType>(aHost, aNodeId, aStoreFileStatsContext, aCompactionJob.m_oldestStoreId, aNewStoreId, aCompactionJob.m_storeIds[0], aCompactionJob.m_storeIds[1], aOut);
+				return PerformOnTwoStores<_KeyType, _ItemType>(aHost, aNodeId, aStoreFileStatsContext, pruneTombstonesStoreId, aNewStoreId, aCompactionJob.m_storeIds[0], aCompactionJob.m_storeIds[1], aOut);
 			else
-				return PerformOnStoreList<_KeyType, _ItemType>(aHost, aNodeId, aStoreFileStatsContext, aCompactionJob.m_oldestStoreId, aNewStoreId, aCompactionJob.m_storeIds, aOut);
+				return PerformOnStoreList<_KeyType, _ItemType>(aHost, aNodeId, aStoreFileStatsContext, pruneTombstonesStoreId, aNewStoreId, aCompactionJob.m_storeIds, aOut);
 		}
 		
 		// Do a "major" compaction of everything.
@@ -293,18 +316,19 @@ namespace jelly
 			// Need at least 3 stores for compaction (can't touch the newest one)
 			if (storeInfo.size() >= 3)
 			{
-				uint32_t oldestStoreId = storeInfo[0].m_id;
-
 				std::vector<uint32_t> storeIds;
 				for(size_t i = 0; i < storeInfo.size() - 1; i++)
 					storeIds.push_back(storeInfo[i].m_id);
 
 				aOut->SetStoreIds(storeIds);
 
+				// The newest store isn't included, so this will never prune tombstones
+				uint32_t pruneTombstonesStoreId = GetPruneTombstonesStoreId(aHost, aNodeId, storeIds);
+
 				if (storeIds.size() == 2)
-					return PerformOnTwoStores<_KeyType, _ItemType>(aHost, aNodeId, aStoreFileStatsContext, oldestStoreId, aNewStoreId, storeIds[0], storeIds[1], aOut);
+					return PerformOnTwoStores<_KeyType, _ItemType>(aHost, aNodeId, aStoreFileStatsContext, pruneTombstonesStoreId, aNewStoreId, storeIds[0], storeIds[1], aOut);
 				else
-					return PerformOnStoreList<_KeyType, _ItemType>(aHost, aNodeId, aStoreFileStatsContext, oldestStoreId, aNewStoreId, storeIds, aOut);
+					return PerformOnStoreList<_KeyType, _ItemType>(aHost, aNodeId, aStoreFileStatsContext, pruneTombstonesStoreId, aNewStoreId, storeIds, aOut);
 			}
 
 			return 0;

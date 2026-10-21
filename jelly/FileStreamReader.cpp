@@ -124,20 +124,20 @@ namespace jelly
 
 			while(remaining  > 0)
 			{
-				if(m_head == NULL)
+				// Feed compressed data to the decompressor until it has output something. A compressed block can be larger
+				// than what we read at a time, so this can take more than one read.
+				while(m_head == NULL)
 				{
 					uint8_t compressed[32768];
 					size_t compressedSize = m_file.Read(compressed, sizeof(compressed));
 					if(compressedSize == 0)
-					{
 						break;
-					}
 
 					m_decompressor->FeedData(compressed, compressedSize);
-
-					if (m_head == NULL)
-						break;
 				}
+
+				if (m_head == NULL)
+					break; // End of file
 
 				JELLY_ASSERT(m_head->m_numBytes > m_head->m_readOffset);
 

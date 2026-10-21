@@ -222,12 +222,13 @@ namespace jelly
 				}
 				else if(item->GetLock() != aRequest->GetLock())
 				{
-					// Locked by someone else				
+					// Locked by someone else
 					if(aRequest->IsForced())
 					{
-						// Force the lock
+						// Force the lock, return the previous one
+						_LockType previousLock = item->GetLock();
 						item->SetLock(aRequest->GetLock());
-						aRequest->SetLock(item->GetLock());
+						aRequest->SetLock(previousLock);
 					}
 					else
 					{
@@ -244,6 +245,11 @@ namespace jelly
 					aRequest->SetSeq(item->GetSeq());
 					return REQUEST_RESULT_OK;
 				}
+			}
+			else
+			{
+				// New item, no previous lock (same as for an existing item that isn't locked)
+				aRequest->SetLock(_LockType());
 			}
 
 			if(aRequest->GetMeta().has_value())
@@ -313,6 +319,8 @@ namespace jelly
 				return REQUEST_RESULT_ALREADY_LOCKED;
 			}
 
+			// A forced delete can delete a locked item, which mustn't stay locked
+			item->GetLock().Clear();
 			item->SetMeta(_LockMetaType());
 			item->SetTimeStamp(aRequest->GetTimeStamp());
 			item->IncrementSeq();

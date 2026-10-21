@@ -30,10 +30,33 @@ namespace jelly::Test::AdvBlobTest
 		JELLY_ALWAYS_ASSERT(keys == expected);
 	}
 
-	void		
+	void
+	_TestUIntVectorKeyHash()
+	{
+		// Keys with the same values in a different order must not have the same hash (more than two identical hashes
+		// can't be put in an ItemHashTable)
+		std::vector<UIntVectorKey<uint32_t, 3>> keys =
+		{
+			{ 1, 2, 3 },
+			{ 1, 3, 2 },
+			{ 2, 1, 3 },
+			{ 2, 3, 1 },
+			{ 3, 1, 2 },
+			{ 3, 2, 1 },
+			{ 0, 0, 0 },
+			{ 5, 5, 0 }
+		};
+
+		std::unordered_set<uint64_t> hashes;
+		for(const UIntVectorKey<uint32_t, 3>& key : keys)
+			JELLY_ALWAYS_ASSERT(hashes.insert(key.GetHash()).second);
+	}
+
+	void
 	Run()
 	{
 		_TestUIntVectorKeySorting();
+		_TestUIntVectorKeyHash();
 
 		// Test vector keys and blob meta data
 		DefaultHost host(".", "advblobtest");

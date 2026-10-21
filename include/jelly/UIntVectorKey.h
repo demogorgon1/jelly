@@ -59,14 +59,17 @@ namespace jelly
 		uint64_t
 		GetHash() const noexcept
 		{
-			// xor splitmix64'd elements together
+			// splitmix64 each element combined with the hash so far. Order matters, so keys with the same values in a
+			// different order (or the same value repeated) don't get the same hash. Too many identical hashes would make
+			// the item hash table grow until running out of memory.
 			uint64_t hash = 0;
 			for(size_t i = 0; i < _Size; i++)
 			{
-				uint64_t x = (m_values[i] ^ (m_values[i] >> 30ULL)) * 0xbf58476d1ce4e5b9ULL;
+				uint64_t x = hash + (uint64_t)m_values[i] + 0x9e3779b97f4a7c15ULL;
+				x = (x ^ (x >> 30ULL)) * 0xbf58476d1ce4e5b9ULL;
 				x = (x ^ (x >> 27ULL)) * 0x94d049bb133111ebULL;
 				x = x ^ (x >> 31ULL);
-				hash ^= x;
+				hash = x;
 			}
 			return hash;
 		}

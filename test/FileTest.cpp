@@ -130,6 +130,20 @@ namespace jelly
 					}
 				}
 
+				// Write a shorter file in place of the existing one - nothing of the old one must be left at the end
+				{
+					{
+						File f(&context, "testfile.tmp", File::MODE_WRITE_STREAM, FileHeader());
+						JELLY_ALWAYS_ASSERT(f.IsValid());
+						f.Write("Short", 5);
+						f.Flush();
+					}
+
+					File f(&context, "testfile.tmp", File::MODE_READ_STREAM, FileHeader());
+					JELLY_ALWAYS_ASSERT(f.IsValid());
+					JELLY_ALWAYS_ASSERT(f.GetSize() == 5 + sizeof(FileHeader));
+				}
+
 				// Delete the file (this tests that all handles are released)
 				JELLY_ALWAYS_ASSERT(std::filesystem::remove("testfile.tmp"));
 			}

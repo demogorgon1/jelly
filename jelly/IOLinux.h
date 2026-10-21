@@ -168,10 +168,19 @@ namespace jelly
 			Handle								m_handle;
 			size_t								m_size;
 			size_t								m_nonFlushedBytes;
+			std::string							m_path;
+			bool								m_directorySynced;
 
 			void			_WriteBuffer(
 								FileWriteBuffer*	 aWriteBuffer);
 		};
+
+		//-----------------------------------------------------------------------------------
+
+		// Renames a file and makes sure the rename is on disk before returning. Returns 0 on success, otherwise errno.
+		int					RenameFile(
+								const char*			aFromPath,
+								const char*			aToPath);
 
 	}
 

@@ -56,6 +56,12 @@ namespace jelly
 						size_t				aBufferSize) override;
 		size_t		GetTotalBytesRead() const override;
 
+		// Renames a file and makes sure the rename is on disk before returning. Returns 0 on success, otherwise a
+		// platform specific error code.
+		static uint32_t	Rename(
+						const char*			aFromPath,
+						const char*			aToPath);
+
 		// Data access
 		const char*	GetPath() const noexcept { return m_path.c_str(); }
 

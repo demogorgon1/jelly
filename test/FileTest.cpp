@@ -130,8 +130,21 @@ namespace jelly
 					}
 				}
 
+				// Rename the file
+				{
+					JELLY_ALWAYS_ASSERT(File::Rename("testfile.tmp", "testfile2.tmp") == 0);
+					JELLY_ALWAYS_ASSERT(!std::filesystem::exists("testfile.tmp"));
+
+					File f(&context, "testfile2.tmp", File::MODE_READ_STREAM, FileHeader());
+					JELLY_ALWAYS_ASSERT(f.IsValid());
+					JELLY_ALWAYS_ASSERT(f.GetSize() == testDataSize + sizeof(FileHeader));
+				}
+
+				// Renaming a file that doesn't exist fails
+				JELLY_ALWAYS_ASSERT(File::Rename("testfile.tmp", "testfile3.tmp") != 0);
+
 				// Delete the file (this tests that all handles are released)
-				JELLY_ALWAYS_ASSERT(std::filesystem::remove("testfile.tmp"));
+				JELLY_ALWAYS_ASSERT(std::filesystem::remove("testfile2.tmp"));
 			}
 
 		}

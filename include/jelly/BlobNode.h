@@ -82,7 +82,7 @@ namespace jelly
 
 					runtimeState.m_storeId = aStoreId;
 					runtimeState.m_storeOffset = aNewOffsets[index++];
-					runtimeState.m_storeSize = item->GetBlob()->GetSize();
+					runtimeState.m_storeSize = item->HasBlob() ? item->GetBlob()->GetSize() : 0; // Tombstones don't have blobs
 
 					if (runtimeState.m_pendingWAL != NULL)
 					{
@@ -324,37 +324,32 @@ namespace jelly
 					return REQUEST_RESULT_NOT_LOCKED;
 				}
 
-				if(item->HasBlob())
+				if(item->GetRuntimeState().m_isResident)
 				{
-					// Already has a blob and is resident
-					JELLY_ASSERT(m_totalResidentBlobSize >= item->GetBlob()->GetSize());
-					m_totalResidentBlobSize -= item->GetBlob()->GetSize();
-
-					if(!aDelete)
-						m_totalResidentBlobSize += newBlob->GetSize();
+					// Resident: either has a blob or is a tombstone
+					if(item->HasBlob())
+					{
+						JELLY_ASSERT(m_totalResidentBlobSize >= item->GetBlob()->GetSize());
+						m_totalResidentBlobSize -= item->GetBlob()->GetSize();
+					}
+					else
+					{
+						JELLY_ASSERT(item->HasTombstone());
+						obeyResidentBlobSizeLimit = true;
+					}
 
 					m_residentItems.MoveToTail(item);
-				}
-				else if(item->HasTombstone())
-				{
-					// Was deleted (and is also resident)
-					if (!aDelete)
-						m_totalResidentBlobSize += newBlob->GetSize();
-
-					m_residentItems.MoveToTail(item);
-
-					obeyResidentBlobSizeLimit = true;
 				}
 				else
 				{
-					// No blob, not resident
-					if(!aDelete)
-						m_totalResidentBlobSize += newBlob->GetSize();
-
+					// Not resident (blob expelled, or a tombstone loaded from a store)
 					m_residentItems.Add(item);
 
 					obeyResidentBlobSizeLimit = true;
 				}
+
+				if(!aDelete)
+					m_totalResidentBlobSize += newBlob->GetSize();
 
 				if(aDelete)
 					item->SetBlob(NULL);
@@ -473,10 +468,14 @@ namespace jelly
 				JELLY_ASSERT(hasTombstone || aItem.HasBlob());
 				Item* existing = result.first;
 
-				if(existing->HasBlob())
+				if(existing->GetRuntimeState().m_isResident)
 				{
-					JELLY_ASSERT(m_totalResidentBlobSize >= existing->GetBlob()->GetSize());
-					m_totalResidentBlobSize -= existing->GetBlob()->GetSize();
+					if(existing->HasBlob())
+					{
+						JELLY_ASSERT(m_totalResidentBlobSize >= existing->GetBlob()->GetSize());
+						m_totalResidentBlobSize -= existing->GetBlob()->GetSize();
+					}
+
 					m_residentItems.MoveToTail(existing);
 				}
 				else
@@ -484,7 +483,8 @@ namespace jelly
 					m_residentItems.Add(existing);
 				}
 
-				m_totalResidentBlobSize += aItem.GetBlob()->GetSize();
+				if(aItem.HasBlob())
+					m_totalResidentBlobSize += aItem.GetBlob()->GetSize();
 
 				existing->MoveFrom(&aItem);
 				existing->GetRuntimeState().m_isResident = true;
@@ -700,12 +700,13 @@ namespace jelly
 				if(!item->Read(aReader, &itemRuntimeState.m_storeOffset))
 					break;
 
-				itemRuntimeState.m_storeSize = item->GetBlob()->GetSize();
+				// Read() sets the stored blob size (tombstones don't have blobs, leaving it at 0)
 
 				_KeyType key = item->GetKey();
 
-				if(m_totalResidentBlobSize >= maxResidentBlobSize || this->GetItemCount() >= maxResidentBlobCount)
+				if(!item->HasBlob() || m_totalResidentBlobSize >= maxResidentBlobSize || this->GetItemCount() >= maxResidentBlobCount)
 				{
+					// Tombstones from stores aren't resident (they're only resident while being written to WALs)
 					item->SetBlob(NULL);
 					itemRuntimeState.m_isResident = false;
 				}
@@ -764,9 +765,14 @@ namespace jelly
 					break;
 				}
 
-				JELLY_ASSERT(head->HasBlob());
-				m_totalResidentBlobSize -= head->GetBlob()->GetSize();
-				head->SetBlob(NULL);
+				// Tombstones are resident too, but don't have blobs
+				if(head->HasBlob())
+				{
+					JELLY_ASSERT(m_totalResidentBlobSize >= head->GetBlob()->GetSize());
+					m_totalResidentBlobSize -= head->GetBlob()->GetSize();
+					head->SetBlob(NULL);
+				}
+
 				m_residentItems.Remove(head);
 
 				runtimeState.m_isResident = false;

@@ -363,6 +363,19 @@ namespace jelly
 			m_nonFlushedBytes += aWriteBuffer->m_bytes;
 		}
 
+		//-----------------------------------------------------------------------------------
+
+		uint32_t
+		RenameFile(
+			const char*			aFromPath,
+			const char*			aToPath)
+		{
+			if(!MoveFileExA(aFromPath, aToPath, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH))
+				return (uint32_t)GetLastError();
+
+			return 0;
+		}
+
 	}
 
 }

@@ -219,4 +219,14 @@ namespace jelly
 		return m_internal->m_fileReadStream->GetTotalBytesRead();
 	}
 
+	//---------------------------------------------------------------------
+
+	uint32_t
+	File::Rename(
+		const char*		aFromPath,
+		const char*		aToPath)
+	{
+		return (uint32_t)RenameFile(aFromPath, aToPath);
+	}
+
 }

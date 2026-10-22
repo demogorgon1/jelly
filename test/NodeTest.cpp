@@ -1601,6 +1601,60 @@ namespace jelly
 			}
 
 			void
+			_TestLockNodeForced(
+				TestDefaultHost*		aHost)
+			{
+				aHost->DeleteAllFiles(UINT32_MAX);
+				aHost->GetDefaultConfigSource()->Clear();
+
+				LockNodeType lockNode(aHost, 0);
+
+				auto lock = [&lockNode](uint32_t aLock, bool aForced, uint32_t& aOutPreviousLock) -> RequestResult
+				{
+					LockNodeType::Request req;
+					req.SetKey(1);
+					req.SetLock(aLock);
+					req.SetForced(aForced);
+					lockNode.Lock(&req);
+					JELLY_ALWAYS_ASSERT(lockNode.ProcessRequests() == 1);
+					lockNode.FlushPendingWAL(0);
+					JELLY_ALWAYS_ASSERT(req.IsCompleted());
+					aOutPreviousLock = req.GetLock().m_value;
+					return req.GetResult();
+				};
+
+				uint32_t previousLock = 0;
+				JELLY_ALWAYS_ASSERT(lock(100, false, previousLock) == REQUEST_RESULT_OK);
+				JELLY_ALWAYS_ASSERT(previousLock == 0);
+
+				// Locked by someone else
+				JELLY_ALWAYS_ASSERT(lock(200, false, previousLock) == REQUEST_RESULT_ALREADY_LOCKED);
+				JELLY_ALWAYS_ASSERT(previousLock == 100);
+
+				// Forced lock returns the previous lock
+				JELLY_ALWAYS_ASSERT(lock(200, true, previousLock) == REQUEST_RESULT_OK);
+				JELLY_ALWAYS_ASSERT(previousLock == 100);
+
+				// Forced delete of locked item
+				{
+					LockNodeType::Request req;
+					req.SetKey(1);
+					req.SetForced(true);
+					lockNode.Delete(&req);
+					JELLY_ALWAYS_ASSERT(lockNode.ProcessRequests() == 1);
+					lockNode.FlushPendingWAL(0);
+					JELLY_ALWAYS_ASSERT(req.IsCompleted());
+					JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
+				}
+
+				// Deleted, so no longer locked
+				JELLY_ALWAYS_ASSERT(lock(300, false, previousLock) == REQUEST_RESULT_OK);
+				JELLY_ALWAYS_ASSERT(previousLock == 0);
+
+				lockNode.Stop();
+			}
+
+			void
 			_TestBlobNodeDelete(
 				TestDefaultHost*		aHost)
 			{
@@ -2341,6 +2395,7 @@ namespace jelly
 
 				// Test delete operation of LockNode
 				_TestLockNodeDelete(&host);
+				_TestLockNodeForced(&host);
 				_TestLockNodeTombstoneNotResurrected(&host);
 				_TestStoreOrigins(&host);
 

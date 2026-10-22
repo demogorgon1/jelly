@@ -836,7 +836,7 @@ namespace jelly
 			else
 			{
 				// Flush only specific pending WAL
-				JELLY_ASSERT(aConcurrentWALIndex < m_pendingWALs.size());
+				JELLY_ASSERT(aConcurrentWALIndex < aPendingWALs.size());
 
 				WAL* pendingWAL = aPendingWALs[aConcurrentWALIndex];
 				if (pendingWAL != NULL)

@@ -367,7 +367,8 @@ namespace jelly
 			{
 				uint32_t storeId = CreateStoreId();
 
-				std::unique_ptr<IStoreWriter> writer(m_host->CreateStore(m_nodeId, storeId, &m_statsContext.m_fileStore));
+				// Store made from a pending store flush is its own origin
+				std::unique_ptr<IStoreWriter> writer(m_host->CreateStore(m_nodeId, storeId, storeId, &m_statsContext.m_fileStore));
 				std::vector<size_t> newOffsets;
 
 				JELLY_ASSERT(m_writePendingStoreCallback);
@@ -862,7 +863,7 @@ namespace jelly
 			else
 			{
 				// Flush only specific pending WAL
-				JELLY_ASSERT(aConcurrentWALIndex < m_pendingWALs.size());
+				JELLY_ASSERT(aConcurrentWALIndex < aPendingWALs.size());
 
 				WAL* pendingWAL = aPendingWALs[aConcurrentWALIndex];
 				if (pendingWAL != NULL)

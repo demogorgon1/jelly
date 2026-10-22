@@ -27,6 +27,9 @@ namespace jelly
 
 		bool		IsValid() const noexcept;
 
+		// Data access
+		const FileHeader&	GetHeader() const { return m_file.GetHeader(); }
+
 		// IFileStreamReader implementation
 		bool		IsEnd() const override;
 		size_t		Read(

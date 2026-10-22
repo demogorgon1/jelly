@@ -1,6 +1,7 @@
 // Big pile of node testing mess. Not making any allusions about this providing full covering of everything,
 // as it's more of a "shotgun" approach to testing. It covers a lot of stuff, but definetely not all.
 
+#include <fstream>
 #include <optional>
 #include <random>
 #include <unordered_set>
@@ -1369,14 +1370,14 @@ namespace jelly
 					}
 				}
 
-				// Now we should have 1 store less
+				// Now we should have 1 store less. Tombstone is gone, as the stores that weren't part of the compaction (2 and 3)
+				// have newer origins than the tombstone (0), so they can't have older versions of key 1.
 				_VerifyLockNodeStore(aHost, 0, 2, { { 3, 1, 100, UINT32_MAX, { }, UINT32_MAX } }); // key 3 lock
 				_VerifyLockNodeStore(aHost, 0, 3, { { 4, 1, 100, UINT32_MAX, { }, UINT32_MAX } }); // key 4 lock
 				_VerifyLockNodeStore(aHost, 0, 4,
-				{ 
-					{ 1, 3, 0, UINT32_MAX, { }, 0 }, // key 1 tombstone
+				{
 					{ 2, 1, 100, UINT32_MAX, { }, UINT32_MAX }, // key 2 lock
-				}); 
+				});
 
 				// Restart
 
@@ -1401,14 +1402,256 @@ namespace jelly
 					lockNode.ApplyCompactionResult(compactionResult.get());
 				}
 
-				// Tombstone should be gone now
 				_VerifyLockNodeStore(aHost, 0, 2, { { 3, 1, 100, UINT32_MAX, { }, UINT32_MAX } }); // key 3 lock
 				_VerifyLockNodeStore(aHost, 0, 5, { { 5, 1, 100, UINT32_MAX, { }, UINT32_MAX } }); // key 5 lock
 				_VerifyLockNodeStore(aHost, 0, 6,
-				{ 
+				{
 					{ 2, 1, 100, UINT32_MAX, { }, UINT32_MAX }, // key 2 lock
 					{ 4, 1, 100, UINT32_MAX, { }, UINT32_MAX } // key 4 lock
-				}); 
+				});
+			}
+
+			void
+			_TestLockNodeTombstoneNotResurrected(
+				TestDefaultHost*		aHost)
+			{
+				aHost->DeleteAllFiles(UINT32_MAX);
+				aHost->GetDefaultConfigSource()->Clear();
+
+				auto lockAndFlush = [](LockNodeType& aLockNode, uint32_t aKey, bool aUnlock)
+				{
+					{
+						LockNodeType::Request req;
+						req.SetKey(aKey);
+						req.SetLock(100);
+						aLockNode.Lock(&req);
+						JELLY_ALWAYS_ASSERT(aLockNode.ProcessRequests() == 1);
+						aLockNode.FlushPendingWAL(0);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
+					}
+
+					if(aUnlock)
+					{
+						LockNodeType::Request req;
+						req.SetKey(aKey);
+						req.SetLock(100);
+						aLockNode.Unlock(&req);
+						JELLY_ALWAYS_ASSERT(aLockNode.ProcessRequests() == 1);
+						aLockNode.FlushPendingWAL(0);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
+					}
+
+					aLockNode.FlushPendingStore();
+				};
+
+				auto compact = [](LockNodeType& aLockNode, uint32_t aOldestStoreId, const std::vector<uint32_t>& aStoreIds)
+				{
+					CompactionJob job(aOldestStoreId);
+					job.m_storeIds = aStoreIds;
+					std::unique_ptr<CompactionResultType> compactionResult(aLockNode.PerformCompaction(job));
+					aLockNode.ApplyCompactionResult(compactionResult.get());
+				};
+
+				auto getKey1 = [](LockNodeType& aLockNode) -> const LockNodeType::Item*
+				{
+					const LockNodeType::Item* found = NULL;
+					aLockNode.ForEach([&](const LockNodeType::Item* aItem)
+					{
+						if(aItem->GetKey() == UIntKey<uint32_t>(1))
+							found = aItem;
+						return found == NULL;
+					});
+					return found;
+				};
+
+				{
+					LockNodeType lockNode(aHost, 0);
+
+					lockAndFlush(lockNode, 1, true);	// Store 0: key 1
+					lockAndFlush(lockNode, 2, false);	// Store 1: key 2
+
+					// Delete key 1, tombstone in store 2
+					{
+						LockNodeType::Request req;
+						req.SetKey(1);
+						lockNode.Delete(&req);
+						JELLY_ALWAYS_ASSERT(lockNode.ProcessRequests() == 1);
+						lockNode.FlushPendingWAL(0);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
+						lockNode.FlushPendingStore();
+					}
+				}
+
+				// Restart, which deletes the WALs (everything in them is in stores), so only stores have key 1
+				{
+					LockNodeType lockNode(aHost, 0);
+
+					// Old version of key 1 moves to store 3, which has a higher id than the tombstone
+					compact(lockNode, 0, { 0, 1 });
+
+					lockAndFlush(lockNode, 3, false);	// Store 4
+					compact(lockNode, 2, { 2, 4 });		// Store 5: tombstone
+					lockAndFlush(lockNode, 5, false);	// Store 6
+					lockAndFlush(lockNode, 6, false);	// Store 7
+
+					// Oldest store (3) is newer than the tombstone's store (2), but store 3 still has the old version of
+					// key 1 (its origin is 0), so the tombstone must be kept
+					compact(lockNode, 3, { 5, 6 });		// Store 8
+				}
+
+				// Key 1 must still be deleted after a restart
+				{
+					LockNodeType lockNode(aHost, 0);
+
+					const LockNodeType::Item* item = getKey1(lockNode);
+					JELLY_ALWAYS_ASSERT(item != NULL && item->HasTombstone());
+
+					// Compacting all stores removes both the tombstone and the old version
+					compact(lockNode, 3, { 3, 7, 8 });
+				}
+
+				{
+					LockNodeType lockNode(aHost, 0);
+
+					JELLY_ALWAYS_ASSERT(getKey1(lockNode) == NULL);
+				}
+			}
+
+			void
+			_TestStoreOrigins(
+				TestDefaultHost*		aHost)
+			{
+				aHost->DeleteAllFiles(UINT32_MAX);
+				aHost->GetDefaultConfigSource()->Clear();
+
+				auto getOrigins = [aHost]() -> std::map<uint32_t, uint32_t>
+				{
+					std::vector<IHost::StoreInfo> storeInfo;
+					aHost->GetStoreInfo(0, storeInfo);
+
+					std::map<uint32_t, uint32_t> origins;
+					for(const IHost::StoreInfo& store : storeInfo)
+						origins[store.m_id] = store.m_originStoreId;
+					return origins;
+				};
+
+				{
+					LockNodeType lockNode(aHost, 0);
+
+					for(uint32_t key = 1; key <= 3; key++)
+					{
+						LockNodeType::Request req;
+						req.SetKey(key);
+						req.SetLock(100);
+						lockNode.Lock(&req);
+						JELLY_ALWAYS_ASSERT(lockNode.ProcessRequests() == 1);
+						lockNode.FlushPendingWAL(0);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
+						lockNode.FlushPendingStore(); // Stores 0, 1, 2
+					}
+
+					// Stores made by pending store flushes are their own origins
+					JELLY_ALWAYS_ASSERT((getOrigins() == std::map<uint32_t, uint32_t>{ { 0, 0 }, { 1, 1 }, { 2, 2 } }));
+
+					// Store made by compaction has the oldest origin of the stores it's made from
+					std::unique_ptr<CompactionResultType> compactionResult(lockNode.PerformCompaction(CompactionJob(0, 1, 2)));
+					lockNode.ApplyCompactionResult(compactionResult.get());
+
+					JELLY_ALWAYS_ASSERT((getOrigins() == std::map<uint32_t, uint32_t>{ { 0, 0 }, { 3, 1 } }));
+				}
+
+				// Turn store 3 into a store from before origins were added: no origin flag in the header, and no origin
+				// after it
+				{
+					std::string path = aHost->GetStorePath(0, 3);
+
+					std::vector<uint8_t> data(std::filesystem::file_size(path));
+					{
+						std::ifstream f(path, std::ios::binary);
+						f.read((char*)&data[0], (std::streamsize)data.size());
+					}
+
+					FileHeader* header = (FileHeader*)&data[0];
+					JELLY_ALWAYS_ASSERT(header->m_flags & FileHeader::FLAG_STORE_ORIGIN);
+					header->m_flags &= ~FileHeader::FLAG_STORE_ORIGIN;
+					data.erase(data.begin() + sizeof(FileHeader), data.begin() + sizeof(FileHeader) + sizeof(uint32_t));
+
+					std::ofstream f(path, std::ios::binary | std::ios::trunc);
+					f.write((const char*)&data[0], (std::streamsize)data.size());
+				}
+
+				// Can still be read, and has origin 0
+				JELLY_ALWAYS_ASSERT((getOrigins() == std::map<uint32_t, uint32_t>{ { 0, 0 }, { 3, 0 } }));
+
+				{
+					LockNodeType lockNode(aHost, 0);
+
+					size_t count = 0;
+					lockNode.ForEach([&count](const LockNodeType::Item* aItem)
+					{
+						JELLY_ALWAYS_ASSERT(aItem->GetLock().m_value == 100);
+						count++;
+						return true;
+					});
+
+					JELLY_ALWAYS_ASSERT(count == 3);
+				}
+
+				aHost->DeleteAllFiles(UINT32_MAX);
+			}
+
+			void
+			_TestLockNodeForced(
+				TestDefaultHost*		aHost)
+			{
+				aHost->DeleteAllFiles(UINT32_MAX);
+				aHost->GetDefaultConfigSource()->Clear();
+
+				LockNodeType lockNode(aHost, 0);
+
+				auto lock = [&lockNode](uint32_t aLock, bool aForced, uint32_t& aOutPreviousLock) -> RequestResult
+				{
+					LockNodeType::Request req;
+					req.SetKey(1);
+					req.SetLock(aLock);
+					req.SetForced(aForced);
+					lockNode.Lock(&req);
+					JELLY_ALWAYS_ASSERT(lockNode.ProcessRequests() == 1);
+					lockNode.FlushPendingWAL(0);
+					JELLY_ALWAYS_ASSERT(req.IsCompleted());
+					aOutPreviousLock = req.GetLock().m_value;
+					return req.GetResult();
+				};
+
+				uint32_t previousLock = 0;
+				JELLY_ALWAYS_ASSERT(lock(100, false, previousLock) == REQUEST_RESULT_OK);
+				JELLY_ALWAYS_ASSERT(previousLock == 0);
+
+				// Locked by someone else
+				JELLY_ALWAYS_ASSERT(lock(200, false, previousLock) == REQUEST_RESULT_ALREADY_LOCKED);
+				JELLY_ALWAYS_ASSERT(previousLock == 100);
+
+				// Forced lock returns the previous lock
+				JELLY_ALWAYS_ASSERT(lock(200, true, previousLock) == REQUEST_RESULT_OK);
+				JELLY_ALWAYS_ASSERT(previousLock == 100);
+
+				// Forced delete of locked item
+				{
+					LockNodeType::Request req;
+					req.SetKey(1);
+					req.SetForced(true);
+					lockNode.Delete(&req);
+					JELLY_ALWAYS_ASSERT(lockNode.ProcessRequests() == 1);
+					lockNode.FlushPendingWAL(0);
+					JELLY_ALWAYS_ASSERT(req.IsCompleted());
+					JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
+				}
+
+				// Deleted, so no longer locked
+				JELLY_ALWAYS_ASSERT(lock(300, false, previousLock) == REQUEST_RESULT_OK);
+				JELLY_ALWAYS_ASSERT(previousLock == 0);
+
+				lockNode.Stop();
 			}
 
 			void
@@ -1559,6 +1802,110 @@ namespace jelly
 						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
 						JELLY_ALWAYS_ASSERT(UInt32Blob::GetValue(req.GetBlob()) == 1234);
 					}
+				}
+			}
+
+			void
+			_TestBlobNodeDeleteFlushAndRestore(
+				TestDefaultHost*		aHost)
+			{
+				aHost->DeleteAllFiles(UINT32_MAX);
+				aHost->GetDefaultConfigSource()->Clear();
+				aHost->GetDefaultConfigSource()->Set(jelly::Config::ID_MAX_RESIDENT_BLOB_COUNT, "2");
+
+				auto set = [](BlobNodeType& aBlobNode, uint32_t aKey, uint32_t aSeq, uint32_t aValue)
+				{
+					BlobNodeType::Request req;
+					req.SetKey(aKey);
+					req.SetSeq(aSeq);
+					req.SetBlob(new UInt32Blob(aValue));
+					aBlobNode.Set(&req);
+					JELLY_ALWAYS_ASSERT(aBlobNode.ProcessRequests() == 1);
+					aBlobNode.FlushPendingWAL(0);
+					JELLY_ALWAYS_ASSERT(req.IsCompleted());
+					JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
+				};
+
+				auto del = [](BlobNodeType& aBlobNode, uint32_t aKey, uint32_t aSeq)
+				{
+					BlobNodeType::Request req;
+					req.SetKey(aKey);
+					req.SetSeq(aSeq);
+					aBlobNode.Delete(&req);
+					JELLY_ALWAYS_ASSERT(aBlobNode.ProcessRequests() == 1);
+					aBlobNode.FlushPendingWAL(0);
+					JELLY_ALWAYS_ASSERT(req.IsCompleted());
+					JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
+				};
+
+				auto get = [](BlobNodeType& aBlobNode, uint32_t aKey) -> std::optional<uint32_t>
+				{
+					BlobNodeType::Request req;
+					req.SetKey(aKey);
+					aBlobNode.Get(&req);
+					JELLY_ALWAYS_ASSERT(aBlobNode.ProcessRequests() == 1);
+					JELLY_ALWAYS_ASSERT(req.IsCompleted());
+					if(req.GetResult() == REQUEST_RESULT_DOES_NOT_EXIST)
+						return std::optional<uint32_t>();
+					JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
+					return UInt32Blob::GetValue(req.GetBlob());
+				};
+
+				{
+					BlobNodeType blobNode(aHost, 0);
+
+					set(blobNode, 1, 1, 101);
+					set(blobNode, 2, 1, 102);
+					del(blobNode, 1, 2);
+
+					// Tombstone written to a store
+					blobNode.FlushPendingStore();
+					blobNode.CleanupWALs();
+
+					// Tombstone is the oldest resident item, so new items expel it
+					set(blobNode, 3, 1, 103);
+					set(blobNode, 4, 1, 104);
+
+					JELLY_ALWAYS_ASSERT(!get(blobNode, 1).has_value());
+					JELLY_ALWAYS_ASSERT(get(blobNode, 2) == 102u);
+				}
+
+				// Restore with tombstone in a store
+				{
+					BlobNodeType blobNode(aHost, 0);
+
+					JELLY_ALWAYS_ASSERT(!get(blobNode, 1).has_value());
+					JELLY_ALWAYS_ASSERT(get(blobNode, 2) == 102u);
+
+					// Set deleted key again
+					set(blobNode, 1, 3, 1001);
+					JELLY_ALWAYS_ASSERT(get(blobNode, 1) == 1001u);
+
+					blobNode.FlushPendingStore();
+					blobNode.CleanupWALs();
+
+					// Delete, but only write it to a WAL
+					del(blobNode, 2, 2);
+				}
+
+				// Restore with tombstone in a WAL
+				{
+					BlobNodeType blobNode(aHost, 0);
+
+					JELLY_ALWAYS_ASSERT(get(blobNode, 1) == 1001u);
+					JELLY_ALWAYS_ASSERT(!get(blobNode, 2).has_value());
+
+					blobNode.FlushPendingStore();
+					blobNode.CleanupWALs();
+				}
+
+				{
+					BlobNodeType blobNode(aHost, 0);
+
+					JELLY_ALWAYS_ASSERT(get(blobNode, 1) == 1001u);
+					JELLY_ALWAYS_ASSERT(!get(blobNode, 2).has_value());
+					JELLY_ALWAYS_ASSERT(get(blobNode, 3) == 103u);
+					JELLY_ALWAYS_ASSERT(get(blobNode, 4) == 104u);
 				}
 			}
 
@@ -2118,10 +2465,14 @@ namespace jelly
 
 				// Test delete operation of LockNode
 				_TestLockNodeDelete(&host);
+				_TestLockNodeForced(&host);
+				_TestLockNodeTombstoneNotResurrected(&host);
+				_TestStoreOrigins(&host);
 				_TestCompactionDamagedAndMissingStores(&host);
 
 				// Test delete operation of BlobNode
 				_TestBlobNodeDelete(&host);
+				_TestBlobNodeDeleteFlushAndRestore(&host);
 
 				// Test canceling requests (exactly same code for lock and blob nodes)
 				_TestCancel(&host); 

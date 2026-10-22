@@ -5,13 +5,12 @@
 #if !defined(_WIN32)
 
 #include <jelly/ErrorUtils.h>
+#include <jelly/FileHeader.h>
 #include <jelly/IReader.h>
 #include <jelly/IWriter.h>
 
 namespace jelly
 {
-
-	struct FileHeader;
 
 	namespace IOLinux
 	{
@@ -89,6 +88,7 @@ namespace jelly
 			bool			IsValid() noexcept;
 			size_t			GetSize() const;
 			bool			IsEnd() const noexcept;
+			const FileHeader&	GetHeader() const noexcept { return m_header; }
 
 			// IReader implementation
 			size_t			Read(
@@ -120,6 +120,7 @@ namespace jelly
 			Handle								m_handle;
 			size_t								m_size;
 			size_t								m_totalBytesRead;
+			FileHeader							m_header;
 
 			FileReadBuffer*	_ReadBuffer();
 
@@ -168,10 +169,19 @@ namespace jelly
 			Handle								m_handle;
 			size_t								m_size;
 			size_t								m_nonFlushedBytes;
+			std::string							m_path;
+			bool								m_directorySynced;
 
 			void			_WriteBuffer(
 								FileWriteBuffer*	 aWriteBuffer);
 		};
+
+		//-----------------------------------------------------------------------------------
+
+		// Renames a file and makes sure the rename is on disk before returning. Returns 0 on success, otherwise errno.
+		int					RenameFile(
+								const char*			aFromPath,
+								const char*			aToPath);
 
 	}
 

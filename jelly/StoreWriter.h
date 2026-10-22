@@ -17,7 +17,8 @@ namespace jelly
 						const char*						aTargetPath,
 						const char*						aTempPath,
 						FileStatsContext*				aFileStatsContext,
-						const FileHeader&				aFileHeader);
+						const FileHeader&				aFileHeader,
+						uint32_t						aOriginStoreId);
 		virtual		~StoreWriter();
 
 		bool		IsValid() const noexcept;

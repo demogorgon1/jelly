@@ -37,6 +37,11 @@ namespace jelly
 			uint32_t		m_id = 0;
 			size_t			m_size = 0;
 
+			// Id of the oldest pending store flush that has data in this store: its own id if made by a pending store
+			// flush, or the oldest origin of the stores it was made from if made by a compaction. Stores made before
+			// origins were added have 0. Used for deciding when tombstones can be pruned.
+			uint32_t		m_originStoreId = 0;
+
 			bool operator<(const StoreInfo& aOther) const { return m_id < aOther.m_id; }
 		};
 
@@ -106,10 +111,11 @@ namespace jelly
 											uint32_t				aId,
 											FileStatsContext*		aFileStatsContext) = 0;
 
-		//! Create a new store.
+		//! Create a new store. See StoreInfo for what the origin store id is.
 		virtual IStoreWriter*			CreateStore(
 											uint32_t				aNodeId,
 											uint32_t				aId,
+											uint32_t				aOriginStoreId,
 											FileStatsContext*		aFileStatsContext) = 0;
 		//! Delete an existing store.
 		virtual void					DeleteStore(

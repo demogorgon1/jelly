@@ -188,9 +188,9 @@ namespace jelly
 		_UpdateConcurrentWALStateLowPrio(
 			EventHandler		aEventHandler)
 		{			
-			for (size_t i = 0; i < m_concurrentWALState.size(); i++)
+			for (size_t i = 0; i < m_concurrentWALStateLowPrio.size(); i++)
 			{
-				ConcurrentWALState& concurrentWALState = m_concurrentWALState[i];
+				ConcurrentWALState& concurrentWALState = m_concurrentWALStateLowPrio[i];
 
 				size_t pendingRequests = m_node->GetPendingLowPrioWALRequestCount((uint32_t)i);
 

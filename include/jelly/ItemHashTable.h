@@ -287,9 +287,13 @@ namespace jelly
 				{
 					if(entry->m_item != NULL)
 					{
-						uint64_t hash = entry->m_key.GetHash();
+						// _TryInsert() replaces what it's inserting with whatever it had to push out if it fails, so
+						// pass a copy. If the old table entry itself was passed and rehashing failed, the old table
+						// would lose this item and have another one twice.
+						TableEntry insert = *entry;
+						uint64_t hash = insert.m_key.GetHash();
 
-						if(!_TryInsert(newTable, aNewSize, *entry, hash))
+						if(!_TryInsert(newTable, aNewSize, insert, hash))
 						{
 							delete [] newTable;
 							return false;

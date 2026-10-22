@@ -14,13 +14,18 @@ namespace jelly
 		const char*						aTargetPath,
 		const char*						aTempPath,
 		FileStatsContext*				aFileStatsContext,
-		const FileHeader&				aFileHeader)
+		const FileHeader&				aFileHeader,
+		uint32_t						aOriginStoreId)
 		: m_file(aFileStatsContext, aTempPath, File::MODE_WRITE_STREAM, aFileHeader)
 		, m_targetPath(aTargetPath)
 		, m_tempPath(aTempPath)
 		, m_isFlushed(false)
 	{
 		JELLY_ASSERT(aFileHeader.m_type == FileHeader::TYPE_STORE);
+		JELLY_ASSERT(aFileHeader.m_flags & FileHeader::FLAG_STORE_ORIGIN);
+
+		// Origin follows header (see IHost::StoreInfo)
+		m_file.Write(&aOriginStoreId, sizeof(aOriginStoreId));
 	}
 
 	StoreWriter::~StoreWriter()

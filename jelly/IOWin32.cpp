@@ -106,7 +106,7 @@ namespace jelly
 			{
 				FileHeader header;
 				ReadAtOffset(0, &header, sizeof(header));
-				JELLY_CHECK(header == aHeader, Exception::ERROR_FILE_READ_RANDOM_HEADER_MISMATCH, "Path=%s", aPath);
+				JELLY_CHECK(aHeader.Accepts(header), Exception::ERROR_FILE_READ_RANDOM_HEADER_MISMATCH, "Path=%s", aPath);
 			}
 		}
 		
@@ -170,13 +170,12 @@ namespace jelly
 
 				if(m_handle.IsSet() && m_size > 0)
 				{
-					FileHeader header;					
 					DWORD bytes;
-					BOOL result = ReadFile(m_handle, &header, (DWORD)sizeof(header), &bytes, NULL);
-					JELLY_CHECK(result != 0 && bytes == (DWORD)sizeof(header), Exception::ERROR_FILE_READ_STREAM_FAILED_TO_READ_HEADER, "Path=%s;ErrorCode=%u", aPath, GetLastError());
-					JELLY_CHECK(header == aHeader, Exception::ERROR_FILE_READ_STREAM_HEADER_MISMATCH, "Path=%s", aPath);
+					BOOL result = ReadFile(m_handle, &m_header, (DWORD)sizeof(m_header), &bytes, NULL);
+					JELLY_CHECK(result != 0 && bytes == (DWORD)sizeof(m_header), Exception::ERROR_FILE_READ_STREAM_FAILED_TO_READ_HEADER, "Path=%s;ErrorCode=%u", aPath, GetLastError());
+					JELLY_CHECK(aHeader.Accepts(m_header), Exception::ERROR_FILE_READ_STREAM_HEADER_MISMATCH, "Path=%s", aPath);
 
-					m_totalBytesRead += sizeof(header);
+					m_totalBytesRead += sizeof(m_header);
 				}
 			}
 		}

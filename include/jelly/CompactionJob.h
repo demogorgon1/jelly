@@ -6,9 +6,10 @@ namespace jelly
 	/** 
 	* \brief Description of a minor compaction job (some stores turned into one). 
 	* 
-	* Tombstones are only pruned if the job includes all stores, as stores made by compactions
-	* get new ids: a store that isn't included could have an older version of a deleted item,
-	* even if its id is newer than the tombstone's. The "oldest store id" isn't used for this.
+	* Tombstones are pruned based on the origins of the stores that aren't included (see
+	* IHost::StoreInfo and Compaction::GetStoreOrigins()). The "oldest store id" isn't used for this,
+	* as stores made by compactions get new ids, so a store with a newer id than a tombstone's could
+	* still have an older version of the deleted item.
 	*/
 	struct CompactionJob
 	{

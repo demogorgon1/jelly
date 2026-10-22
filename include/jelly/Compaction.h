@@ -13,11 +13,22 @@ namespace jelly
 	namespace Compaction
 	{
 
-		// Returns the store id to pass to ItemBase::ShouldBePruned() when compacting the specified stores. Tombstones can
-		// only be pruned if all stores are part of the compaction: stores made by compactions get new (higher) ids, so any
-		// store not included could have an older version of a deleted item, which would come back after a restart.
-		inline uint32_t
-		GetPruneTombstonesStoreId(
+		struct StoreOrigins
+		{
+			uint32_t		m_newStoreOriginStoreId = 0;			//!< Origin of the store made by the compaction
+			uint32_t		m_pruneTombstonesStoreId = UINT32_MAX;	//!< Store id to pass to ItemBase::ShouldBePruned()
+		};
+
+		// Determines origins (see IHost::StoreInfo) when compacting the specified stores:
+		//
+		// - The store made by the compaction has the oldest origin of the stores it's made from.
+		//
+		// - A tombstone's store id is the id the next pending store flush had when the item was deleted, so older versions
+		//   of the item can only be in stores with older origins (store ids don't tell, as stores made by compactions get
+		//   new ids). Older versions in the stores being compacted are replaced by the tombstone, so it can be pruned if
+		//   none of the other stores have an older origin. Otherwise the older version would come back after a restart.
+		inline StoreOrigins
+		GetStoreOrigins(
 			IHost*										aHost,
 			uint32_t									aNodeId,
 			const std::vector<uint32_t>&				aStoreIds)
@@ -25,13 +36,27 @@ namespace jelly
 			std::vector<IHost::StoreInfo> storeInfo;
 			aHost->GetStoreInfo(aNodeId, storeInfo);
 
+			uint32_t oldestCompactedOrigin = UINT32_MAX;
+			uint32_t oldestOtherOrigin = UINT32_MAX;
+
 			for(const IHost::StoreInfo& store : storeInfo)
 			{
-				if(std::find(aStoreIds.cbegin(), aStoreIds.cend(), store.m_id) == aStoreIds.cend())
-					return 0; // Don't prune any tombstones
+				if(std::find(aStoreIds.cbegin(), aStoreIds.cend(), store.m_id) != aStoreIds.cend())
+					oldestCompactedOrigin = std::min<uint32_t>(oldestCompactedOrigin, store.m_originStoreId);
+				else
+					oldestOtherOrigin = std::min<uint32_t>(oldestOtherOrigin, store.m_originStoreId);
 			}
 
-			return UINT32_MAX; // Prune all tombstones
+			StoreOrigins t;
+
+			if(oldestCompactedOrigin != UINT32_MAX)
+				t.m_newStoreOriginStoreId = oldestCompactedOrigin;
+
+			// ShouldBePruned() prunes tombstones with store ids lower than this, i.e. not newer than the oldest other origin
+			if(oldestOtherOrigin != UINT32_MAX)
+				t.m_pruneTombstonesStoreId = oldestOtherOrigin + 1;
+
+			return t;
 		}
 
 		// Do a compaction of just 2 stores
@@ -41,8 +66,9 @@ namespace jelly
 			IHost*										aHost,
 			uint32_t									aNodeId,
 			FileStatsContext*							aStoreFileStatsContext,
-			uint32_t									aOldestStoreId,
+			uint32_t									aPruneTombstonesStoreId,
 			uint32_t									aNewStoreId,
+			uint32_t									aNewStoreOriginStoreId,
 			uint32_t									aStoreId1,
 			uint32_t									aStoreId2,
 			CompactionResult<_KeyType>*					aOut)
@@ -55,7 +81,7 @@ namespace jelly
 				return 0; // Could be that the stores no longer exists, just don't do anything then
 
 			{
-				std::unique_ptr<IStoreWriter> fOut(aHost->CreateStore(aNodeId, aNewStoreId, aStoreFileStatsContext));
+				std::unique_ptr<IStoreWriter> fOut(aHost->CreateStore(aNodeId, aNewStoreId, aNewStoreOriginStoreId, aStoreFileStatsContext));
 				JELLY_CHECK(fOut, Exception::ERROR_COMPACTION_FAILED_TO_OPEN_OUTPUT_STORE, "NewStoreId=%u", aNewStoreId);
 
 				_ItemType item1;
@@ -77,7 +103,7 @@ namespace jelly
 
 					if (hasItem1 && !hasItem2)
 					{
-						uint64_t offset = item1.CompactionWrite(aOldestStoreId, fOut.get());
+						uint64_t offset = item1.CompactionWrite(aPruneTombstonesStoreId, fOut.get());
 						if(offset != UINT64_MAX)
 							aOut->AddItem(item1.GetKey(), item1.GetSeq(), aNewStoreId, offset);
 
@@ -86,7 +112,7 @@ namespace jelly
 					}
 					else if (!hasItem1 && hasItem2)
 					{
-						uint64_t offset = item2.CompactionWrite(aOldestStoreId, fOut.get());
+						uint64_t offset = item2.CompactionWrite(aPruneTombstonesStoreId, fOut.get());
 						if (offset != UINT64_MAX)
 							aOut->AddItem(item2.GetKey(), item2.GetSeq(), aNewStoreId, offset);
 
@@ -99,7 +125,7 @@ namespace jelly
 
 						if (item1.GetKey() < item2.GetKey())
 						{
-							uint64_t offset = item1.CompactionWrite(aOldestStoreId, fOut.get());
+							uint64_t offset = item1.CompactionWrite(aPruneTombstonesStoreId, fOut.get());
 							if (offset != UINT64_MAX)
 								aOut->AddItem(item1.GetKey(), item1.GetSeq(), aNewStoreId, offset);
 
@@ -108,7 +134,7 @@ namespace jelly
 						}
 						else if (item2.GetKey() < item1.GetKey())
 						{
-							uint64_t offset = item2.CompactionWrite(aOldestStoreId, fOut.get());
+							uint64_t offset = item2.CompactionWrite(aPruneTombstonesStoreId, fOut.get());
 							if (offset != UINT64_MAX)
 								aOut->AddItem(item2.GetKey(), item2.GetSeq(), aNewStoreId, offset);
 
@@ -124,12 +150,12 @@ namespace jelly
 							if (item1.GetSeq() > item2.GetSeq())
 							{
 								seq = item1.GetSeq();
-								offset = item1.CompactionWrite(aOldestStoreId, fOut.get());
+								offset = item1.CompactionWrite(aPruneTombstonesStoreId, fOut.get());
 							}
 							else
 							{
 								seq = item2.GetSeq();
-								offset = item2.CompactionWrite(aOldestStoreId, fOut.get());
+								offset = item2.CompactionWrite(aPruneTombstonesStoreId, fOut.get());
 							}
 
 							if (offset != UINT64_MAX)
@@ -157,8 +183,9 @@ namespace jelly
 			IHost*										aHost,
 			uint32_t									aNodeId,
 			FileStatsContext*							aStoreFileStatsContext,
-			uint32_t									aOldestStoreId,
+			uint32_t									aPruneTombstonesStoreId,
 			uint32_t									aNewStoreId,
+			uint32_t									aNewStoreOriginStoreId,
 			const std::vector<uint32_t>&				aStoreIds,
 			CompactionResult<_KeyType>*					aOut)
 		{
@@ -198,7 +225,7 @@ namespace jelly
 				return 0;
 
 			// Open output store
-			std::unique_ptr<IStoreWriter> outputStore(aHost->CreateStore(aNodeId, aNewStoreId, aStoreFileStatsContext));
+			std::unique_ptr<IStoreWriter> outputStore(aHost->CreateStore(aNodeId, aNewStoreId, aNewStoreOriginStoreId, aStoreFileStatsContext));
 			JELLY_CHECK(outputStore, Exception::ERROR_COMPACTION_FAILED_TO_OPEN_OUTPUT_STORE, "NewStoreId=%u", aNewStoreId);
 
 			// Perform the compaction
@@ -258,7 +285,7 @@ namespace jelly
 				{
 					_ItemType& sourceItem = lowestKeySourceStores[0]->m_item;
 
-					size_t offset = sourceItem.CompactionWrite(aOldestStoreId, outputStore.get());
+					size_t offset = sourceItem.CompactionWrite(aPruneTombstonesStoreId, outputStore.get());
 
 					if(offset != UINT64_MAX)
 						aOut->AddItem(lowestKey.value(), sourceItem.GetSeq(), aNewStoreId, offset);
@@ -291,12 +318,12 @@ namespace jelly
 		{
 			aOut->SetStoreIds(aCompactionJob.m_storeIds);
 
-			uint32_t pruneTombstonesStoreId = GetPruneTombstonesStoreId(aHost, aNodeId, aCompactionJob.m_storeIds);
+			StoreOrigins origins = GetStoreOrigins(aHost, aNodeId, aCompactionJob.m_storeIds);
 
 			if(aCompactionJob.m_storeIds.size() == 2)
-				return PerformOnTwoStores<_KeyType, _ItemType>(aHost, aNodeId, aStoreFileStatsContext, pruneTombstonesStoreId, aNewStoreId, aCompactionJob.m_storeIds[0], aCompactionJob.m_storeIds[1], aOut);
+				return PerformOnTwoStores<_KeyType, _ItemType>(aHost, aNodeId, aStoreFileStatsContext, origins.m_pruneTombstonesStoreId, aNewStoreId, origins.m_newStoreOriginStoreId, aCompactionJob.m_storeIds[0], aCompactionJob.m_storeIds[1], aOut);
 			else
-				return PerformOnStoreList<_KeyType, _ItemType>(aHost, aNodeId, aStoreFileStatsContext, pruneTombstonesStoreId, aNewStoreId, aCompactionJob.m_storeIds, aOut);
+				return PerformOnStoreList<_KeyType, _ItemType>(aHost, aNodeId, aStoreFileStatsContext, origins.m_pruneTombstonesStoreId, aNewStoreId, origins.m_newStoreOriginStoreId, aCompactionJob.m_storeIds, aOut);
 		}
 		
 		// Do a "major" compaction of everything.
@@ -322,13 +349,12 @@ namespace jelly
 
 				aOut->SetStoreIds(storeIds);
 
-				// The newest store isn't included, so this will never prune tombstones
-				uint32_t pruneTombstonesStoreId = GetPruneTombstonesStoreId(aHost, aNodeId, storeIds);
+				StoreOrigins origins = GetStoreOrigins(aHost, aNodeId, storeIds);
 
 				if (storeIds.size() == 2)
-					return PerformOnTwoStores<_KeyType, _ItemType>(aHost, aNodeId, aStoreFileStatsContext, pruneTombstonesStoreId, aNewStoreId, storeIds[0], storeIds[1], aOut);
+					return PerformOnTwoStores<_KeyType, _ItemType>(aHost, aNodeId, aStoreFileStatsContext, origins.m_pruneTombstonesStoreId, aNewStoreId, origins.m_newStoreOriginStoreId, storeIds[0], storeIds[1], aOut);
 				else
-					return PerformOnStoreList<_KeyType, _ItemType>(aHost, aNodeId, aStoreFileStatsContext, pruneTombstonesStoreId, aNewStoreId, storeIds, aOut);
+					return PerformOnStoreList<_KeyType, _ItemType>(aHost, aNodeId, aStoreFileStatsContext, origins.m_pruneTombstonesStoreId, aNewStoreId, origins.m_newStoreOriginStoreId, storeIds, aOut);
 			}
 
 			return 0;

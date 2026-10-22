@@ -1,6 +1,7 @@
 // Big pile of node testing mess. Not making any allusions about this providing full covering of everything,
 // as it's more of a "shotgun" approach to testing. It covers a lot of stuff, but definetely not all.
 
+#include <fstream>
 #include <optional>
 #include <random>
 #include <unordered_set>
@@ -1369,14 +1370,14 @@ namespace jelly
 					}
 				}
 
-				// Now we should have 1 store less
+				// Now we should have 1 store less. Tombstone is gone, as the stores that weren't part of the compaction (2 and 3)
+				// have newer origins than the tombstone (0), so they can't have older versions of key 1.
 				_VerifyLockNodeStore(aHost, 0, 2, { { 3, 1, 100, UINT32_MAX, { }, UINT32_MAX } }); // key 3 lock
 				_VerifyLockNodeStore(aHost, 0, 3, { { 4, 1, 100, UINT32_MAX, { }, UINT32_MAX } }); // key 4 lock
 				_VerifyLockNodeStore(aHost, 0, 4,
-				{ 
-					{ 1, 3, 0, UINT32_MAX, { }, 0 }, // key 1 tombstone
+				{
 					{ 2, 1, 100, UINT32_MAX, { }, UINT32_MAX }, // key 2 lock
-				}); 
+				});
 
 				// Restart
 
@@ -1401,12 +1402,10 @@ namespace jelly
 					lockNode.ApplyCompactionResult(compactionResult.get());
 				}
 
-				// Tombstone is still there, as stores 2 and 5 weren't part of the compaction (see _TestLockNodeTombstoneNotResurrected())
 				_VerifyLockNodeStore(aHost, 0, 2, { { 3, 1, 100, UINT32_MAX, { }, UINT32_MAX } }); // key 3 lock
 				_VerifyLockNodeStore(aHost, 0, 5, { { 5, 1, 100, UINT32_MAX, { }, UINT32_MAX } }); // key 5 lock
 				_VerifyLockNodeStore(aHost, 0, 6,
 				{
-					{ 1, 3, 0, UINT32_MAX, { }, 0 }, // key 1 tombstone
 					{ 2, 1, 100, UINT32_MAX, { }, UINT32_MAX }, // key 2 lock
 					{ 4, 1, 100, UINT32_MAX, { }, UINT32_MAX } // key 4 lock
 				});
@@ -1496,7 +1495,7 @@ namespace jelly
 					lockAndFlush(lockNode, 6, false);	// Store 7
 
 					// Oldest store (3) is newer than the tombstone's store (2), but store 3 still has the old version of
-					// key 1, so the tombstone must be kept
+					// key 1 (its origin is 0), so the tombstone must be kept
 					compact(lockNode, 3, { 5, 6 });		// Store 8
 				}
 
@@ -1516,6 +1515,89 @@ namespace jelly
 
 					JELLY_ALWAYS_ASSERT(getKey1(lockNode) == NULL);
 				}
+			}
+
+			void
+			_TestStoreOrigins(
+				TestDefaultHost*		aHost)
+			{
+				aHost->DeleteAllFiles(UINT32_MAX);
+				aHost->GetDefaultConfigSource()->Clear();
+
+				auto getOrigins = [aHost]() -> std::map<uint32_t, uint32_t>
+				{
+					std::vector<IHost::StoreInfo> storeInfo;
+					aHost->GetStoreInfo(0, storeInfo);
+
+					std::map<uint32_t, uint32_t> origins;
+					for(const IHost::StoreInfo& store : storeInfo)
+						origins[store.m_id] = store.m_originStoreId;
+					return origins;
+				};
+
+				{
+					LockNodeType lockNode(aHost, 0);
+
+					for(uint32_t key = 1; key <= 3; key++)
+					{
+						LockNodeType::Request req;
+						req.SetKey(key);
+						req.SetLock(100);
+						lockNode.Lock(&req);
+						JELLY_ALWAYS_ASSERT(lockNode.ProcessRequests() == 1);
+						lockNode.FlushPendingWAL(0);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
+						lockNode.FlushPendingStore(); // Stores 0, 1, 2
+					}
+
+					// Stores made by pending store flushes are their own origins
+					JELLY_ALWAYS_ASSERT((getOrigins() == std::map<uint32_t, uint32_t>{ { 0, 0 }, { 1, 1 }, { 2, 2 } }));
+
+					// Store made by compaction has the oldest origin of the stores it's made from
+					std::unique_ptr<CompactionResultType> compactionResult(lockNode.PerformCompaction(CompactionJob(0, 1, 2)));
+					lockNode.ApplyCompactionResult(compactionResult.get());
+
+					JELLY_ALWAYS_ASSERT((getOrigins() == std::map<uint32_t, uint32_t>{ { 0, 0 }, { 3, 1 } }));
+				}
+
+				// Turn store 3 into a store from before origins were added: no origin flag in the header, and no origin
+				// after it
+				{
+					std::string path = aHost->GetStorePath(0, 3);
+
+					std::vector<uint8_t> data(std::filesystem::file_size(path));
+					{
+						std::ifstream f(path, std::ios::binary);
+						f.read((char*)&data[0], (std::streamsize)data.size());
+					}
+
+					FileHeader* header = (FileHeader*)&data[0];
+					JELLY_ALWAYS_ASSERT(header->m_flags & FileHeader::FLAG_STORE_ORIGIN);
+					header->m_flags &= ~FileHeader::FLAG_STORE_ORIGIN;
+					data.erase(data.begin() + sizeof(FileHeader), data.begin() + sizeof(FileHeader) + sizeof(uint32_t));
+
+					std::ofstream f(path, std::ios::binary | std::ios::trunc);
+					f.write((const char*)&data[0], (std::streamsize)data.size());
+				}
+
+				// Can still be read, and has origin 0
+				JELLY_ALWAYS_ASSERT((getOrigins() == std::map<uint32_t, uint32_t>{ { 0, 0 }, { 3, 0 } }));
+
+				{
+					LockNodeType lockNode(aHost, 0);
+
+					size_t count = 0;
+					lockNode.ForEach([&count](const LockNodeType::Item* aItem)
+					{
+						JELLY_ALWAYS_ASSERT(aItem->GetLock().m_value == 100);
+						count++;
+						return true;
+					});
+
+					JELLY_ALWAYS_ASSERT(count == 3);
+				}
+
+				aHost->DeleteAllFiles(UINT32_MAX);
 			}
 
 			void
@@ -2156,6 +2238,7 @@ namespace jelly
 				// Test delete operation of LockNode
 				_TestLockNodeDelete(&host);
 				_TestLockNodeTombstoneNotResurrected(&host);
+				_TestStoreOrigins(&host);
 
 				// Test delete operation of BlobNode
 				_TestBlobNodeDelete(&host);

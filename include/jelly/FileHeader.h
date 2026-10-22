@@ -15,7 +15,8 @@ namespace jelly
 		enum Flag : uint8_t
 		{
 			FLAG_ITEM_COMPRESSION = 0x01,
-			FLAG_STREAM_COMPRESSION = 0x02
+			FLAG_STREAM_COMPRESSION = 0x02,
+			FLAG_STORE_ORIGIN = 0x04		// Header is followed by the store's origin id (uint32_t), see IHost::StoreInfo
 		};
 
 		FileHeader(
@@ -34,6 +35,17 @@ namespace jelly
 			const FileHeader&			aOther) const noexcept
 		{
 			return m_type == aOther.m_type && m_flags == aOther.m_flags && m_compressionId == aOther.m_compressionId;
+		}
+
+		// Returns true if a file with this (expected) header can read a file with the specified header. Stores can have
+		// an origin or not (stores written before origins were added don't).
+		bool
+		Accepts(
+			const FileHeader&			aActual) const noexcept
+		{
+			return m_type == aActual.m_type &&
+				(m_flags & ~FLAG_STORE_ORIGIN) == (aActual.m_flags & ~FLAG_STORE_ORIGIN) &&
+				m_compressionId == aActual.m_compressionId;
 		}
 
 		// Public data

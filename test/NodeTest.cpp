@@ -1682,6 +1682,110 @@ namespace jelly
 			}
 
 			void
+			_TestBlobNodeDeleteFlushAndRestore(
+				TestDefaultHost*		aHost)
+			{
+				aHost->DeleteAllFiles(UINT32_MAX);
+				aHost->GetDefaultConfigSource()->Clear();
+				aHost->GetDefaultConfigSource()->Set(jelly::Config::ID_MAX_RESIDENT_BLOB_COUNT, "2");
+
+				auto set = [](BlobNodeType& aBlobNode, uint32_t aKey, uint32_t aSeq, uint32_t aValue)
+				{
+					BlobNodeType::Request req;
+					req.SetKey(aKey);
+					req.SetSeq(aSeq);
+					req.SetBlob(new UInt32Blob(aValue));
+					aBlobNode.Set(&req);
+					JELLY_ALWAYS_ASSERT(aBlobNode.ProcessRequests() == 1);
+					aBlobNode.FlushPendingWAL(0);
+					JELLY_ALWAYS_ASSERT(req.IsCompleted());
+					JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
+				};
+
+				auto del = [](BlobNodeType& aBlobNode, uint32_t aKey, uint32_t aSeq)
+				{
+					BlobNodeType::Request req;
+					req.SetKey(aKey);
+					req.SetSeq(aSeq);
+					aBlobNode.Delete(&req);
+					JELLY_ALWAYS_ASSERT(aBlobNode.ProcessRequests() == 1);
+					aBlobNode.FlushPendingWAL(0);
+					JELLY_ALWAYS_ASSERT(req.IsCompleted());
+					JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
+				};
+
+				auto get = [](BlobNodeType& aBlobNode, uint32_t aKey) -> std::optional<uint32_t>
+				{
+					BlobNodeType::Request req;
+					req.SetKey(aKey);
+					aBlobNode.Get(&req);
+					JELLY_ALWAYS_ASSERT(aBlobNode.ProcessRequests() == 1);
+					JELLY_ALWAYS_ASSERT(req.IsCompleted());
+					if(req.GetResult() == REQUEST_RESULT_DOES_NOT_EXIST)
+						return std::optional<uint32_t>();
+					JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
+					return UInt32Blob::GetValue(req.GetBlob());
+				};
+
+				{
+					BlobNodeType blobNode(aHost, 0);
+
+					set(blobNode, 1, 1, 101);
+					set(blobNode, 2, 1, 102);
+					del(blobNode, 1, 2);
+
+					// Tombstone written to a store
+					blobNode.FlushPendingStore();
+					blobNode.CleanupWALs();
+
+					// Tombstone is the oldest resident item, so new items expel it
+					set(blobNode, 3, 1, 103);
+					set(blobNode, 4, 1, 104);
+
+					JELLY_ALWAYS_ASSERT(!get(blobNode, 1).has_value());
+					JELLY_ALWAYS_ASSERT(get(blobNode, 2) == 102u);
+				}
+
+				// Restore with tombstone in a store
+				{
+					BlobNodeType blobNode(aHost, 0);
+
+					JELLY_ALWAYS_ASSERT(!get(blobNode, 1).has_value());
+					JELLY_ALWAYS_ASSERT(get(blobNode, 2) == 102u);
+
+					// Set deleted key again
+					set(blobNode, 1, 3, 1001);
+					JELLY_ALWAYS_ASSERT(get(blobNode, 1) == 1001u);
+
+					blobNode.FlushPendingStore();
+					blobNode.CleanupWALs();
+
+					// Delete, but only write it to a WAL
+					del(blobNode, 2, 2);
+				}
+
+				// Restore with tombstone in a WAL
+				{
+					BlobNodeType blobNode(aHost, 0);
+
+					JELLY_ALWAYS_ASSERT(get(blobNode, 1) == 1001u);
+					JELLY_ALWAYS_ASSERT(!get(blobNode, 2).has_value());
+
+					blobNode.FlushPendingStore();
+					blobNode.CleanupWALs();
+				}
+
+				{
+					BlobNodeType blobNode(aHost, 0);
+
+					JELLY_ALWAYS_ASSERT(get(blobNode, 1) == 1001u);
+					JELLY_ALWAYS_ASSERT(!get(blobNode, 2).has_value());
+					JELLY_ALWAYS_ASSERT(get(blobNode, 3) == 103u);
+					JELLY_ALWAYS_ASSERT(get(blobNode, 4) == 104u);
+				}
+			}
+
+			void
 			_TestBlobNodeMemoryLimit(
 				TestDefaultHost*		aHost)
 			{
@@ -2242,6 +2346,7 @@ namespace jelly
 
 				// Test delete operation of BlobNode
 				_TestBlobNodeDelete(&host);
+				_TestBlobNodeDeleteFlushAndRestore(&host);
 
 				// Test canceling requests (exactly same code for lock and blob nodes)
 				_TestCancel(&host); 

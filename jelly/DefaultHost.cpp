@@ -37,7 +37,7 @@ namespace jelly
 
 		{
 			// Make sure that no other host operates in the same root
-			std::string fileLockPath = StringUtils::Format("%s/%shost.lck", aRoot, aFilePrefix);
+			std::string fileLockPath = StringUtils::Format("%s/%shost.lck", aRoot, m_filePrefix.c_str());
 			m_fileLock = std::make_unique<File>(nullptr, fileLockPath.c_str(), File::MODE_MUTEX, FileHeader(FileHeader::TYPE_NONE));
 		}
 
@@ -70,7 +70,7 @@ namespace jelly
 		}
 
 		// Initialize store manager
-		m_storeManager = std::make_unique<StoreManager>(aRoot, aFilePrefix, _GetStoreFileHeader());
+		m_storeManager = std::make_unique<StoreManager>(aRoot, m_filePrefix.c_str(), _GetStoreFileHeader());
 	}
 	
 	DefaultHost::~DefaultHost()
@@ -296,7 +296,7 @@ namespace jelly
 	{
 		std::error_code errorCode;
 		std::filesystem::remove(PathUtils::MakePath(m_root.c_str(), m_filePrefix.c_str(), PathUtils::FILE_TYPE_WAL, aNodeId, aId).c_str(), errorCode);
-		JELLY_CHECK(!errorCode, Exception::ERROR_FAILED_TO_DELETE_WAL, "NodeId=%u;Id=%u;Msg=%s", aNodeId, aNodeId, errorCode.message().c_str());
+		JELLY_CHECK(!errorCode, Exception::ERROR_FAILED_TO_DELETE_WAL, "NodeId=%u;Id=%u;Msg=%s", aNodeId, aId, errorCode.message().c_str());
 	}
 	
 	IFileStreamReader*

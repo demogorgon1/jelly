@@ -47,7 +47,8 @@ namespace jelly
 		};
 
 		CompactionResult() noexcept
-			: m_isMajorCompaction(false) 
+			: m_isMajorCompaction(false)
+			, m_nothingCompacted(false)
 		{
 
 		}
@@ -80,16 +81,25 @@ namespace jelly
 			m_isMajorCompaction = aMajorCompaction;
 		}
 
+		//! Nothing was compacted (for example because some of the stores no longer exist), so the stores mustn't be deleted
+		void
+		SetNothingCompacted() noexcept
+		{
+			m_nothingCompacted = true;
+		}
+
 		// Data access
 		bool								IsMajorCompaction() const noexcept { return m_isMajorCompaction; }
+		bool								IsNothingCompacted() const noexcept { return m_nothingCompacted; }
 		const std::vector<Item>&			GetItems() const noexcept { return m_items; }
 		const std::vector<uint32_t>&		GetStoreIds() const noexcept { return m_storeIds; }
-		
+
 	private:
-		
+
 		std::vector<Item>													m_items;
 		std::vector<uint32_t>												m_storeIds;
 		bool																m_isMajorCompaction;
+		bool																m_nothingCompacted;
 	};
 
 }

@@ -39,8 +39,8 @@ namespace jelly
 			std::unordered_set<uint32_t> storeIdSet;
 			for(uint32_t storeId : m_storeIds)
 			{
-				if(storeIdSet.find(storeId) != storeIdSet.end())
-					return false;
+				if(!storeIdSet.insert(storeId).second)
+					return false; // Same store more than once
 			}
 			return true;
 		}

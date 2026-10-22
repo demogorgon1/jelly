@@ -136,8 +136,7 @@ namespace jelly
 
 			DWORD bytesRead;
 			BOOL result = ReadFile(m_handle, aBuffer, (DWORD)aBufferSize, &bytesRead, &overlapped);
-			JELLY_CHECK(result != 0, Exception::ERROR_FILE_READ_RANDOM_FAILED_TO_READ, "Offset=%zu;BufferSize=%zu", aOffset, aBufferSize);
-			JELLY_ASSERT(bytesRead == (DWORD)aBufferSize);
+			JELLY_CHECK(result != 0 && bytesRead == (DWORD)aBufferSize, Exception::ERROR_FILE_READ_RANDOM_FAILED_TO_READ, "Offset=%zu;BufferSize=%zu;BytesRead=%u", aOffset, aBufferSize, bytesRead);
 		}
 
 		//-----------------------------------------------------------------------------------

@@ -1401,14 +1401,121 @@ namespace jelly
 					lockNode.ApplyCompactionResult(compactionResult.get());
 				}
 
-				// Tombstone should be gone now
+				// Tombstone is still there, as stores 2 and 5 weren't part of the compaction (see _TestLockNodeTombstoneNotResurrected())
 				_VerifyLockNodeStore(aHost, 0, 2, { { 3, 1, 100, UINT32_MAX, { }, UINT32_MAX } }); // key 3 lock
 				_VerifyLockNodeStore(aHost, 0, 5, { { 5, 1, 100, UINT32_MAX, { }, UINT32_MAX } }); // key 5 lock
 				_VerifyLockNodeStore(aHost, 0, 6,
-				{ 
+				{
+					{ 1, 3, 0, UINT32_MAX, { }, 0 }, // key 1 tombstone
 					{ 2, 1, 100, UINT32_MAX, { }, UINT32_MAX }, // key 2 lock
 					{ 4, 1, 100, UINT32_MAX, { }, UINT32_MAX } // key 4 lock
-				}); 
+				});
+			}
+
+			void
+			_TestLockNodeTombstoneNotResurrected(
+				TestDefaultHost*		aHost)
+			{
+				aHost->DeleteAllFiles(UINT32_MAX);
+				aHost->GetDefaultConfigSource()->Clear();
+
+				auto lockAndFlush = [](LockNodeType& aLockNode, uint32_t aKey, bool aUnlock)
+				{
+					{
+						LockNodeType::Request req;
+						req.SetKey(aKey);
+						req.SetLock(100);
+						aLockNode.Lock(&req);
+						JELLY_ALWAYS_ASSERT(aLockNode.ProcessRequests() == 1);
+						aLockNode.FlushPendingWAL(0);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
+					}
+
+					if(aUnlock)
+					{
+						LockNodeType::Request req;
+						req.SetKey(aKey);
+						req.SetLock(100);
+						aLockNode.Unlock(&req);
+						JELLY_ALWAYS_ASSERT(aLockNode.ProcessRequests() == 1);
+						aLockNode.FlushPendingWAL(0);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
+					}
+
+					aLockNode.FlushPendingStore();
+				};
+
+				auto compact = [](LockNodeType& aLockNode, uint32_t aOldestStoreId, const std::vector<uint32_t>& aStoreIds)
+				{
+					CompactionJob job(aOldestStoreId);
+					job.m_storeIds = aStoreIds;
+					std::unique_ptr<CompactionResultType> compactionResult(aLockNode.PerformCompaction(job));
+					aLockNode.ApplyCompactionResult(compactionResult.get());
+				};
+
+				auto getKey1 = [](LockNodeType& aLockNode) -> const LockNodeType::Item*
+				{
+					const LockNodeType::Item* found = NULL;
+					aLockNode.ForEach([&](const LockNodeType::Item* aItem)
+					{
+						if(aItem->GetKey() == UIntKey<uint32_t>(1))
+							found = aItem;
+						return found == NULL;
+					});
+					return found;
+				};
+
+				{
+					LockNodeType lockNode(aHost, 0);
+
+					lockAndFlush(lockNode, 1, true);	// Store 0: key 1
+					lockAndFlush(lockNode, 2, false);	// Store 1: key 2
+
+					// Delete key 1, tombstone in store 2
+					{
+						LockNodeType::Request req;
+						req.SetKey(1);
+						lockNode.Delete(&req);
+						JELLY_ALWAYS_ASSERT(lockNode.ProcessRequests() == 1);
+						lockNode.FlushPendingWAL(0);
+						JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
+						lockNode.FlushPendingStore();
+					}
+				}
+
+				// Restart, which deletes the WALs (everything in them is in stores), so only stores have key 1
+				{
+					LockNodeType lockNode(aHost, 0);
+
+					// Old version of key 1 moves to store 3, which has a higher id than the tombstone
+					compact(lockNode, 0, { 0, 1 });
+
+					lockAndFlush(lockNode, 3, false);	// Store 4
+					compact(lockNode, 2, { 2, 4 });		// Store 5: tombstone
+					lockAndFlush(lockNode, 5, false);	// Store 6
+					lockAndFlush(lockNode, 6, false);	// Store 7
+
+					// Oldest store (3) is newer than the tombstone's store (2), but store 3 still has the old version of
+					// key 1, so the tombstone must be kept
+					compact(lockNode, 3, { 5, 6 });		// Store 8
+				}
+
+				// Key 1 must still be deleted after a restart
+				{
+					LockNodeType lockNode(aHost, 0);
+
+					const LockNodeType::Item* item = getKey1(lockNode);
+					JELLY_ALWAYS_ASSERT(item != NULL && item->HasTombstone());
+
+					// Compacting all stores removes both the tombstone and the old version
+					compact(lockNode, 3, { 3, 7, 8 });
+				}
+
+				{
+					LockNodeType lockNode(aHost, 0);
+
+					JELLY_ALWAYS_ASSERT(getKey1(lockNode) == NULL);
+				}
 			}
 
 			void
@@ -2048,6 +2155,7 @@ namespace jelly
 
 				// Test delete operation of LockNode
 				_TestLockNodeDelete(&host);
+				_TestLockNodeTombstoneNotResurrected(&host);
 
 				// Test delete operation of BlobNode
 				_TestBlobNodeDelete(&host);

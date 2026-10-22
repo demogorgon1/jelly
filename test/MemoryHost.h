@@ -53,6 +53,7 @@ namespace jelly
 			IStoreWriter*			CreateStore(
 										uint32_t					aNodeId,
 										uint32_t					aId,
+										uint32_t					aOriginStoreId,
 										FileStatsContext*			aFileStatsContext) override;
 			void					DeleteStore(
 										uint32_t					aNodeId,

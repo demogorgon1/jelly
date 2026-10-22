@@ -6,11 +6,10 @@ namespace jelly
 	/** 
 	* \brief Description of a minor compaction job (some stores turned into one). 
 	* 
-	* The "oldest store id" is required for pruning tombstones: every tombstone has an 
-	* inscription mentioning the latest store id at time of deletion. When a tombstone
-	* is encountered during the compaction process, the inscriped store id is compared 
-	* with the current oldest one. If the oldest one is newer it means that no present 
-	* store can possilby have references to this item - so it can safely be deleted.
+	* Tombstones are pruned based on the origins of the stores that aren't included (see
+	* IHost::StoreInfo and Compaction::GetStoreOrigins()). The "oldest store id" isn't used for this,
+	* as stores made by compactions get new ids, so a store with a newer id than a tombstone's could
+	* still have an older version of the deleted item.
 	*/
 	struct CompactionJob
 	{

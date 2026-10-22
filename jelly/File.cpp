@@ -163,6 +163,16 @@ namespace jelly
 		return m_internal->m_fileReadStream->IsEnd();
 	}
 
+	const FileHeader&
+	File::GetHeader() const
+	{
+		JELLY_ASSERT(m_internal != NULL);
+		JELLY_ASSERT(m_internal->m_mode == MODE_READ_STREAM);
+		JELLY_ASSERT(m_internal->m_fileReadStream);
+
+		return m_internal->m_fileReadStream->GetHeader();
+	}
+
 	//---------------------------------------------------------------------
 
 	void
@@ -217,6 +227,16 @@ namespace jelly
 		JELLY_ASSERT(m_internal->m_fileReadStream);
 
 		return m_internal->m_fileReadStream->GetTotalBytesRead();
+	}
+
+	//---------------------------------------------------------------------
+
+	uint32_t
+	File::Rename(
+		const char*		aFromPath,
+		const char*		aToPath)
+	{
+		return (uint32_t)RenameFile(aFromPath, aToPath);
 	}
 
 }

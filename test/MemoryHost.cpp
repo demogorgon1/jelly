@@ -260,6 +260,7 @@ namespace jelly
 
 			// Public data
 			BufferList		m_data;
+			uint32_t		m_originStoreId = 0;
 
 			struct FileStreamReader : public IFileStreamReader
 			{
@@ -613,7 +614,7 @@ namespace jelly
 			for (StoreMap::iterator i = m_storeMap.begin(); i != m_storeMap.end(); i++)
 			{
 				if (i->first.first == aNodeId)
-					aOut.push_back(IHost::StoreInfo{i->first.second, i->second->m_data.m_totalBytes});
+					aOut.push_back(IHost::StoreInfo{i->first.second, i->second->m_data.m_totalBytes, i->second->m_originStoreId});
 			}
 		}
 		
@@ -686,12 +687,14 @@ namespace jelly
 		MemoryHost::CreateStore(
 			uint32_t					aNodeId,
 			uint32_t					aId,
+			uint32_t					aOriginStoreId,
 			FileStatsContext*			/*aFileStatsContext*/)
 		{
 			StoreMap::iterator i = m_storeMap.find(std::make_pair(aNodeId, aId));
 			JELLY_ALWAYS_ASSERT(i == m_storeMap.end());
 
 			std::unique_ptr<Store> store = std::make_unique<Store>();
+			store->m_originStoreId = aOriginStoreId;
 			std::unique_ptr<IStoreWriter> storeWriter(store->Write());
 
 			m_storeMap.insert(

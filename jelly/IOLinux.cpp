@@ -17,6 +17,33 @@ namespace jelly
 	namespace IOLinux
 	{
 
+		namespace
+		{
+
+			// Directory entries (new or renamed files) aren't guaranteed to be on disk until the directory itself has been
+			// synced. Returns 0 on success, otherwise errno.
+			int
+			_SyncParentDirectory(
+				const char*			aPath)
+			{
+				std::filesystem::path directory = std::filesystem::path(aPath).parent_path();
+				if(directory.empty())
+					directory = ".";
+
+				Handle handle = open(directory.c_str(), O_RDONLY | O_DIRECTORY);
+				if(!handle.IsSet())
+					return errno;
+
+				if(fsync(handle) == -1)
+					return errno;
+
+				return 0;
+			}
+
+		}
+
+		//-----------------------------------------------------------------------------------
+
 		Handle::Handle(
 			int					aFd)
 			: m_fd(aFd)
@@ -100,7 +127,7 @@ namespace jelly
 				FileHeader header;
 				ssize_t bytes = read(m_handle, &header, sizeof(header));
 				JELLY_CHECK((size_t)bytes == sizeof(header), Exception::ERROR_FILE_READ_RANDOM_FAILED_TO_READ_HEADER, "Path=%s;ErrorCode=%d", aPath, errno);
-				JELLY_CHECK(header == aHeader, Exception::ERROR_FILE_READ_RANDOM_HEADER_MISMATCH, "Path=%s", aPath);
+				JELLY_CHECK(aHeader.Accepts(header), Exception::ERROR_FILE_READ_RANDOM_HEADER_MISMATCH, "Path=%s", aPath);
 			}
 		}
 		
@@ -155,12 +182,11 @@ namespace jelly
 
 				if(m_handle.IsSet() && m_size > 0)
 				{
-					FileHeader header;
-					ssize_t bytes = read(m_handle, &header, sizeof(header));
-					JELLY_CHECK((size_t)bytes == sizeof(header), Exception::ERROR_FILE_READ_STREAM_FAILED_TO_READ_HEADER, "Path=%s;ErrorCode=%d", aPath, errno);
-					JELLY_CHECK(header == aHeader, Exception::ERROR_FILE_READ_STREAM_HEADER_MISMATCH, "Path=%s", aPath);
+					ssize_t bytes = read(m_handle, &m_header, sizeof(m_header));
+					JELLY_CHECK((size_t)bytes == sizeof(m_header), Exception::ERROR_FILE_READ_STREAM_FAILED_TO_READ_HEADER, "Path=%s;ErrorCode=%d", aPath, errno);
+					JELLY_CHECK(aHeader.Accepts(m_header), Exception::ERROR_FILE_READ_STREAM_HEADER_MISMATCH, "Path=%s", aPath);
 
-					m_totalBytesRead = sizeof(header);
+					m_totalBytesRead = sizeof(m_header);
 				}
 			}
 		}
@@ -251,8 +277,11 @@ namespace jelly
 			const FileHeader&	aHeader)
 			: m_size(0)
 			, m_nonFlushedBytes(0)
+			, m_path(aPath)
+			, m_directorySynced(false)
 		{
-			int flags = O_CREAT | O_WRONLY;
+			// Truncate any existing file (like CREATE_ALWAYS on Windows), otherwise old data could be left at the end of the new file
+			int flags = O_CREAT | O_WRONLY | O_TRUNC;
 			int mode = S_IRUSR | S_IWUSR;
 
 			m_handle = open(aPath, flags, mode);
@@ -279,6 +308,15 @@ namespace jelly
 
 			int result = fsync(m_handle);
 			JELLY_CHECK(result != -1, Exception::ERROR_FILE_WRITE_STREAM_FAILED_TO_FLUSH, "ErrorCode=%d", errno);
+
+			if(!m_directorySynced)
+			{
+				// First flush of a new file: make sure the file itself (its directory entry) is on disk too
+				int errorCode = _SyncParentDirectory(m_path.c_str());
+				JELLY_CHECK(errorCode == 0, Exception::ERROR_FILE_WRITE_STREAM_FAILED_TO_FLUSH, "Path=%s;ErrorCode=%d", m_path.c_str(), errorCode);
+
+				m_directorySynced = true;
+			}
 
 			size_t flushedBytes = m_nonFlushedBytes;
 			m_nonFlushedBytes = 0;
@@ -334,6 +372,19 @@ namespace jelly
 			JELLY_CHECK((size_t)bytes == aWriteBuffer->m_bytes, Exception::ERROR_FILE_WRITE_STREAM_FAILED_TO_WRITE, "ErrorCode=%d", errno);
 
 			m_nonFlushedBytes += aWriteBuffer->m_bytes;
+		}
+
+		//-----------------------------------------------------------------------------------
+
+		int
+		RenameFile(
+			const char*			aFromPath,
+			const char*			aToPath)
+		{
+			if(rename(aFromPath, aToPath) == -1)
+				return errno;
+
+			return _SyncParentDirectory(aToPath);
 		}
 
 	}

@@ -281,7 +281,8 @@ namespace jelly
 			, m_path(aPath)
 			, m_directorySynced(false)
 		{
-			int flags = O_CREAT | O_WRONLY;
+			// Truncate any existing file (like CREATE_ALWAYS on Windows), otherwise old data could be left at the end of the new file
+			int flags = O_CREAT | O_WRONLY | O_TRUNC;
 			int mode = S_IRUSR | S_IWUSR;
 
 			m_handle = open(aPath, flags, mode);

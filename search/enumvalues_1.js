@@ -1,0 +1,19 @@
+var searchData=
+[
+  ['request_5fresult_5falready_5flocked_0',['REQUEST_RESULT_ALREADY_LOCKED',['../RequestResult_8h.html#ae25a5aa8abac75e60d56324d8adc1524a84acf917611cc3d9c60c00f8a827abe4',1,'jelly']]],
+  ['request_5fresult_5fcanceled_1',['REQUEST_RESULT_CANCELED',['../RequestResult_8h.html#ae25a5aa8abac75e60d56324d8adc1524a7aadbc5025eca7f2a6063efc470bb0eb',1,'jelly']]],
+  ['request_5fresult_5fdoes_5fnot_5fexist_2',['REQUEST_RESULT_DOES_NOT_EXIST',['../RequestResult_8h.html#ae25a5aa8abac75e60d56324d8adc1524aad926e093af7d16d3c785521cf2643df',1,'jelly']]],
+  ['request_5fresult_5fexception_3',['REQUEST_RESULT_EXCEPTION',['../RequestResult_8h.html#ae25a5aa8abac75e60d56324d8adc1524a60167346bf65377915005d68700a7327',1,'jelly']]],
+  ['request_5fresult_5fnone_4',['REQUEST_RESULT_NONE',['../RequestResult_8h.html#ae25a5aa8abac75e60d56324d8adc1524a4e04e442895dea27aa70709b8579b14d',1,'jelly']]],
+  ['request_5fresult_5fnot_5flocked_5',['REQUEST_RESULT_NOT_LOCKED',['../RequestResult_8h.html#ae25a5aa8abac75e60d56324d8adc1524a97f5c31165ca438836d3e2bc54adebc2',1,'jelly']]],
+  ['request_5fresult_5fnot_5fmaster_6',['REQUEST_RESULT_NOT_MASTER',['../RequestResult_8h.html#ae25a5aa8abac75e60d56324d8adc1524add0d88ae79b5b808f76a6de54d6cc9ab',1,'jelly']]],
+  ['request_5fresult_5fok_7',['REQUEST_RESULT_OK',['../RequestResult_8h.html#ae25a5aa8abac75e60d56324d8adc1524abc94be86251d67939f4a48d014e9d06a',1,'jelly']]],
+  ['request_5fresult_5foutdated_8',['REQUEST_RESULT_OUTDATED',['../RequestResult_8h.html#ae25a5aa8abac75e60d56324d8adc1524a6951844ef869ed4307c84519ee53dfba',1,'jelly']]],
+  ['request_5ftype_5fblob_5fnode_5fdelete_9',['REQUEST_TYPE_BLOB_NODE_DELETE',['../Exception_8h.html#a2c035d47df04d56ac8d1beb0101a0fafa8c01ad0a11e07b1e72a6be7d7bbf75ac',1,'jelly::Exception']]],
+  ['request_5ftype_5fblob_5fnode_5fget_10',['REQUEST_TYPE_BLOB_NODE_GET',['../Exception_8h.html#a2c035d47df04d56ac8d1beb0101a0fafa39089a8d9f8a38332caf849981c34751',1,'jelly::Exception']]],
+  ['request_5ftype_5fblob_5fnode_5fset_11',['REQUEST_TYPE_BLOB_NODE_SET',['../Exception_8h.html#a2c035d47df04d56ac8d1beb0101a0fafa92cc845c6214edbdc779de7be5b1e3d4',1,'jelly::Exception']]],
+  ['request_5ftype_5flock_5fnode_5fdelete_12',['REQUEST_TYPE_LOCK_NODE_DELETE',['../Exception_8h.html#a2c035d47df04d56ac8d1beb0101a0fafabc2717f00db26672b7b67454b3a87e70',1,'jelly::Exception']]],
+  ['request_5ftype_5flock_5fnode_5flock_13',['REQUEST_TYPE_LOCK_NODE_LOCK',['../Exception_8h.html#a2c035d47df04d56ac8d1beb0101a0fafa001bb739e51bd9b8fbec53b8cf898251',1,'jelly::Exception']]],
+  ['request_5ftype_5flock_5fnode_5funlock_14',['REQUEST_TYPE_LOCK_NODE_UNLOCK',['../Exception_8h.html#a2c035d47df04d56ac8d1beb0101a0fafaae509510eff384c96f00217b6645d01b',1,'jelly::Exception']]],
+  ['request_5ftype_5fnone_15',['REQUEST_TYPE_NONE',['../Exception_8h.html#a2c035d47df04d56ac8d1beb0101a0fafaddc9e85dbb496e5f90596bbe6b6c9cac',1,'jelly::Exception']]]
+];

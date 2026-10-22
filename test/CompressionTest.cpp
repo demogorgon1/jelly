@@ -157,6 +157,66 @@ namespace jelly
 				}
 			}
 
+			#if defined(JELLY_ZSTD)
+				void
+				_TestCompressedWALWithLargeBlocks()
+				{
+					// A lot of data that compresses poorly (but not so poorly that it's stored uncompressed), flushed at
+					// once, results in compressed blocks much larger than what the WAL reader reads from the file at a
+					// time. All of it must be read back.
+					DefaultHost host(".", "compressedwaltest");
+					host.DeleteAllFiles(UINT32_MAX);
+
+					typedef BlobNodeItem<UIntKey<uint32_t>, MetaData::Dummy> ItemType;
+
+					static const uint32_t ITEM_COUNT = 200;
+					static const size_t BLOB_SIZE = 1024;
+
+					std::mt19937 random;
+					std::vector<std::unique_ptr<ItemType>> items;
+
+					for(uint32_t i = 0; i < ITEM_COUNT; i++)
+					{
+						std::unique_ptr<IBuffer> blob = std::make_unique<Buffer<1>>();
+						blob->SetSize(BLOB_SIZE);
+						for(size_t j = 0; j < BLOB_SIZE; j++)
+							((uint8_t*)blob->GetPointer())[j] = (uint8_t)(random() % 16);
+
+						items.push_back(std::make_unique<ItemType>(i, 1, blob.release()));
+					}
+
+					{
+						std::unique_ptr<IWALWriter> writer(host.CreateWAL(0, 0, true, NULL));
+						JELLY_ALWAYS_ASSERT(writer);
+
+						for(const std::unique_ptr<ItemType>& item : items)
+							writer->WriteItem(item.get(), NULL);
+
+						JELLY_ALWAYS_ASSERT(writer->Flush(NULL) == ITEM_COUNT);
+					}
+
+					{
+						std::unique_ptr<IFileStreamReader> reader(host.ReadWALStream(0, 0, true, NULL));
+						JELLY_ALWAYS_ASSERT(reader);
+
+						uint32_t count = 0;
+						while(!reader->IsEnd())
+						{
+							ItemType item;
+							JELLY_ALWAYS_ASSERT(item.Read(reader.get(), NULL));
+							JELLY_ALWAYS_ASSERT(item.GetKey() == UIntKey<uint32_t>(count));
+							JELLY_ALWAYS_ASSERT(item.GetBlob()->GetSize() == BLOB_SIZE);
+							JELLY_ALWAYS_ASSERT(memcmp(item.GetBlob()->GetPointer(), items[count]->GetBlob()->GetPointer(), BLOB_SIZE) == 0);
+							count++;
+						}
+
+						JELLY_ALWAYS_ASSERT(count == ITEM_COUNT);
+					}
+
+					host.DeleteAllFiles(UINT32_MAX);
+				}
+			#endif
+
 		}
 
 		namespace CompressionTest
@@ -167,6 +227,7 @@ namespace jelly
 			{
 				#if defined(JELLY_ZSTD)
 					_TestCompressionProvider<ZstdCompression>();
+					_TestCompressedWALWithLargeBlocks();
 				#endif
 			}
 

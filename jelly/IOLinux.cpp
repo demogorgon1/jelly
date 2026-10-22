@@ -100,7 +100,7 @@ namespace jelly
 				FileHeader header;
 				ssize_t bytes = read(m_handle, &header, sizeof(header));
 				JELLY_CHECK((size_t)bytes == sizeof(header), Exception::ERROR_FILE_READ_RANDOM_FAILED_TO_READ_HEADER, "Path=%s;ErrorCode=%d", aPath, errno);
-				JELLY_CHECK(header == aHeader, Exception::ERROR_FILE_READ_RANDOM_HEADER_MISMATCH, "Path=%s", aPath);
+				JELLY_CHECK(aHeader.Accepts(header), Exception::ERROR_FILE_READ_RANDOM_HEADER_MISMATCH, "Path=%s", aPath);
 			}
 		}
 		
@@ -155,12 +155,11 @@ namespace jelly
 
 				if(m_handle.IsSet() && m_size > 0)
 				{
-					FileHeader header;
-					ssize_t bytes = read(m_handle, &header, sizeof(header));
-					JELLY_CHECK((size_t)bytes == sizeof(header), Exception::ERROR_FILE_READ_STREAM_FAILED_TO_READ_HEADER, "Path=%s;ErrorCode=%d", aPath, errno);
-					JELLY_CHECK(header == aHeader, Exception::ERROR_FILE_READ_STREAM_HEADER_MISMATCH, "Path=%s", aPath);
+					ssize_t bytes = read(m_handle, &m_header, sizeof(m_header));
+					JELLY_CHECK((size_t)bytes == sizeof(m_header), Exception::ERROR_FILE_READ_STREAM_FAILED_TO_READ_HEADER, "Path=%s;ErrorCode=%d", aPath, errno);
+					JELLY_CHECK(aHeader.Accepts(m_header), Exception::ERROR_FILE_READ_STREAM_HEADER_MISMATCH, "Path=%s", aPath);
 
-					m_totalBytesRead = sizeof(header);
+					m_totalBytesRead = sizeof(m_header);
 				}
 			}
 		}

@@ -9,6 +9,7 @@ namespace jelly
 {
 
 	class DefaultConfigSource;
+	class FileStreamReader;
 
 	/**
 	 * \brief Default implementation of the IHost interface, which nodes use to interact with the system.
@@ -79,6 +80,7 @@ namespace jelly
 		IStoreWriter*			CreateStore(
 									uint32_t					aNodeId,
 									uint32_t					aId,
+									uint32_t					aOriginStoreId,
 									FileStatsContext*			aFileStatsContext) override;
 		void					DeleteStore(
 									uint32_t					aNodeId,
@@ -108,6 +110,13 @@ namespace jelly
 		std::unique_ptr<DefaultConfigSource>	m_defaultConfigSource;
 		std::unique_ptr<ConfigProxy>			m_config;
 		std::unique_ptr<File>					m_fileLock;
+
+		FileHeader			_GetStoreFileHeader() const;
+		FileStreamReader*	_OpenStoreStream(
+								uint32_t					aNodeId,
+								uint32_t					aId,
+								FileStatsContext*			aFileStatsContext,
+								uint32_t&					aOutOriginStoreId);
 	};
 
 }

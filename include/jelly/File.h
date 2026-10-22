@@ -43,6 +43,7 @@ namespace jelly
 						size_t				aBufferSize);
 		size_t		GetReadOffset() const;
 		bool		IsEnd() const noexcept;
+		const FileHeader&	GetHeader() const; // Header read from a stream (MODE_READ_STREAM)
 
 		// IWriter implementation
 		void		Write(

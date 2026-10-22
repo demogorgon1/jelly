@@ -70,17 +70,7 @@ namespace jelly
 		}
 
 		// Initialize store manager
-		{
-			FileHeader fileHeader(FileHeader::TYPE_STORE);
-
-			if (m_compressionProvider != NULL)
-			{
-				fileHeader.m_flags |= FileHeader::FLAG_ITEM_COMPRESSION;
-				fileHeader.m_compressionId = m_compressionProvider->GetId();
-			}
-
-			m_storeManager = std::make_unique<StoreManager>(aRoot, aFilePrefix, fileHeader);
-		}
+		m_storeManager = std::make_unique<StoreManager>(aRoot, aFilePrefix, _GetStoreFileHeader());
 	}
 	
 	DefaultHost::~DefaultHost()
@@ -234,6 +224,9 @@ namespace jelly
 					StoreInfo t;
 					t.m_id = id;
 					t.m_size = (size_t)entry.file_size();
+
+					std::unique_ptr<FileStreamReader> f(_OpenStoreStream(aNodeId, id, NULL, t.m_originStoreId));
+
 					aOut.push_back(t);
 				}
 			}
@@ -310,26 +303,10 @@ namespace jelly
 	DefaultHost::ReadStoreStream(
 		uint32_t					aNodeId,
 		uint32_t					aId,
-		FileStatsContext*			aFileStatsContext) 
+		FileStatsContext*			aFileStatsContext)
 	{
-		FileHeader fileHeader(FileHeader::TYPE_STORE);
-
-		if (m_compressionProvider != NULL)
-		{
-			fileHeader.m_flags |= FileHeader::FLAG_ITEM_COMPRESSION;
-			fileHeader.m_compressionId = m_compressionProvider->GetId();
-		}
-
-		std::unique_ptr<FileStreamReader> f(new FileStreamReader(
-			PathUtils::MakePath(m_root.c_str(), m_filePrefix.c_str(), PathUtils::FILE_TYPE_STORE, aNodeId, aId).c_str(),
-			NULL,
-			aFileStatsContext,
-			fileHeader));
-
-		if (!f->IsValid())
-			return NULL;
-
-		return f.release();
+		uint32_t originStoreId;
+		return _OpenStoreStream(aNodeId, aId, aFileStatsContext, originStoreId);
 	}
 
 	IStoreBlobReader* 
@@ -345,24 +322,21 @@ namespace jelly
 	DefaultHost::CreateStore(
 		uint32_t					aNodeId,
 		uint32_t					aId,
+		uint32_t					aOriginStoreId,
 		FileStatsContext*			aFileStatsContext)
 	{
 		std::string targetPath = PathUtils::MakePath(m_root.c_str(), m_filePrefix.c_str(), PathUtils::FILE_TYPE_STORE, aNodeId, aId);
 		std::string tempPath = targetPath + ".tmp";
 
-		FileHeader fileHeader(FileHeader::TYPE_STORE);
-
-		if(m_compressionProvider != NULL)
-		{
-			fileHeader.m_flags |= FileHeader::FLAG_ITEM_COMPRESSION;
-			fileHeader.m_compressionId = m_compressionProvider->GetId();
-		}
+		FileHeader fileHeader = _GetStoreFileHeader();
+		fileHeader.m_flags |= FileHeader::FLAG_STORE_ORIGIN;
 
 		std::unique_ptr<StoreWriter> f(new StoreWriter(
 			targetPath.c_str(),
 			tempPath.c_str(),
 			aFileStatsContext,
-			fileHeader));
+			fileHeader,
+			aOriginStoreId));
 
 		if (!f->IsValid())
 			return NULL;
@@ -439,6 +413,50 @@ namespace jelly
 		uint32_t					aId) 
 	{
 		return PathUtils::MakePath(m_root.c_str(), m_filePrefix.c_str(), PathUtils::FILE_TYPE_STORE, aNodeId, aId);
+	}
+
+	//---------------------------------------------------------------
+
+	FileHeader
+	DefaultHost::_GetStoreFileHeader() const
+	{
+		FileHeader fileHeader(FileHeader::TYPE_STORE);
+
+		if (m_compressionProvider != NULL)
+		{
+			fileHeader.m_flags |= FileHeader::FLAG_ITEM_COMPRESSION;
+			fileHeader.m_compressionId = m_compressionProvider->GetId();
+		}
+
+		return fileHeader;
+	}
+
+	FileStreamReader*
+	DefaultHost::_OpenStoreStream(
+		uint32_t					aNodeId,
+		uint32_t					aId,
+		FileStatsContext*			aFileStatsContext,
+		uint32_t&					aOutOriginStoreId)
+	{
+		// Stores made before origins were added don't have one
+		aOutOriginStoreId = 0;
+
+		std::unique_ptr<FileStreamReader> f(new FileStreamReader(
+			PathUtils::MakePath(m_root.c_str(), m_filePrefix.c_str(), PathUtils::FILE_TYPE_STORE, aNodeId, aId).c_str(),
+			NULL,
+			aFileStatsContext,
+			_GetStoreFileHeader()));
+
+		if (!f->IsValid())
+			return NULL;
+
+		if(f->GetHeader().m_flags & FileHeader::FLAG_STORE_ORIGIN)
+		{
+			size_t bytes = f->Read(&aOutOriginStoreId, sizeof(aOutOriginStoreId));
+			JELLY_CHECK(bytes == sizeof(aOutOriginStoreId), Exception::ERROR_FILE_READ_STREAM_FAILED_TO_READ_HEADER, "NodeId=%u;Id=%u", aNodeId, aId);
+		}
+
+		return f.release();
 	}
 
 }

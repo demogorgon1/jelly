@@ -17,6 +17,33 @@ namespace jelly
 	namespace IOLinux
 	{
 
+		namespace
+		{
+
+			// Directory entries (new or renamed files) aren't guaranteed to be on disk until the directory itself has been
+			// synced. Returns 0 on success, otherwise errno.
+			int
+			_SyncParentDirectory(
+				const char*			aPath)
+			{
+				std::filesystem::path directory = std::filesystem::path(aPath).parent_path();
+				if(directory.empty())
+					directory = ".";
+
+				Handle handle = open(directory.c_str(), O_RDONLY | O_DIRECTORY);
+				if(!handle.IsSet())
+					return errno;
+
+				if(fsync(handle) == -1)
+					return errno;
+
+				return 0;
+			}
+
+		}
+
+		//-----------------------------------------------------------------------------------
+
 		Handle::Handle(
 			int					aFd)
 			: m_fd(aFd)
@@ -251,6 +278,8 @@ namespace jelly
 			const FileHeader&	aHeader)
 			: m_size(0)
 			, m_nonFlushedBytes(0)
+			, m_path(aPath)
+			, m_directorySynced(false)
 		{
 			// Truncate any existing file (like CREATE_ALWAYS on Windows), otherwise old data could be left at the end of the new file
 			int flags = O_CREAT | O_WRONLY | O_TRUNC;
@@ -280,6 +309,15 @@ namespace jelly
 
 			int result = fsync(m_handle);
 			JELLY_CHECK(result != -1, Exception::ERROR_FILE_WRITE_STREAM_FAILED_TO_FLUSH, "ErrorCode=%d", errno);
+
+			if(!m_directorySynced)
+			{
+				// First flush of a new file: make sure the file itself (its directory entry) is on disk too
+				int errorCode = _SyncParentDirectory(m_path.c_str());
+				JELLY_CHECK(errorCode == 0, Exception::ERROR_FILE_WRITE_STREAM_FAILED_TO_FLUSH, "Path=%s;ErrorCode=%d", m_path.c_str(), errorCode);
+
+				m_directorySynced = true;
+			}
 
 			size_t flushedBytes = m_nonFlushedBytes;
 			m_nonFlushedBytes = 0;
@@ -335,6 +373,19 @@ namespace jelly
 			JELLY_CHECK((size_t)bytes == aWriteBuffer->m_bytes, Exception::ERROR_FILE_WRITE_STREAM_FAILED_TO_WRITE, "ErrorCode=%d", errno);
 
 			m_nonFlushedBytes += aWriteBuffer->m_bytes;
+		}
+
+		//-----------------------------------------------------------------------------------
+
+		int
+		RenameFile(
+			const char*			aFromPath,
+			const char*			aToPath)
+		{
+			if(rename(aFromPath, aToPath) == -1)
+				return errno;
+
+			return _SyncParentDirectory(aToPath);
 		}
 
 	}

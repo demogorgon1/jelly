@@ -172,6 +172,13 @@ namespace jelly
 							FileWriteBuffer*	aWriteBuffer);
 		};
 
+		//-----------------------------------------------------------------------------------
+
+		// Renames a file and makes sure the rename is on disk before returning. Returns 0 on success, otherwise GetLastError().
+		uint32_t		RenameFile(
+							const char*			aFromPath,
+							const char*			aToPath);
+
 	}
 
 }

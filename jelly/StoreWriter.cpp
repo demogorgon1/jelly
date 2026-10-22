@@ -52,10 +52,9 @@ namespace jelly
 		m_file.Flush();
 		m_file.Close();
 
-		// Rename temp path to final target path
-		std::error_code errorCode;
-		std::filesystem::rename(m_tempPath, m_targetPath, errorCode);
-		JELLY_CHECK(!errorCode, Exception::ERROR_STORE_WRITER_RENAME_FAILED, "Temp=%s;Target=%s;Msg=%s", m_tempPath.c_str(), m_targetPath.c_str(), errorCode.message().c_str());
+		// Rename temp path to final target path. This must be on disk before any WALs flushed to this store are deleted.
+		uint32_t errorCode = File::Rename(m_tempPath.c_str(), m_targetPath.c_str());
+		JELLY_CHECK(errorCode == 0, Exception::ERROR_STORE_WRITER_RENAME_FAILED, "Temp=%s;Target=%s;ErrorCode=%u", m_tempPath.c_str(), m_targetPath.c_str(), errorCode);
 
 		m_isFlushed = true;
 	}

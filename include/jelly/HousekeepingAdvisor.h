@@ -99,10 +99,12 @@ namespace jelly
 		{
 			// Initialize compaction advisor
 			{
-				CompactionAdvisor::Strategy compactionStrategy;
-				const char* compactionStrategyName = m_config.GetString(Config::ID_COMPACTION_STRATEGY);				
+				CompactionAdvisor::Strategy compactionStrategy = CompactionAdvisor::STRATEGY_SIZE_TIERED;
+				const char* compactionStrategyName = m_config.GetString(Config::ID_COMPACTION_STRATEGY);
 				if(strcmp(compactionStrategyName, "stcs") == 0)
 					compactionStrategy = CompactionAdvisor::STRATEGY_SIZE_TIERED;
+				else
+					JELLY_FAIL(Exception::ERROR_INVALID_COMPACTION_STRATEGY, "Strategy=%s", compactionStrategyName);
 
 				m_compactionAdvisor = std::make_unique<CompactionAdvisor>(
 					m_node->GetNodeId(),

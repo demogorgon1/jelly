@@ -481,13 +481,26 @@ namespace jelly
 					m_currentCompactionStoreIds.insert(storeId);
 			}
 
-			Compaction::Perform<_KeyType, _ItemType>(
-				m_host,
-				m_nodeId,
-				&m_statsContext.m_fileStore,
-				CreateStoreId(),
-				aCompactionJob,
-				result.get());
+			try
+			{
+				Compaction::Perform<_KeyType, _ItemType>(
+					m_host,
+					m_nodeId,
+					&m_statsContext.m_fileStore,
+					CreateStoreId(),
+					aCompactionJob,
+					result.get());
+			}
+			catch(...)
+			{
+				// Compaction failed, so the stores are no longer being compacted
+				std::lock_guard lock(m_currentCompactionStoreIdsLock);
+
+				for (uint32_t storeId : aCompactionJob.m_storeIds)
+					m_currentCompactionStoreIds.erase(storeId);
+
+				throw;
+			}
 
 			return result.release();
 		}
@@ -516,12 +529,23 @@ namespace jelly
 
 			result->SetMajorCompaction(true);
 
-			Compaction::PerformMajorCompaction<_KeyType, _ItemType>(
-				m_host,
-				m_nodeId,
-				&m_statsContext.m_fileStore,
-				CreateStoreId(),
-				result.get());
+			try
+			{
+				Compaction::PerformMajorCompaction<_KeyType, _ItemType>(
+					m_host,
+					m_nodeId,
+					&m_statsContext.m_fileStore,
+					CreateStoreId(),
+					result.get());
+			}
+			catch(...)
+			{
+				// Major compaction failed, so it's no longer in progress
+				std::lock_guard lock(m_currentCompactionStoreIdsLock);
+				m_currentCompactionIsMajor = false;
+
+				throw;
+			}
 
 			return result.release();
 		}
@@ -552,8 +576,11 @@ namespace jelly
 				}
 			}
 
-			for (uint32_t storeId : aCompactionResult->GetStoreIds())
-				m_host->DeleteStore(m_nodeId, storeId);
+			if(!aCompactionResult->IsNothingCompacted())
+			{
+				for (uint32_t storeId : aCompactionResult->GetStoreIds())
+					m_host->DeleteStore(m_nodeId, storeId);
+			}
 
 			{
 				std::lock_guard lock(m_currentCompactionStoreIdsLock);

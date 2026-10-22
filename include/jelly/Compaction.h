@@ -13,6 +13,23 @@ namespace jelly
 	namespace Compaction
 	{
 
+		// Reads the next item from a store. Returns false at the end of the store. Failing to read an item anywhere else
+		// means the store is damaged: compaction must fail, otherwise the rest of the store would be lost when it's deleted.
+		template <typename _ItemType>
+		bool
+		ReadItem(
+			IFileStreamReader*							aReader,
+			uint32_t									aStoreId,
+			_ItemType&									aOutItem)
+		{
+			if(aReader->IsEnd())
+				return false;
+
+			bool ok = aOutItem.CompactionRead(aReader);
+			JELLY_CHECK(ok, Exception::ERROR_COMPACTION_FAILED_TO_READ_STORE, "StoreId=%u;Offset=%zu", aStoreId, aReader->GetTotalBytesRead());
+			return true;
+		}
+
 		// Do a compaction of just 2 stores
 		template <typename _KeyType, typename _ItemType>
 		size_t
@@ -31,7 +48,11 @@ namespace jelly
 			std::unique_ptr<IFileStreamReader> f2(aHost->ReadStoreStream(aNodeId, aStoreId2, aStoreFileStatsContext));
 
 			if(!f1 || !f2)
-				return 0; // Could be that the stores no longer exists, just don't do anything then
+			{
+				// Could be that the stores no longer exists, just don't do anything then
+				aOut->SetNothingCompacted();
+				return 0;
+			}
 
 			{
 				std::unique_ptr<IStoreWriter> fOut(aHost->CreateStore(aNodeId, aNewStoreId, aStoreFileStatsContext));
@@ -46,10 +67,10 @@ namespace jelly
 				for (;;)
 				{
 					if (!hasItem1)
-						hasItem1 = item1.CompactionRead(f1.get());
+						hasItem1 = ReadItem(f1.get(), aStoreId1, item1);
 
 					if (!hasItem2)
-						hasItem2 = item2.CompactionRead(f2.get());
+						hasItem2 = ReadItem(f2.get(), aStoreId2, item2);
 
 					if (!hasItem1 && !hasItem2)
 						break;
@@ -174,7 +195,11 @@ namespace jelly
 			}
 
 			if(sourceStores.size() <= 2)
+			{
+				// Some stores no longer exist, don't do anything
+				aOut->SetNothingCompacted();
 				return 0;
+			}
 
 			// Open output store
 			std::unique_ptr<IStoreWriter> outputStore(aHost->CreateStore(aNodeId, aNewStoreId, aStoreFileStatsContext));
@@ -189,8 +214,8 @@ namespace jelly
 
 				for (std::unique_ptr<SourceStore>& sourceStore : sourceStores)
 				{
-					if (!sourceStore->m_hasItem && !sourceStore->m_fileStreamReader->IsEnd())
-						sourceStore->m_hasItem = sourceStore->m_item.CompactionRead(sourceStore->m_fileStreamReader.get());
+					if (!sourceStore->m_hasItem)
+						sourceStore->m_hasItem = ReadItem(sourceStore->m_fileStreamReader.get(), sourceStore->m_storeId, sourceStore->m_item);
 
 					if (sourceStore->m_hasItem)
 						numSourceStoresWithItemsRemaining++;

@@ -142,6 +142,8 @@ namespace jelly
 			ERROR_COMPACTION_IN_PROGRESS,
 			ERROR_STRING_KEY_TOO_LONG,
 			ERROR_TEST,
+			ERROR_COMPACTION_FAILED_TO_READ_STORE,
+			ERROR_INVALID_COMPACTION_STRATEGY,
 
 			NUM_ERRORS
 		};
@@ -265,7 +267,9 @@ namespace jelly
 			{ "MAJOR_COMPACTION_IN_PROGRESS",				CATEGORY_COMPACTION,			"Major compaction already in progress." },
 			{ "COMPACTION_IN_PROGRESS",						CATEGORY_COMPACTION,			"Tried to perform compaction on a store that is currently being compacted." },
 			{ "STRING_KEY_TOO_LONG",						CATEGORY_USER,					"Maximum length for string keys exceeded." },
-			{ "TEST",										CATEGORY_NONE,					"Test error." }
+			{ "TEST",										CATEGORY_NONE,					"Test error." },
+			{ "COMPACTION_FAILED_TO_READ_STORE",			CATEGORY_COMPACTION,			"Failed to read an item from a store being compacted. The store might be damaged." },
+			{ "INVALID_COMPACTION_STRATEGY",				CATEGORY_CONFIGURATION,			"Invalid compaction strategy." }
 		};
 
 		static_assert(sizeof(CATEGORY_STRINGS) / sizeof(const char*) == NUM_CATEGORIES);

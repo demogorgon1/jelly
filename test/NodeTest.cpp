@@ -1412,6 +1412,76 @@ namespace jelly
 			}
 
 			void
+			_TestCompactionDamagedAndMissingStores(
+				TestDefaultHost*		aHost)
+			{
+				aHost->DeleteAllFiles(UINT32_MAX);
+				aHost->GetDefaultConfigSource()->Clear();
+
+				auto lockAndFlush = [](LockNodeType& aLockNode, uint32_t aKey)
+				{
+					LockNodeType::Request req;
+					req.SetKey(aKey);
+					req.SetLock(100);
+					aLockNode.Lock(&req);
+					JELLY_ALWAYS_ASSERT(aLockNode.ProcessRequests() == 1);
+					aLockNode.FlushPendingWAL(0);
+					JELLY_ALWAYS_ASSERT(req.GetResult() == REQUEST_RESULT_OK);
+					aLockNode.FlushPendingStore();
+				};
+
+				{
+					LockNodeType lockNode(aHost, 0);
+
+					for(uint32_t key = 1; key <= 3; key++)
+						lockAndFlush(lockNode, key); // Stores 0, 1, 2
+				}
+
+				// Cut the end off store 1, so its last item is damaged
+				{
+					std::string path = aHost->GetStorePath(0, 1);
+					std::filesystem::resize_file(path, std::filesystem::file_size(path) - 1);
+				}
+
+				{
+					LockNodeType lockNode(aHost, 0);
+
+					// Compacting a damaged store fails, keeping the stores
+					for(uint32_t attempt = 0; attempt < 2; attempt++)
+					{
+						bool failed = false;
+
+						try
+						{
+							std::unique_ptr<CompactionResultType> compactionResult(lockNode.PerformCompaction(CompactionJob(0, 0, 1)));
+						}
+						catch(Exception::Code e)
+						{
+							// Second attempt must fail the same way (stores aren't still flagged as being compacted)
+							JELLY_ALWAYS_ASSERT(Exception::GetExceptionCodeError(e) == Exception::ERROR_COMPACTION_FAILED_TO_READ_STORE);
+							failed = true;
+						}
+
+						JELLY_ALWAYS_ASSERT(failed);
+					}
+
+					JELLY_ALWAYS_ASSERT(std::filesystem::exists(aHost->GetStorePath(0, 0)));
+					JELLY_ALWAYS_ASSERT(std::filesystem::exists(aHost->GetStorePath(0, 1)));
+
+					// Compacting with a store that doesn't exist does nothing, keeping the store that does exist
+					{
+						std::unique_ptr<CompactionResultType> compactionResult(lockNode.PerformCompaction(CompactionJob(0, 0, 1000)));
+						JELLY_ALWAYS_ASSERT(compactionResult->IsNothingCompacted());
+						lockNode.ApplyCompactionResult(compactionResult.get());
+					}
+
+					JELLY_ALWAYS_ASSERT(std::filesystem::exists(aHost->GetStorePath(0, 0)));
+				}
+
+				aHost->DeleteAllFiles(UINT32_MAX);
+			}
+
+			void
 			_TestBlobNodeDelete(
 				TestDefaultHost*		aHost)
 			{
@@ -2048,6 +2118,7 @@ namespace jelly
 
 				// Test delete operation of LockNode
 				_TestLockNodeDelete(&host);
+				_TestCompactionDamagedAndMissingStores(&host);
 
 				// Test delete operation of BlobNode
 				_TestBlobNodeDelete(&host);
